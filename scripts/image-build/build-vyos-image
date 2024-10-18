@@ -62,7 +62,7 @@ except Exception as e:
 # Checkout vyos-1x under build directory
 try:
     branch_name = build_defaults['vyos_branch']
-    url_vyos_1x = 'https://github.com/vyos/vyos-1x'
+    url_vyos_1x = 'https://github.com/psleng/vyos-1x'
     path_vyos_1x = os.path.join(defaults.BUILD_DIR, 'vyos-1x')
     try:
         repo_vyos_1x = git.Repo.clone_from(url_vyos_1x, path_vyos_1x, no_checkout=True)

@@ -1,0 +1,36 @@
+diff --git a/mxm_wifiex/wlan_src/mlinux/moal_uap_cfg80211.c b/mxm_wifiex/wlan_src/mlinux/moal_uap_cfg80211.c
+index d0e9446..dc98841 100644
+--- a/mxm_wifiex/wlan_src/mlinux/moal_uap_cfg80211.c
++++ b/mxm_wifiex/wlan_src/mlinux/moal_uap_cfg80211.c
+@@ -3340,6 +3340,7 @@ int woal_uap_cfg80211_get_station(struct wiphy *wiphy, struct net_device *dev,
+ 			       MAC2STR(mac),
+ 			       (int)info->param.sta_list.info[i].rssi);
+ #if CFG80211_VERSION_CODE >= KERNEL_VERSION(4, 0, 0)
++//printk(KERN_ALERT "%s: rx=%d tx=%d\n", __func__, info->param.sta_list.info[i].stats.rx_bytes, info->param.sta_list.info[i].stats.tx_bytes); // TODO HACK RPH
+ 			stainfo->filled = BIT(NL80211_STA_INFO_INACTIVE_TIME) |
+ 					  BIT(NL80211_STA_INFO_RX_BYTES) |
+ 					  BIT(NL80211_STA_INFO_TX_BYTES) |
+@@ -3443,9 +3444,22 @@ int woal_uap_cfg80211_dump_station(struct wiphy *wiphy, struct net_device *dev,
+ 			ETH_ALEN);
+ 	PRINTM(MIOCTL, "Dump station: " MACSTR " RSSI=%d\n", MAC2STR(mac),
+ 	       (int)info->param.sta_list.info[idx].rssi);
++//printk(KERN_ALERT "%s: " MACSTR " rx=%d tx=%d\n", __func__, MAC2STR(mac), info->param.sta_list.info[idx].stats.rx_bytes, info->param.sta_list.info[idx].stats.tx_bytes); // TODO HACK RPH
+ #if CFG80211_VERSION_CODE >= KERNEL_VERSION(4, 0, 0)
++	//sinfo->filled = BIT(NL80211_STA_INFO_INACTIVE_TIME) |
++	//BIT(NL80211_STA_INFO_SIGNAL);
+ 	sinfo->filled = BIT(NL80211_STA_INFO_INACTIVE_TIME) |
+-			BIT(NL80211_STA_INFO_SIGNAL);
++	                BIT(NL80211_STA_INFO_RX_BYTES) |
++	                BIT(NL80211_STA_INFO_TX_BYTES) |
++	                BIT(NL80211_STA_INFO_RX_PACKETS) |
++	                BIT(NL80211_STA_INFO_TX_PACKETS) |
++	                BIT(NL80211_STA_INFO_SIGNAL_AVG);
++	// VyOS expects all of these to be in place
++	sinfo->rx_bytes   = info->param.sta_list.info[idx].stats.rx_bytes;
++	sinfo->tx_bytes   = info->param.sta_list.info[idx].stats.tx_bytes;
++	sinfo->rx_packets = info->param.sta_list.info[idx].stats.rx_packets;
++	sinfo->tx_packets = info->param.sta_list.info[idx].stats.tx_packets;
++	sinfo->signal_avg = info->param.sta_list.info[idx].rssi;
+ #else
+ 	sinfo->filled = STATION_INFO_INACTIVE_TIME | STATION_INFO_SIGNAL;
+ #endif

@@ -1,0 +1,56 @@
+#!/bin/bash -e
+#
+# PSL: Build NXP WiFi/Bluetooth drivers
+#
+echo === $0 BEGIN in $PWD
+
+# Initialize repository URL variable
+: ${REPO_URL:="https://github.com/psleng"}
+: ${ROOTDIR:=$(dirname $(sudo git rev-parse --show-toplevel))}
+BRANCH=lf-6.6.3_1.0.0
+
+echo "Build/Install NXP 88Q9098/88W9098 branch $BRANCH"
+
+# Clone the repos
+for i in mwifiex imx-firmware
+do
+    if [ -d "$i" ]; then
+        echo "=== $i already exists; pulling"
+        cd $i; git pull; cd -
+    else
+        echo "=== Cloning $i"
+        git clone $REPO_URL/$i.git -b $BRANCH
+        if [ -f $i.patch ]; then
+            echo "=== Applying patch $i.patch from $(realpath $i)"
+            patch -d $i -p1 < $i.patch
+        fi
+    fi
+done
+
+# Build
+echo "=== Building NXP kernel modules"
+cd mwifiex/mxm_wifiex/wlan_src
+make -j -C $ROOTDIR/vyos-build/scripts/package-build/linux-kernel/linux M=$PWD
+cd -
+
+# Copy to kernel modules filesystem
+echo "=== Installing NXP kernel modules"
+DST=$ROOTDIR/build/fs/lib/modules/nxp
+sudo mkdir -p $DST
+sudo cp -f mwifiex/mxm_wifiex/wlan_src/*.ko $DST
+sudo cp -f wifi.sh $DST
+
+# Copy firmware to filesystem
+echo "=== Installing NXP firmware"
+DST=$ROOTDIR/build/fs/lib/firmware/nxp/
+sudo mkdir -p $ROOTDIR/build/fs/lib/firmware/nxp
+sudo cp -f imx-firmware/nxp/FwImage_9098_PCIE/*.bin $DST
+sudo cp -f imx-firmware/nxp/wifi_mod_para.conf $DST
+
+# Some useful rules
+echo "=== Installing NXP related rules"
+sudo cp -f 99-default.link $ROOTDIR/build/fs/etc/systemd/network/
+sudo cp -f 60-Perle-pcie-card-nxp9098.rules $ROOTDIR/build/fs/etc/udev/rules.d/
+sudo cp -f 60-Perle-usb-modem.rules $ROOTDIR/build/fs/etc/udev/rules.d/
+
+echo === $0 COMPLETE

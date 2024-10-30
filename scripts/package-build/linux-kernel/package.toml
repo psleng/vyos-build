@@ -71,3 +71,8 @@ name = "realtek-r8152"
 commit_id = ""
 scm_url = ""
 build_cmd = "build_realtek_r8152"
+
+# PSL: NXP WiFi drivers
+[[packages]]
+name = "build_iGOS_drivers"
+build_cmd = "./build_iGOS_drivers"

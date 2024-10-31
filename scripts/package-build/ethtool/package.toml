@@ -2,3 +2,6 @@
 name = "ethtool"
 commit_id = "debian/1%6.10-1"
 scm_url = "https://salsa.debian.org/kernel-team/ethtool"
+# PSL: ethtool fails testsuite because netlink support does not work inside
+# a docker container. "DEB_BUILD_OPTIONS=nocheck" suppresses it.
+build_cmd = "DEB_BUILD_OPTIONS=nocheck dpkg-buildpackage -uc -us -tc -b"

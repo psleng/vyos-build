@@ -33,24 +33,40 @@ cd mwifiex/mxm_wifiex/wlan_src
 make -j -C $ROOTDIR/vyos-build/scripts/package-build/linux-kernel/linux M=$PWD
 cd -
 
+#
+# Create a tar file containing additions to the filesystem
+# (which has normally not been built at this point)
+#
+
+rm -rf fs
+mkdir fs
+TAR=fs.tar.gz
+
 # Copy to kernel modules filesystem
-echo "=== Installing NXP kernel modules"
-DST=$ROOTDIR/build/fs/lib/modules/nxp
-sudo mkdir -p $DST
-sudo cp -f mwifiex/mxm_wifiex/wlan_src/*.ko $DST
-sudo cp -f wifi.sh $DST
+echo "=== Installing NXP kernel modules for $TAR"
+DST=fs/lib/modules/nxp
+mkdir -p $DST
+cp -f mwifiex/mxm_wifiex/wlan_src/*.ko $DST
+cp -f wifi.sh $DST
 
 # Copy firmware to filesystem
-echo "=== Installing NXP firmware"
-DST=$ROOTDIR/build/fs/lib/firmware/nxp/
-sudo mkdir -p $ROOTDIR/build/fs/lib/firmware/nxp
-sudo cp -f imx-firmware/nxp/FwImage_9098_PCIE/*.bin $DST
-sudo cp -f imx-firmware/nxp/wifi_mod_para.conf $DST
+echo "=== Installing NXP firmware for $TAR"
+DST=fs/lib/firmware/nxp/
+mkdir -p fs/lib/firmware/nxp
+cp -f imx-firmware/nxp/FwImage_9098_PCIE/*.bin $DST
+cp -f imx-firmware/nxp/wifi_mod_para.conf $DST
 
 # Some useful rules
-echo "=== Installing NXP related rules"
-sudo cp -f 99-default.link $ROOTDIR/build/fs/etc/systemd/network/
-sudo cp -f 60-Perle-pcie-card-nxp9098.rules $ROOTDIR/build/fs/etc/udev/rules.d/
-sudo cp -f 60-Perle-usb-modem.rules $ROOTDIR/build/fs/etc/udev/rules.d/
+echo "=== Installing NXP related rules for $TAR"
+mkdir -p fs/etc/systemd/network/ fs/etc/udev/rules.d/
+cp -f 99-default.link fs/etc/systemd/network/
+cp -f 60-Perle-pcie-card-nxp9098.rules fs/etc/udev/rules.d/
+cp -f 60-Perle-usb-modem.rules fs/etc/udev/rules.d/
+
+tar -C fs --owner 0 --group 0 -zcf $TAR .
+
+rm -rf fs
+
+echo "=== Created tarfile $(realpath $TAR))"
 
 echo === $0 COMPLETE

@@ -1,6 +1,6 @@
 [[packages]]
 name = "openvpn-otp"
-commit_id = "master"
+commit_id = "9781ff1"
 scm_url = "https://github.com/evgeny-gridasov/openvpn-otp"
 
 # build_cmd = "cd ..; ./build-openvpn-otp.sh"

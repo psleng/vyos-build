@@ -4,3 +4,4 @@ openvpn-otp/
 *.changes
 *.deb
 *.dsc
+*.tar.gz

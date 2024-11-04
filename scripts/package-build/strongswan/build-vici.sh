@@ -1,4 +1,5 @@
 #!/bin/sh
+exec 2>&1
 CWD=$(pwd)
 set -e
 

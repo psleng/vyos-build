@@ -75,7 +75,7 @@ def prepare_package(repo_dir: Path, install_data: str) -> None:
         raise
 
 
-def build_package(package: list, dependencies: list, patch_dir: Path) -> None:
+def build_package(package: dict, dependencies: list, patch_dir: Path) -> None:
     """Build a package from the repository
 
     Args:
@@ -114,23 +114,25 @@ def build_package(package: list, dependencies: list, patch_dir: Path) -> None:
         # Build dependency package and install it
         if (repo_dir / 'debian/control').exists():
             try:
-                run('sudo mk-build-deps --install --tool "apt-get --yes --no-install-recommends"', cwd=repo_dir, check=True, shell=True)
-                run('sudo dpkg -i *build-deps*.deb', cwd=repo_dir, check=True, shell=True)
+                run('sudo mk-build-deps --install --tool "apt-get --yes --no-install-recommends" 2>&1', cwd=repo_dir, check=True, shell=True)
+                run('sudo dpkg -i *build-deps*.deb 2>&1', cwd=repo_dir, check=True, shell=True)
             except CalledProcessError as e:
                 print(f"Failed to build package {repo_name}: {e}")
+                #exit(e.returncode)  # Really fail
 
         # Build the package, check if we have build_cmd in the package.toml
         try:
             build_cmd = package.get('build_cmd', 'dpkg-buildpackage -uc -us -tc -F')
-            run(build_cmd, cwd=repo_dir, check=True, shell=True)
+            run(build_cmd + " 2>&1", cwd=repo_dir, check=True, shell=True)
         except CalledProcessError as e:
             print(e)
             print("I: Source packages build failed, ignoring - building binaries only")
             build_cmd = package.get('build_cmd', 'dpkg-buildpackage -uc -us -tc -b')
-            run(build_cmd, cwd=repo_dir, check=True, shell=True)
+            run(build_cmd + " 2>&1", cwd=repo_dir, check=True, shell=True)
 
     except CalledProcessError as e:
         print(f"Failed to build package {repo_name}: {e}")
+        #exit(e.returncode)  # Really fail
     finally:
         # Clean up repository directory
         # shutil.rmtree(repo_dir, ignore_errors=True)

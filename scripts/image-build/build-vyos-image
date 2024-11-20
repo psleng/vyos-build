@@ -165,6 +165,37 @@ def has_nonempty_key(config, key):
 def make_toml_path(dir, file_basename):
     return os.path.join(dir, file_basename + ".toml")
 
+def _process_vyos_signedby(build_config: dict) -> str:
+    '''Copy signedby key from nexus src to expected lb chroot location.
+    It is required by lb to retrieve packages.'''
+    vyos_signedby = build_config.get('vyos_signedby', None)
+    if not vyos_signedby:
+        return ''
+
+    key_base = re.sub(r'.*/(.*)\.chroot.*]', r'\1', vyos_signedby)
+    src = os.path.join('../../updates', key_base)
+    if not os.access(src, os.R_OK):
+        print(f'E: Cannot access {src}; BUILD WILL FAIL')
+        return ''
+
+    # Ok, copy it
+    archprefix = '../data/live-build-config/archives'
+    dst = os.path.join(archprefix, key_base + '.chroot')
+    print(f'I: Copying {src} to {dst}')
+    shutil.copy(src, dst)
+
+    # Also create the corresponding XXX.pref.chroot which tells apt
+    # to prefer this source when there is a choice.
+    dst = os.path.splitext(key_base)[0] + '.pref.chroot'
+    dst = os.path.join(archprefix, dst)
+    print(f'I: Creating {dst}')
+    with open(dst, 'w') as fp:
+        fp.write('Package: *\n'
+                 'Pin: release n=current\n'
+                 'Pin-Priority: 999\n')
+
+    return vyos_signedby + ' '
+
 
 if __name__ == "__main__":
     ## Get a list of available build flavors
@@ -504,7 +535,8 @@ DOCUMENTATION_URL="{build_config['documentation_url']}"
 
         # Add the additional repositories to package lists
         print("I: Setting up additional APT entries")
-        vyos_repo_entry = "deb {vyos_mirror} {vyos_branch} main\n".format(**build_config)
+        vyos_signedby = _process_vyos_signedby(build_config)
+        vyos_repo_entry = "deb " + vyos_signedby + "{vyos_mirror} {vyos_branch} main\n".format(**build_config)
 
         apt_file = defaults.VYOS_REPO_FILE
 

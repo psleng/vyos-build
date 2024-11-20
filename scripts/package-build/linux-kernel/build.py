@@ -154,6 +154,10 @@ def build_kernel(kernel_version):
     with subprocess.Popen(['xz', '-cd', f'linux-{kernel_version}.tar.xz'], stdout=subprocess.PIPE) as proc_xz:
         run(['gpg2', '--verify', f'linux-{kernel_version}.tar.sign', '-'], stdin=proc_xz.stdout, check=True)
     run(['tar', 'xf', f'linux-{kernel_version}.tar.xz'], check=True)
+    try:
+        os.remove('linux')
+    except FileNotFoundError:
+        pass
     os.symlink(f'linux-{kernel_version}', 'linux')
     run(['./build-kernel.sh'], check=True)
 

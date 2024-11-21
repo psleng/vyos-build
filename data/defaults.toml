@@ -9,11 +9,11 @@ debian_security_mirror = "http://deb.debian.org/debian-security"
 
 debian_archive_areas = "main contrib non-free non-free-firmware"
 
-vyos_mirror = "https://packages.vyos.net/repositories/current"
+#vyos_mirror = "https://packages.vyos.net/repositories/current"
 
 ## For PSL building -- comment out the above vyos_mirror and uncomment this.
-#vyos_mirror = "http://psleng.github.io"
-#vyos_signedby = "[signed-by=/etc/apt/trusted.gpg.d/psleng.key.chroot.gpg]"
+vyos_mirror = "http://psleng.github.io"
+vyos_signedby = "[signed-by=/etc/apt/trusted.gpg.d/psleng.key.chroot.gpg]"
 
 vyos_branch = "current"
 release_train = "current"

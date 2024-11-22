@@ -172,28 +172,7 @@ def _process_vyos_signedby(build_config: dict) -> str:
     if not vyos_signedby:
         return ''
 
-    key_base = re.sub(r'.*/(.*)\.chroot.*]', r'\1', vyos_signedby)
-    src = os.path.join('../../updates', key_base)
-    if not os.access(src, os.R_OK):
-        print(f'E: Cannot access {src}; BUILD WILL FAIL')
-        return ''
-
-    # Ok, copy it
-    archprefix = '../data/live-build-config/archives'
-    dst = os.path.join(archprefix, key_base + '.chroot')
-    print(f'I: Copying {src} to {dst}')
-    shutil.copy(src, dst)
-
-    # Also create the corresponding XXX.pref.chroot which tells apt
-    # to prefer this source when there is a choice.
-    dst = os.path.splitext(key_base)[0] + '.pref.chroot'
-    dst = os.path.join(archprefix, dst)
-    print(f'I: Creating {dst}')
-    with open(dst, 'w') as fp:
-        fp.write('Package: *\n'
-                 'Pin: release n=current\n'
-                 'Pin-Priority: 999\n')
-
+    print(f'I: Using vyos_signedby "{vyos_signedby}"')
     return vyos_signedby + ' '
 
 

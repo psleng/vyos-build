@@ -34,39 +34,71 @@ make -j -C $ROOTDIR/vyos-build/scripts/package-build/linux-kernel/linux M=$PWD
 cd -
 
 #
-# Create a tar file containing additions to the filesystem
+# Set up nxp-wifi pieces as they would appear in the final filesystem
 # (which has normally not been built at this point)
 #
 
 rm -rf fs
 mkdir fs
-TAR=fs.tar.gz
 
 # Copy to kernel modules filesystem
-echo "=== Installing NXP kernel modules for $TAR"
+echo "=== Installing NXP kernel modules"
 DST=fs/lib/modules/nxp
 mkdir -p $DST
 cp -f mwifiex/mxm_wifiex/wlan_src/*.ko $DST
 cp -f wifi.sh $DST
 
 # Copy firmware to filesystem
-echo "=== Installing NXP firmware for $TAR"
+echo "=== Installing NXP firmware"
 DST=fs/lib/firmware/nxp/
 mkdir -p fs/lib/firmware/nxp
 cp -f imx-firmware/nxp/FwImage_9098_PCIE/*.bin $DST
 cp -f imx-firmware/nxp/wifi_mod_para.conf $DST
 
 # Some useful rules
-echo "=== Installing NXP related rules for $TAR"
-mkdir -p fs/etc/systemd/network/ fs/etc/udev/rules.d/
+echo "=== Installing NXP related rules"
+mkdir -p fs/etc/systemd/network/ fs/lib/udev/rules.d/
 cp -f 99-default.link fs/etc/systemd/network/
-cp -f 60-Perle-pcie-card-nxp9098.rules fs/etc/udev/rules.d/
-cp -f 60-Perle-usb-modem.rules fs/etc/udev/rules.d/
+cp -f 60-Perle-pcie-card-nxp9098.rules fs/lib/udev/rules.d/
+cp -f 60-Perle-usb-modem.rules fs/lib/udev/rules.d/
 
-tar -C fs --owner 0 --group 0 -zcf $TAR .
+## tar file for reference
+#tar -C fs --owner 0 --group 0 -zcf fs.tar.gz .
 
-rm -rf fs
+VERS=1.0.0
+ARCH=$(dpkg-architecture -q DEB_BUILD_ARCH)
+PKG=nxp-wifi
+echo "=== Creating debian package $PKG.deb"
+rm -rf $PKG
+mkdir -p $PKG/DEBIAN
 
-echo "=== Created tarfile $(realpath $TAR))"
+# The control file
+cat > $PKG/DEBIAN/control <<%
+Package: $PKG
+Version: $VERS
+Priority: optional
+Architecture: $ARCH
+Maintainer: Perle Systems <psleng@perle.com>
+Homepage: https://github.com/nxp-imx/mwifiex
+Description: nxp wifi drivers.
+ For JODY-W377 from NXP.
+%
+
+# The data
+cp -pr fs/* $PKG
+
+# Config files
+(cd fs; find . -type f | grep systemd | sed 's/.//') > $PKG/DEBIAN/conffiles
+
+# The md5sums
+(cd fs; find . -type f | xargs md5sum) > $PKG/DEBIAN/md5sums
+
+# Build $PKG.deb
+fakeroot dpkg-deb --build $PKG
+
+DEBPKG=${PKG}_${VERS}_${ARCH}.deb
+mv -f $PKG.deb ../$DEBPKG
+ls -l $(realpath ../$DEBPKG)
+rm -rf fs $PKG
 
 echo === $0 COMPLETE

@@ -1,7 +1,7 @@
-pam_tacplus/
-pam_tacplus-debian/
+amazon-cloudwatch-agent/
 *.buildinfo
 *.build
 *.changes
 *.deb
 *.dsc
+*.tar.gz

@@ -1,4 +1,6 @@
-dropbear/
+libnss-tacplus/
+libpam-tacplus/
+libtacplus-map/
 *.buildinfo
 *.build
 *.changes

@@ -13,7 +13,7 @@ dpkg-buildpackage -uc -us -tc -b -d
 cd ..; ./build-vici.sh
 """
 
-[packages.dependencies]
+[dependencies]
 packages = [
     "bison",
     "bzip2",

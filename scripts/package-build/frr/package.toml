@@ -16,7 +16,7 @@ commit_id = "stable/9.1"
 scm_url = "https://github.com/FRRouting/frr.git"
 build_cmd = "sudo dpkg -i ../*.deb; sudo dpkg-buildpackage -us -uc -tc -b -Ppkg.frr.rtrlib,pkg.frr.lua"
 
-[packages.dependencies]
+[dependencies]
 packages = [
     "chrpath",
     "gawk",

@@ -1,4 +1,4 @@
-dropbear/
+amazon-ssm-agent/
 *.buildinfo
 *.build
 *.changes

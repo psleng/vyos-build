@@ -6,3 +6,4 @@ libyang/
 *.changes
 *.deb
 *.dsc
+*.tar.gz

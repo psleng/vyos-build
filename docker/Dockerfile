@@ -103,6 +103,7 @@ RUN apt-get update && apt-get install -y \
       python3-flake8 \
       python3-autopep8 \
       python3-tomli \
+      python3-tomli-w \
       yq \
       debootstrap \
       live-build \
@@ -136,7 +137,7 @@ RUN dpkg-reconfigure ca-certificates; \
 # Installing OCAML needed to compile libvyosconfig
 RUN curl https://raw.githubusercontent.com/ocaml/opam/master/shell/install.sh \
       --output /tmp/opam_install.sh --retry 10 --retry-delay 5 && \
-    sed -i 's/read BINDIR/BINDIR=""/' /tmp/opam_install.sh && sh /tmp/opam_install.sh && \
+    sed -i 's/read -r BINDIR/BINDIR=""/' /tmp/opam_install.sh && sh /tmp/opam_install.sh && \
     opam init --root=/opt/opam --comp=${OCAML_VERSION} --disable-sandboxing --no-setup
 
 RUN eval $(opam env --root=/opt/opam --set-root) && \
@@ -152,10 +153,6 @@ RUN eval $(opam env --root=/opt/opam --set-root) && opam install -y \
       fileutils \
       xml-light
 
-# Build VyConf which is required to build libvyosconfig
-RUN eval $(opam env --root=/opt/opam --set-root) && \
-    opam pin add vyos1x-config https://github.com/vyos/vyos1x-config.git#d7260e772e39bc6a3a2d76d629567e03bbad16b5 -y
-
 # Packages needed for libvyosconfig
 RUN apt-get update && apt-get install -y \
       quilt \
@@ -165,7 +162,7 @@ RUN apt-get update && apt-get install -y \
 # Build libvyosconfig
 RUN eval $(opam env --root=/opt/opam --set-root) && \
     git clone https://github.com/vyos/libvyosconfig.git /tmp/libvyosconfig && \
-    cd /tmp/libvyosconfig && git checkout 9e4f6c1494fcff64ad22503b704dbdd43347b0a6 && \
+    cd /tmp/libvyosconfig && git checkout e4bfbf0147f4242b0999a3305fd9a496b49b2caf && \
     dpkg-buildpackage -uc -us -tc -b && \
     dpkg -i /tmp/libvyosconfig0_*_$(dpkg-architecture -qDEB_HOST_ARCH).deb
 

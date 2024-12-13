@@ -4,3 +4,4 @@ strongswan/
 *.changes
 *.deb
 *.dsc
+*.tar.gz

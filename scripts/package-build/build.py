@@ -75,12 +75,11 @@ def prepare_package(repo_dir: Path, install_data: str) -> None:
         raise
 
 
-def build_package(package: dict, dependencies: list, patch_dir: Path) -> None:
+def build_package(package: dict, patch_dir: Path) -> None:
     """Build a package from the repository
 
     Args:
         package (list): List of Packages from toml
-        dependencies (list): List of additional dependencies
         patch_dir (Path): Directory containing patches
     """
     repo_name = package['name']
@@ -93,9 +92,6 @@ def build_package(package: dict, dependencies: list, patch_dir: Path) -> None:
 
         # Check out the specific commit
         run(['git', 'checkout', package['commit_id']], cwd=repo_dir, check=True)
-
-        # Ensure dependencies
-        ensure_dependencies(dependencies)
 
         # Apply patches if any
         if (repo_dir / 'patches'):
@@ -179,11 +175,14 @@ if __name__ == '__main__':
     packages = config['packages']
     patch_dir = Path(args.patch_dir)
 
-    for package in packages:
-        dependencies = package.get('dependencies', {}).get('packages', [])
+    # Load global dependencies
+    global_dependencies = config.get('dependencies', {}).get('packages', [])
+    if global_dependencies:
+        ensure_dependencies(global_dependencies)
 
+    for package in packages:
         # Build the package
-        build_package(package, dependencies, patch_dir)
+        build_package(package, patch_dir)
 
         # Clean up build dependency packages after build
         cleanup_build_deps(Path(package['name']))

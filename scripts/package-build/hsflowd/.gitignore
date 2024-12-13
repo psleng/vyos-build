@@ -4,3 +4,4 @@ host-sflow/
 *.changes
 *.deb
 *.dsc
+*.tar.gz

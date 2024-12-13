@@ -20,7 +20,7 @@ fpm --input-type dir --output-type deb --name podman \
     --license "Apache License 2.0" -C podman-v$VERSION --package ..
 """
 
-[packages.dependencies]
+[dependencies]
 packages = [
     "libseccomp-dev",
     "libgpgme-dev"

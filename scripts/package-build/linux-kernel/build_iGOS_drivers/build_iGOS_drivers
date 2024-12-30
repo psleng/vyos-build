@@ -90,8 +90,18 @@ cp -pr fs/* $PKG
 # Config files
 (cd fs; find . -type f | grep systemd | sed 's/.//') > $PKG/DEBIAN/conffiles
 
+# Changelog
+CHANGELOG=$PKG/usr/share/doc/nxp-wifi/changelog.gz
+mkdir -p $(dirname $CHANGELOG)
+(cd mwifiex; git log) | gzip -9 > $CHANGELOG
+
+# Copyright
+COPYRIGHT=$PKG/usr/share/doc/nxp-wifi/copyright
+cp mwifiex/SCR.txt $COPYRIGHT
+echo See the file /usr/share/common-licenses/GPL for more information. >> $COPYRIGHT
+
 # The md5sums
-(cd fs; find . -type f | xargs md5sum) > $PKG/DEBIAN/md5sums
+(cd $PKG; find . -type f | grep -v /DEBIAN | xargs md5sum) > $PKG/DEBIAN/md5sums
 
 # Build $PKG.deb
 fakeroot dpkg-deb --build $PKG
@@ -99,6 +109,7 @@ fakeroot dpkg-deb --build $PKG
 DEBPKG=${PKG}_${VERS}_${ARCH}.deb
 mv -f $PKG.deb ../$DEBPKG
 ls -l $(realpath ../$DEBPKG)
+# lintian ../$DEBPKG
 rm -rf fs $PKG
 
 echo === $0 COMPLETE

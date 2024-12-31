@@ -78,6 +78,7 @@ Package: $PKG
 Version: $VERS
 Priority: optional
 Architecture: $ARCH
+Section: kernel
 Maintainer: Perle Systems <psleng@perle.com>
 Homepage: https://github.com/nxp-imx/mwifiex
 Description: nxp wifi drivers.

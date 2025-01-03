@@ -1,4 +1,11 @@
-ACTION=="add", SUBSYSTEM=="pci", ATTR{vendor}=="0x1b4b" ,ATTR{device}=="0x2b4[34]", RUN+="/usr/lib/modules/nxp/wifi.sh"
+# Rules for the 88W9098 dual wifi
+#
+# It appears as at three devices (two wifi, one BT).
+# We want to trigger on just one of these, otherwise the RUN action
+# will happen two or three times. We use the second wifi in this case.
+#
+#ACTION=="add", SUBSYSTEM=="pci", ATTR{vendor}=="0x1b4b" ,ATTR{device}=="0x2b4[34]", RUN+="/usr/lib/modules/nxp/wifi.sh"
+ACTION=="add", SUBSYSTEM=="pci", ATTR{vendor}=="0x1b4b", ATTR{device}=="0x2b44", RUN+="/usr/lib/modules/nxp/wifi.sh"
 ACTION=="add",KERNEL=="uap0", NAME="wlan0"
 ACTION=="add",KERNEL=="muap0", NAME="wlan1"
 ACTION=="add",KERNEL=="mlan0", NAME="wlan2"

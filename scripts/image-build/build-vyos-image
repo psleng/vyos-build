@@ -63,6 +63,7 @@ except Exception as e:
 # Checkout vyos-1x under build directory
 try:
     branch_name = build_defaults['vyos_branch']
+    branch_name = os.getenv('VYOS1X_REPO_BRANCH', default=branch_name)
     url_vyos_1x = os.getenv('VYOS1X_REPO_URL', default='https://github.com/vyos/vyos-1x')
     path_vyos_1x = os.path.join(defaults.BUILD_DIR, 'vyos-1x')
     try:

@@ -1,0 +1,13 @@
+#!/bin/sh
+echo 'I: Performing PSL customizations'
+
+# Start modem manager service early
+ln -fs /lib/systemd/system/ModemManager.service /etc/systemd/system/dbus-org.freedesktop.ModemManager1.service
+ln -fs /lib/systemd/system/ModemManager.service /etc/systemd/system/multi-user.target.wants/ModemManager.service
+
+# journald fixups
+sudo sed -i \
+	-e 's/#Storage=persistent/Storage=volatile/' \
+	-e 's/#RuntimeMaxUse=/RuntimeMaxUse=256K/' \
+	-e 's/MaxLevelSyslog=debug/MaxLevelSyslog=info/' \
+		/etc/systemd/journald.conf

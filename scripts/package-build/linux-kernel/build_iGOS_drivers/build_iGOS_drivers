@@ -7,7 +7,8 @@ echo === $0 BEGIN in $PWD
 # Initialize repository URL variable
 : ${REPO_URL:="https://github.com/psleng"}
 : ${ROOTDIR:=$(dirname $(sudo git rev-parse --show-toplevel))}
-BRANCH=lf-6.6.3_1.0.0
+#BRANCH=lf-6.6.3_1.0.0
+BRANCH=lf-6.6.52_2.2.0
 
 echo "Build/Install NXP 88Q9098/88W9098 branch $BRANCH"
 
@@ -20,16 +21,22 @@ do
     else
         echo "=== Cloning $i"
         git clone $REPO_URL/$i.git -b $BRANCH
-        if [ -f $i.patch ]; then
-            echo "=== Applying patch $i.patch from $(realpath $i)"
-            patch -d $i -p1 < $i.patch
+        PATCH=$i.$BRANCH.patch
+        if [ -f $PATCH ]; then
+            echo "=== Applying patch $PATCH to $(realpath $i)"
+            patch -d $i -p1 < $PATCH
         fi
     fi
 done
 
 # Build
 echo "=== Building NXP kernel modules"
-cd mwifiex/mxm_wifiex/wlan_src
+if [ -d mwifiex/mxm_wifiex/wlan_src ]; then
+    # Older versions
+    cd mwifiex/mxm_wifiex/wlan_src
+else
+    cd mwifiex
+fi
 make -j -C $ROOTDIR/vyos-build/scripts/package-build/linux-kernel/linux M=$PWD
 cd -
 
@@ -45,14 +52,14 @@ mkdir fs
 echo "=== Installing NXP kernel modules"
 DST=fs/lib/modules/nxp
 mkdir -p $DST
-cp -f mwifiex/mxm_wifiex/wlan_src/*.ko $DST
+cp -f $(find mwifiex -name '*.ko') $DST
 cp -f wifi.sh $DST
 
 # Copy firmware to filesystem
 echo "=== Installing NXP firmware"
 DST=fs/lib/firmware/nxp/
-mkdir -p fs/lib/firmware/nxp
-cp -f imx-firmware/nxp/FwImage_9098_PCIE/*.bin $DST
+mkdir -p $DST
+cp -f imx-firmware/nxp/FwImage_9098_PCIE/* $DST
 cp -f imx-firmware/nxp/wifi_mod_para.conf $DST
 
 # Some useful rules

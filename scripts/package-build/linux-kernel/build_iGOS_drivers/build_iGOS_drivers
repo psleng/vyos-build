@@ -53,7 +53,13 @@ echo "=== Installing NXP kernel modules"
 DST=fs/lib/modules/nxp
 mkdir -p $DST
 cp -f $(find mwifiex -name '*.ko') $DST
-cp -f wifi.sh $DST
+cp -f nxp.sh $DST
+
+# Copy the systemd service file to start/stop wifi cleanly
+echo "=== Installing NXP system service"
+DST=fs/usr/lib/systemd/system
+mkdir -p $DST
+cp -f nxp.service $DST
 
 # Copy firmware to filesystem
 echo "=== Installing NXP firmware"
@@ -96,7 +102,19 @@ Description: nxp wifi drivers.
 cp -pr fs/* $PKG
 
 # Config files
-(cd fs; find . -type f | grep systemd | sed 's/.//') > $PKG/DEBIAN/conffiles
+(cd fs; find ./etc -type f | sed 's/.//') > $PKG/DEBIAN/conffiles
+
+# postinst
+DST=$PKG/DEBIAN/postinst
+cat > $DST <<'%'
+#!/bin/sh
+#DEBHELPER#
+#. /usr/share/debconf/confmodule
+if [ "$1" = "configure" ]; then
+    systemctl enable nxp
+fi
+%
+chmod +x $DST
 
 # Changelog
 CHANGELOG=$PKG/usr/share/doc/nxp-wifi/changelog.gz

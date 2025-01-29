@@ -1,12 +1,15 @@
 # Rules for the 88W9098 dual wifi
 #
-# It appears as at three devices (two wifi, one BT).
-# We want to trigger on just one of these, otherwise the RUN action
-# will happen two or three times. We use the second wifi in this case.
+# It appears as at two PCIe devices for wifi matching 0x2b4[34]
+# Bluetooth is done via UART.
 #
-#ACTION=="add", SUBSYSTEM=="pci", ATTR{vendor}=="0x1b4b" ,ATTR{device}=="0x2b4[34]", RUN+="/usr/lib/modules/nxp/wifi.sh"
-ACTION=="add", SUBSYSTEM=="pci", ATTR{vendor}=="0x1b4b", ATTR{device}=="0x2b44", RUN+="/usr/lib/modules/nxp/wifi.sh"
-ACTION=="add",KERNEL=="uap0", NAME="wlan0"
-ACTION=="add",KERNEL=="muap0", NAME="wlan1"
-ACTION=="add",KERNEL=="mlan0", NAME="wlan2"
-ACTION=="add",KERNEL=="mmlan0", NAME="wlan3"
+# We want to trigger on just one of the PCIe devices, otherwise the
+# RUN action will happen twice. We use the second wifi in this case.
+# Do NOT enable this action if you use a systemd service for activation.
+#ACTION=="add", SUBSYSTEM=="pci", ATTR{vendor}=="0x1b4b", ATTR{device}=="0x2b44", RUN+="/usr/lib/modules/nxp/wifi.sh"
+
+# Rename to what VyOS expects
+KERNEL=="uap0",   ACTION=="add", NAME="wlan0"
+KERNEL=="muap0",  ACTION=="add", NAME="wlan1"
+KERNEL=="mlan0",  ACTION=="add", NAME="wlan2"
+KERNEL=="mmlan0", ACTION=="add", NAME="wlan3"

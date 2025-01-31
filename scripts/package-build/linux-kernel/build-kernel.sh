@@ -22,8 +22,14 @@ cp -rv ${CWD}/arch/ .
 
 KERNEL_VERSION=$(make kernelversion)
 KERNEL_SUFFIX=-$(awk -F "= " '/kernel_flavor/ {print $2}' ../../../../data/defaults.toml | tr -d \")
-KERNEL_CONFIG=arch/x86/configs/vyos_defconfig
 
+# Check if the machine is ARM
+if [[ $(uname -m) == "aarch64" ]]; then
+    KERNEL_CONFIG=arch/arm64/configs/vyos_defconfig
+else
+    KERNEL_CONFIG=arch/x86/configs/vyos_defconfig
+fi
+echo "I: $0 using KERNEL_CONFIG=$KERNEL_CONFIG"
 # VyOS requires some small Kernel Patches - apply them here
 # It's easier to habe them here and make use of the upstream
 # repository instead of maintaining a full Kernel Fork.
@@ -32,7 +38,10 @@ PATCH_DIR=${CWD}/patches/kernel
 for patch in $(ls ${PATCH_DIR})
 do
     echo "I: Apply Kernel patch: ${PATCH_DIR}/${patch}"
-    patch -p1 < ${PATCH_DIR}/${patch}
+    # If this is a second run, some of the patches might fail because they
+    # had already been applied earlier. Just log this and continue
+    # instead of silently failing (set -e).
+    patch -f -p1 < ${PATCH_DIR}/${patch} || { echo "E: patch $patch FAILED"; }
 done
 
 # Change name of Signing Cert

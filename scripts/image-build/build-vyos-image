@@ -449,6 +449,8 @@ if __name__ == "__main__":
                 print("W: Could not build a version string specific to git branch, falling back to default: {0}".format(str(e)))
                 version = "999.{0}".format(build_timestamp)
 
+            build_config['version'] = version
+
         version_data = {
             'version': version,
             'flavor': build_config["build_flavor"],
@@ -473,7 +475,7 @@ if __name__ == "__main__":
 NAME="VyOS"
 VERSION_ID="{version}"
 VERSION="{version} ({build_config['release_train']})"
-VERSION_CODENAME={build_defaults['debian_distribution']}
+VERSION_CODENAME={build_defaults['release_train']}
 ID=vyos
 BUILD_ID="{build_git}"
 HOME_URL="{build_defaults['website_url']}"

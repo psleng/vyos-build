@@ -1,8 +1,16 @@
 #!/bin/bash
 CWD=$(pwd)
 KERNEL_SRC=linux
+ROOT_DIR=$(dirname $(dirname $(dirname $(dirname ${CWD}))))
+DEFS_FILE=".defs.mk"
 
 set -e
+
+if [ ! -f "${ROOT_DIR}/${DEFS_FILE}" ] ; then
+    echo "E: DEF file (${ROOT_DIR}/${DEFS_FILE}) is not exist."
+    exit 1
+fi
+. ${ROOT_DIR}/${DEFS_FILE}
 
 if [ ! -d ${KERNEL_SRC} ]; then
     echo "Linux Kernel source directory does not exists, please 'git clone'"
@@ -17,24 +25,29 @@ if [ -d .git ]; then
     git clean --force -d -x
 fi
 
-echo "I: Copy Kernel config (x86_64_vyos_defconfig) to Kernel Source"
-cp -rv ${CWD}/arch/ .
+PLATFORM_DIR=${CWD}/platform/${BUILDTARG}/${BUILDTYPE}
+echo "BUILDTARG : ${BUILDTARG}"
+echo "BUILDTYPE : ${BUILDTYPE}"
+echo "PLATFORM_DIR : ${PLATFORM_DIR}"
+
+echo "I: Copy Kernel config (vyos_defconfig) to Kernel Source"
+cp -rv ${PLATFORM_DIR}/arch/ .
 
 KERNEL_VERSION=$(make kernelversion)
 KERNEL_SUFFIX=-$(awk -F "= " '/kernel_flavor/ {print $2}' ../../../../data/defaults.toml | tr -d \")
 
-# Check if the machine is ARM
-if [[ $(uname -m) == "aarch64" ]]; then
-    KERNEL_CONFIG=arch/arm64/configs/vyos_defconfig
-else
+# Check if the target is ARM or x86
+if [[ ${BUILDTARG} == "x86_64" ]]; then
     KERNEL_CONFIG=arch/x86/configs/vyos_defconfig
+else
+    KERNEL_CONFIG=arch/arm64/configs/vyos_defconfig
 fi
 echo "I: $0 using KERNEL_CONFIG=$KERNEL_CONFIG"
 # VyOS requires some small Kernel Patches - apply them here
 # It's easier to habe them here and make use of the upstream
 # repository instead of maintaining a full Kernel Fork.
 # Saving time/resources is essential :-)
-PATCH_DIR=${CWD}/patches/kernel
+PATCH_DIR=${PLATFORM_DIR}/patches/kernel
 for patch in $(ls ${PATCH_DIR})
 do
     echo "I: Apply Kernel patch: ${PATCH_DIR}/${patch}"

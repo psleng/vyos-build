@@ -47,14 +47,17 @@ echo "I: $0 using KERNEL_CONFIG=$KERNEL_CONFIG"
 # It's easier to habe them here and make use of the upstream
 # repository instead of maintaining a full Kernel Fork.
 # Saving time/resources is essential :-)
-PATCH_DIR=${PLATFORM_DIR}/patches/kernel
-for patch in $(ls ${PATCH_DIR})
+for PATCH_DIR in "$CWD/patches/kernel" "${PLATFORM_DIR}/patches/kernel"
 do
-    echo "I: Apply Kernel patch: ${PATCH_DIR}/${patch}"
-    # If this is a second run, some of the patches might fail because they
-    # had already been applied earlier. Just log this and continue
-    # instead of silently failing (set -e).
-    patch -f -p1 < ${PATCH_DIR}/${patch} || { echo "E: patch $patch FAILED"; }
+    echo "I: Processing kernel patches in $PATCH_DIR"
+    for patch in $(ls ${PATCH_DIR})
+    do
+        echo "I: Apply Kernel patch: ${PATCH_DIR}/${patch}"
+        # If this is a second run, some of the patches might fail because they
+        # had already been applied earlier. Just log this and continue
+        # instead of silently failing (set -e).
+        patch -f -p1 < ${PATCH_DIR}/${patch} || { echo "E: patch $patch FAILED"; }
+    done
 done
 
 # Change name of Signing Cert

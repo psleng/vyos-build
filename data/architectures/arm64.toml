@@ -1,6 +1,6 @@
 # Packages included in ARM64 images by default
 packages = [
-  "grub-efi-arm64",
+  "grub-efi-arm64", "igmpproxy",
 ]
 bootloaders = "grub-efi"
 

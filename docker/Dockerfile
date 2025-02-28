@@ -108,6 +108,7 @@ RUN apt-get update && apt-get install -y \
       debootstrap \
       live-build \
       gdisk \
+      sbsigntool \
       dosfstools
 
 # Packages for TPM test
@@ -137,7 +138,7 @@ RUN dpkg-reconfigure ca-certificates; \
 # Installing OCAML needed to compile libvyosconfig
 RUN curl https://raw.githubusercontent.com/ocaml/opam/master/shell/install.sh \
       --output /tmp/opam_install.sh --retry 10 --retry-delay 5 && \
-    sed -i 's/read -r BINDIR/BINDIR=""/' /tmp/opam_install.sh && sh /tmp/opam_install.sh && \
+    sed -i 's/read_tty BINDIR/BINDIR=""/' /tmp/opam_install.sh && sh /tmp/opam_install.sh && \
     opam init --root=/opt/opam --comp=${OCAML_VERSION} --disable-sandboxing --no-setup
 
 RUN eval $(opam env --root=/opt/opam --set-root) && \
@@ -264,7 +265,8 @@ RUN pip install --break-system-packages \
       python3-zmq \
       pylint \
       quilt \
-      whois
+      whois \
+      python3-cracklib
 
 # Go required for telegraf and prometheus exporters build
 RUN GO_VERSION_INSTALL="1.23.2" ; \

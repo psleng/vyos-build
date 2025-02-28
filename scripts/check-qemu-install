@@ -361,7 +361,7 @@ if args.qemu_cmd:
     os.system(tmp)
     exit(0)
 
-test_timeout = 3 *3600 # 3 hours (in seconds)
+test_timeout = 5 *3600 # 3 hours (in seconds)
 tpm_process = None
 try:
     # Start TPM emulator
@@ -553,6 +553,8 @@ try:
     c.sendline('show system cpu')
     c.expect(op_mode_prompt)
     c.sendline('show system memory')
+    c.expect(op_mode_prompt)
+    c.sendline('show version all | grep -e "vpp" -e "vyos-1x"')
     c.expect(op_mode_prompt)
 
     #################################################

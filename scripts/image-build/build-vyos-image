@@ -442,6 +442,10 @@ if __name__ == "__main__":
                 with open('../data/versions') as f:
                     version_mapping = json.load(f)
 
+                # PERLE override the branch to version mapping file...hoping it merges no conflicts with upstream
+                with open('../data/versions.igos') as f:
+                    version_mapping = json.load(f)
+
                 branch_version = version_mapping[git_branch]
 
                 version = "{0}-rolling-{1}".format(branch_version, build_timestamp)

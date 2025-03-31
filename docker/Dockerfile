@@ -1,4 +1,4 @@
-# Copyright (C) 2018-2024 VyOS maintainers and contributors
+# Copyright (C) 2018-2025 VyOS maintainers and contributors
 #
 # This program is free software; you can redistribute it and/or modify
 # in order to easy exprort images built to "external" world
@@ -18,7 +18,7 @@
 
 # This Dockerfile is installable on both x86, x86-64, armhf and arm64 systems
 ARG ARCH=
-FROM ${ARCH}debian:bookworm
+FROM ${ARCH}debian:bookworm-slim
 
 RUN grep "VERSION_ID" /etc/os-release || (echo 'VERSION_ID="12"' >> /etc/os-release)
 
@@ -160,13 +160,6 @@ RUN apt-get update && apt-get install -y \
       libpcre3-dev \
       libffi-dev
 
-# Build libvyosconfig
-RUN eval $(opam env --root=/opt/opam --set-root) && \
-    git clone https://github.com/vyos/libvyosconfig.git /tmp/libvyosconfig && \
-    cd /tmp/libvyosconfig && git checkout 677d1e2bf8109b9fd4da60e20376f992b747e384 && \
-    dpkg-buildpackage -uc -us -tc -b && \
-    dpkg -i /tmp/libvyosconfig0_*_$(dpkg-architecture -qDEB_HOST_ARCH).deb
-
 # Packages needed for open-vmdk
 RUN apt-get update && apt-get install -y \
       zlib1g-dev
@@ -244,6 +237,7 @@ RUN pip install --break-system-packages \
       iproute2 \
       libzmq3-dev \
       procps \
+      protobuf-compiler \
       python3 \
       python3-setuptools \
       python3-inotify \
@@ -374,9 +368,8 @@ RUN sed "s/^%sudo.*/%sudo\tALL=(ALL) NOPASSWD:ALL/g" -i /etc/sudoers && \
     echo "vyos_bld\tALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers && \
     chmod a+s /usr/sbin/useradd /usr/sbin/groupadd
 
-# Ensure sure all users have access to our OCAM and Go installation
-RUN echo "$(opam env --root=/opt/opam --set-root)" >> /etc/skel/.bashrc && \
-    echo "export PATH=/opt/go/bin:\$PATH" >> /etc/skel/.bashrc
+# Ensure sure all users have access to Go
+RUN echo "export PATH=/opt/go/bin:\$PATH" >> /etc/skel/.bashrc
 
 # Rise upper limit for UID when working in an Active Direcotry integrated
 # environment. This solves the warning: vyos_bld's uid 1632000007 outside of the

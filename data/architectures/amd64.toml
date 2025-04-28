@@ -8,6 +8,8 @@ packages = [
   "vyos-intel-ixgbe",
   "vyos-intel-ixgbevf",
   "vyos-ipt-netflow",
+  "intel-microcode",
+  "amd64-microcode"
 ]
 
 # url = "https://packages.vyos.net/saltproject/debian/11/amd64/3005"

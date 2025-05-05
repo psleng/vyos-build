@@ -109,7 +109,8 @@ RUN apt-get update && apt-get install -y \
       live-build \
       gdisk \
       sbsigntool \
-      dosfstools
+      dosfstools \
+      kpartx
 
 # Packages for TPM test
 RUN apt-get update && apt-get install -y swtpm
@@ -285,7 +286,6 @@ RUN if dpkg-architecture -ii386 || dpkg-architecture -iamd64; then \
 # This is only supported on i386 and amd64 platforms
 RUN if dpkg-architecture -ii386 || dpkg-architecture -iamd64; then \
      apt-get update && apt-get install -y \
-      kpartx \
       parted \
       udev \
       grub-pc \

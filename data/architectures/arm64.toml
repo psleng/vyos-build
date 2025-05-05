@@ -4,7 +4,7 @@ packages = [
 ]
 bootloaders = "grub-efi"
 
-#  url =        "https://packages.vyos.net/saltproject/debian/11/amd64/3005"
+#  url =	"https://packages.vyos.net/saltproject/debian/11/arm64/3005"
 [additional_repositories.salt]
   architecture = "arm64"
   url = "https://packages.broadcom.com/artifactory/saltproject-deb"

@@ -1,0 +1,24 @@
+diff --git a/nxp/wifi_mod_para.conf b/nxp/wifi_mod_para.conf
+index cfdc16f..8fc8529 100644
+--- a/nxp/wifi_mod_para.conf
++++ b/nxp/wifi_mod_para.conf
+@@ -104,6 +104,9 @@ PCIE9098_0 = {
+ 	auto_ds=1
+ 	host_mlme=1
+ 	fw_name=nxp/pcieuart9098_combo_v1.bin
++	# PSL: increase connections from the default 8 (client and AP).
++	uap_max_sta = 64
++	max_sta_conn = 64
+ }
+ 
+ PCIE9098_1 = {
+@@ -114,6 +117,9 @@ PCIE9098_1 = {
+ 	auto_ds=1
+ 	host_mlme=1
+ 	fw_name=nxp/pcieuart9098_combo_v1.bin
++	# PSL: increase connections from the default 8 (client and AP).
++	uap_max_sta = 64
++	max_sta_conn = 64
+ }
+ 
+ SD9098_0 = {

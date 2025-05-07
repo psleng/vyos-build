@@ -78,7 +78,7 @@ cp -f 60-Perle-usb-modem.rules fs/lib/udev/rules.d/
 ## tar file for reference
 #tar -C fs --owner 0 --group 0 -zcf fs.tar.gz .
 
-VERS=1.0.0
+VERS=1.0.1
 ARCH=$(dpkg-architecture -q DEB_BUILD_ARCH)
 PKG=nxp-wifi
 echo "=== Creating debian package $PKG.deb"

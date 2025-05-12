@@ -129,6 +129,10 @@ jobs:
             trigger_build "bash-completion"
           fi
 
+          if [ "${{ steps.changes.outputs.blackbox_exporter }}" == "true" ]; then
+            trigger_build "blackbox_exporter"
+          fi
+
           if [ "${{ steps.changes.outputs.ddclient }}" == "true" ]; then
             trigger_build "ddclient"
           fi

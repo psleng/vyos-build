@@ -22,7 +22,7 @@ kernel_version = "6.6.89"
 kernel_flavor = "vyos"
 bootloaders = "syslinux,grub-efi"
 
-squashfs_compression_type = "xz -Xbcj x86 -b 256k -always-use-fragments -no-recovery"
+squashfs_compression_type = "lz4 -b 1M -no-fragments"
 
 website_url = "https://vyos.io"
 support_url = "https://support.vyos.io"

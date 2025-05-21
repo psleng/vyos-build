@@ -15,8 +15,8 @@ index ee36cd011661..4a35297006d0 100644
 -		serial1 = &main_uart1;
 -		serial2 = &main_uart0;
 +		serial0 = &main_uart0;
-+		serial1 = &mcu_uart0;
-+		serial2 = &main_uart1;
++		serial1 = &main_uart1;
++		serial2 = &mcu_uart0;
  		serial3 = &main_uart3;
  		i2c0 = &main_i2c0;
  		i2c1 = &main_i2c1;

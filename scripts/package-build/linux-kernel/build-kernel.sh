@@ -25,10 +25,10 @@ if [ -d .git ]; then
     git clean --force -d -x
 fi
 
-PLATFORM_DIR=${CWD}/platform/${BUILDTARG}/${BUILDTYPE}
-echo "BUILDTARG : ${BUILDTARG}"
-echo "BUILDTYPE : ${BUILDTYPE}"
-echo "PLATFORM_DIR : ${PLATFORM_DIR}"
+PLATFORM_DIR=${CWD}/platform/${BUILDTARG}
+echo "BUILDTARG         : ${BUILDTARG}"
+echo "BUILDTYPE         : ${BUILDTYPE}"
+echo "PLATFORM_DIR      : ${PLATFORM_DIR}"
 
 echo "I: Copy Kernel config (vyos_defconfig) to Kernel Source"
 cp -rv ${PLATFORM_DIR}/arch/ .
@@ -47,7 +47,7 @@ echo "I: $0 using KERNEL_CONFIG=$KERNEL_CONFIG"
 # It's easier to habe them here and make use of the upstream
 # repository instead of maintaining a full Kernel Fork.
 # Saving time/resources is essential :-)
-for PATCH_DIR in "$CWD/patches/kernel" "${PLATFORM_DIR}/patches/kernel"
+for PATCH_DIR in "$CWD/patches/kernel" "${PLATFORM_DIR}/${BUILDTYPE}/patches/kernel"
 do
     echo "I: Processing kernel patches in $PATCH_DIR"
     for patch in $(ls ${PATCH_DIR})

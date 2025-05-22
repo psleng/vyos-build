@@ -37,6 +37,7 @@ def ensure_dependencies(dependencies: list) -> None:
         return
 
     print("I: Ensure Debian build dependencies are met")
+    run(['sudo', 'apt-get', 'update'], check=True)
     run(['sudo', 'apt-get', 'install', '-y'] + dependencies, check=True)
 
 
@@ -111,9 +112,6 @@ def build_package(package: dict, dependencies: list) -> None:
     try:
         # Clone or update the repository
         #clone_or_update_repo(repo_dir, package['scm_url'], package['commit_id'])
-
-        # Ensure dependencies
-        #ensure_dependencies(dependencies)
 
         # Prepare the package if required
         #if package.get('prepare_package', False):
@@ -274,6 +272,11 @@ if __name__ == '__main__':
     # Extract defaults and packages
     with open(defaults_path, 'r') as file:
         defaults = toml.load(file)
+
+    # Load global dependencies
+    global_dependencies = config.get('dependencies', {}).get('packages', [])
+    if global_dependencies:
+        ensure_dependencies(global_dependencies)
 
     packages = config['packages']
 

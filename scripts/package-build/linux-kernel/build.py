@@ -87,6 +87,10 @@ def create_tarball(package_name, source_dir=None):
         >>> create_tarball("my-package", "/path/to/source")
         I: Tarball created: my-package.tar.gz
     """
+    # PSL: Creating these tarballs take a LOT of time and they are not used.
+    print(f'I: PSL: Skipping pointless tarball creation of {package_name}')
+    return
+
     # Use package_name as the source directory if source_dir is not provided
     source_dir = source_dir or package_name
     output_tarball = f"{package_name}.tar.gz"

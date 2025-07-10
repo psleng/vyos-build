@@ -27,6 +27,11 @@ useradd --shell /bin/bash --uid $NEW_UID --gid $NEW_GID --non-unique --create-ho
 sudo chown $NEW_UID:$NEW_GID /home/$USER_NAME
 export HOME=/home/$USER_NAME
 
+# If /etc/.ssh exists, provide it to the default user
+if [ ! -d $HOME/.ssh -a -d /etc/.ssh ]; then
+    ln -fs /etc/.ssh $HOME
+fi
+
 if [ "$(id -u)" == "0" ]; then
     exec gosu $USER_NAME "$@"
 fi

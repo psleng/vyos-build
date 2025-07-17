@@ -53,6 +53,8 @@ LABEL authors="VyOS Maintainers <maintainers@vyos.io>" \
 ENV DEBIAN_FRONTEND=noninteractive
 
 RUN /bin/echo -e 'APT::Install-Recommends "0";\nAPT::Install-Suggests "0";' > /etc/apt/apt.conf.d/01norecommends
+# Clean cache after each apt-get install command so that it is not stored in the image
+RUN /bin/echo -e 'DPkg::Post-Invoke {"/bin/rm -f /var/cache/apt/archives/*.deb /var/lib/apt/lists/* || true";};' > /etc/apt/apt.conf.d/clean
 
 RUN apt-get update && apt-get install -y \
       dialog \
@@ -142,7 +144,8 @@ RUN dpkg-reconfigure ca-certificates; \
 RUN curl https://raw.githubusercontent.com/ocaml/opam/master/shell/install.sh \
       --output /tmp/opam_install.sh --retry 10 --retry-delay 5 && \
     sed -i 's/read_tty BINDIR/BINDIR=""/' /tmp/opam_install.sh && sh /tmp/opam_install.sh && \
-    opam init --root=/opt/opam --comp=${OCAML_VERSION} --disable-sandboxing --no-setup
+    opam init --root=/opt/opam --comp=${OCAML_VERSION} --disable-sandboxing --no-setup \
+    && rm /tmp/opam_install.sh
 
 RUN eval $(opam env --root=/opt/opam --set-root) && opam install -y \
       re \
@@ -162,7 +165,8 @@ RUN apt-get update && apt-get install -y \
 # Install open-vmdk
 RUN wget -O /tmp/open-vmdk-master.zip https://github.com/vmware/open-vmdk/archive/master.zip && \
     unzip -d /tmp/ /tmp/open-vmdk-master.zip && \
-    cd /tmp/open-vmdk-master/ && make && make install
+    cd /tmp/open-vmdk-master/ && make && make install && \
+    cd /tmp && rm -rf /tmp/open-vmdk-master/ && rm /tmp/open-vmdk-master.zip
 
 # Packages need for build live-build
 RUN apt-get update && apt-get install -y \
@@ -175,7 +179,9 @@ RUN git clone https://salsa.debian.org/live-team/live-build.git /tmp/live-build 
     patch -p1 < /tmp/0001-save-package-info.patch && \
     dch -n "Applying fix for save package info" && \
     dpkg-buildpackage -us -uc && \
-    dpkg -i ../live-build*.deb
+    dpkg -i ../live-build*.deb && \
+    rm -rf /tmp/live-build
+
 #
 # live-build: building in docker fails with mounting /proc | /sys
 #
@@ -190,13 +196,15 @@ RUN wget https://salsa.debian.org/klausenbusk-guest/debootstrap/commit/a9a603b17
     patch -p1 < /tmp/a9a603b17cadbf52cb98cde0843dc9f23a08b0da.patch && \
     dch -n "Applying fix for docker image compile" && \
     dpkg-buildpackage -us -uc && \
-    sudo dpkg -i ../debootstrap*.deb
+    sudo dpkg -i ../debootstrap*.deb \
+    && rm /tmp/a9a603b17cadbf52cb98cde0843dc9f23a08b0da.patch \
+    && rm -rf /tmp/debootstrap
 
 # FPM is used when generation Debian pckages for e.g. Intel QAT drivers
 RUN gem install --no-document fpm
 
 # Packages needed for vyos-1x
-RUN pip install --break-system-packages \
+RUN pip --no-cache --no-cache-dir install --break-system-packages \
       git+https://github.com/aristanetworks/j2lint.git@341b5d5db86 \
       pyhumps==3.8.0; \
     apt-get update && apt-get install -y \
@@ -322,6 +330,12 @@ RUN sed -i 's/UID_MAX\t\t\t60000/UID_MAX\t\t\t2000000000/g' /etc/login.defs
 
 # Cleanup
 RUN rm -rf /tmp/*
+
+# Remove cleanup script so that in-container apt-get install uses cache
+RUN rm /etc/apt/apt.conf.d/clean
+
+# Add cache once as it is needed by some builds in GitHub Actions
+RUN apt-get update
 
 # Disable mouse in vim
 RUN printf "set mouse=\nset ttymouse=\n" > /etc/vim/vimrc.local

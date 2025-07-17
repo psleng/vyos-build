@@ -7,8 +7,10 @@ echo === $0 BEGIN in $PWD
 # Initialize repository URL variable
 : ${REPO_URL:="https://github.com/psleng"}
 : ${ROOTDIR:=$(dirname $(sudo git rev-parse --show-toplevel))}
+
 #BRANCH=lf-6.6.3_1.0.0
-BRANCH=lf-6.6.52_2.2.0
+#BRANCH=lf-6.6.52_2.2.0
+BRANCH=lf-6.12.20_2.0.0
 
 echo "Build/Install NXP 88Q9098/88W9098 branch $BRANCH"
 

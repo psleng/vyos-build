@@ -26,7 +26,7 @@ test: checkiso
 .PHONY: test-no-interfaces
 .ONESHELL:
 test-no-interfaces: checkiso
-	scripts/check-qemu-install --debug --configd --smoketest --uefi --no-interfaces --cpu 4 --memory 8 build/live-image-amd64.hybrid.iso
+	scripts/check-qemu-install --debug --configd --smoketest --uefi --no-interfaces --cpu 4 --memory 8 --huge-page-size 2M --huge-page-count 1800 build/live-image-amd64.hybrid.iso
 
 .PHONY: test-no-interfaces-no-vpp
 .ONESHELL:

@@ -5,6 +5,9 @@ echo 'I: Performing PSL customizations'
 ln -fs /lib/systemd/system/ModemManager.service /etc/systemd/system/dbus-org.freedesktop.ModemManager1.service
 ln -fs /lib/systemd/system/ModemManager.service /etc/systemd/system/multi-user.target.wants/ModemManager.service
 
+#Start chrony service
+ln -fs /lib/systemd/system/chrony.service /etc/systemd/system/chronyd.service
+
 # journald fixups
 sudo sed -i \
 	-e 's/#Storage=persistent/Storage=volatile/' \

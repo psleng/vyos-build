@@ -1,23 +1,32 @@
 diff --git a/mlinux/moal_uap_cfg80211.c b/mlinux/moal_uap_cfg80211.c
-index ce7cbd3..427044a 100644
+index ce7cbd3..0580b6f 100644
 --- a/mlinux/moal_uap_cfg80211.c
 +++ b/mlinux/moal_uap_cfg80211.c
-@@ -4334,9 +4334,22 @@ int woal_uap_cfg80211_dump_station(struct wiphy *wiphy, struct net_device *dev,
- 			ETH_ALEN);
- 	PRINTM(MIOCTL, "Dump station: " MACSTR " RSSI=%d\n", MAC2STR(mac),
+@@ -3045,7 +3045,10 @@ int woal_cfg80211_del_virt_if(struct wiphy *wiphy, struct net_device *dev)
+ 			}
+ 		}
+ 	}
+-
++	if(vir_priv && !vir_priv->bss_virtual){
++		PRINTM(MERROR, "Block delete interface %s\n", dev->name);
++		return ret;
++	}
+ 	priv = (moal_private *)woal_get_priv_bss_type(handle,
+ 						      MLAN_BSS_TYPE_WIFIDIRECT);
+ 	if (!priv)
+@@ -4336,7 +4339,19 @@ int woal_uap_cfg80211_dump_station(struct wiphy *wiphy, struct net_device *dev,
  	       (int)info->param.sta_list.info[idx].rssi);
-+//printk(KERN_ALERT "%s: " MACSTR " rx=%d tx=%d\n", __func__, MAC2STR(mac), info->param.sta_list.info[idx].stats.rx_bytes, info->param.sta_list.info[idx].stats.tx_bytes); // TODO HACK RPH
  #if CFG80211_VERSION_CODE >= KERNEL_VERSION(4, 0, 0)
-+	//sinfo->filled = BIT(NL80211_STA_INFO_INACTIVE_TIME) |
-+	//		BIT(NL80211_STA_INFO_SIGNAL);
  	sinfo->filled = BIT(NL80211_STA_INFO_INACTIVE_TIME) |
 -			BIT(NL80211_STA_INFO_SIGNAL);
++	                BIT(NL80211_STA_INFO_SIGNAL) |
++	                BIT(NL80211_STA_INFO_SIGNAL_AVG) |
 +	                BIT(NL80211_STA_INFO_RX_BYTES) |
 +	                BIT(NL80211_STA_INFO_TX_BYTES) |
 +	                BIT(NL80211_STA_INFO_RX_PACKETS) |
-+	                BIT(NL80211_STA_INFO_TX_PACKETS) |
-+	                BIT(NL80211_STA_INFO_SIGNAL_AVG);
-+	// VyOS expects all of these to be in place
++	                BIT(NL80211_STA_INFO_TX_PACKETS);
++
++	// Info displayed by "iw uap0 station dump"
 +	sinfo->rx_bytes   = info->param.sta_list.info[idx].stats.rx_bytes;
 +	sinfo->tx_bytes   = info->param.sta_list.info[idx].stats.tx_bytes;
 +	sinfo->rx_packets = info->param.sta_list.info[idx].stats.rx_packets;

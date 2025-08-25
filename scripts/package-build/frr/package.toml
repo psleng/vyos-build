@@ -5,11 +5,6 @@ scm_url = "https://github.com/CESNET/libyang.git"
 build_cmd = "pipx run apkg build -i && find pkg/pkgs -type f -name *.deb -exec mv -t .. {} +"
 
 [[packages]]
-name = "rtrlib"
-commit_id = "v0.8.0"
-scm_url = "https://github.com/rtrlib/rtrlib.git"
-
-[[packages]]
 name = "frr"
 commit_id = "stable/10.2"
 scm_url = "https://github.com/FRRouting/frr.git"
@@ -23,8 +18,10 @@ packages = [
     "libcap-dev",
     "libc-ares-dev",
     "libjson-c-dev",
+    "libnl-3-dev",
     "librtr-dev",
     "libpam-dev",
+    "libpcre3-dev",
     "libprotobuf-c-dev",
     "libpython3-dev:native",
     "python3-sphinx:native",

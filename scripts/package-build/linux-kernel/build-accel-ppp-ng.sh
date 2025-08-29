@@ -2,29 +2,29 @@
 
 CWD=$(pwd)
 KERNEL_VAR_FILE=${CWD}/kernel-vars
-VPP_INCLUDE_PATH="${CWD}/../vpp/vpp/src/vpp-api:${CWD}/../vpp/vpp/src:${CWD}/../vpp/vpp/build-root/build-vpp-native/vpp/CMakeFiles/vpp-api"
-VPP_LIBRARY_PATH="${CWD}/../vpp/vpp/build-root/build-vpp-native/vpp/CMakeFiles/debian/libvppinfra/usr/lib/x86_64-linux-gnu/:${CWD}/../vpp/vpp/build-root/install-vpp-native/vpp/lib/x86_64-linux-gnu/"
-VPP_LIB_CHECK_PATH="${CWD}/../vpp/vpp/build-root/build-vpp-native/vpp/CMakeFiles/debian/libvppinfra/usr/lib/x86_64-linux-gnu/"
 
 ACCEL_SRC=${CWD}/accel-ppp-ng
-
 # Build VPP as we need VPP libraries
 cd ../vpp/
 ./build.py
 cd ${CWD}
 
+VPP_INCLUDE_PATH="${CWD}/../vpp/vpp/src/vpp-api:${CWD}/../vpp/vpp/src:${CWD}/../vpp/vpp/build-root/build-vpp-native/vpp/CMakeFiles/vpp-api"
+VPP_LIBRARY_PATH="$(echo ${CWD}/../vpp/vpp/build-root/build-vpp-native/vpp/CMakeFiles/debian/libvppinfra/usr/lib/*-linux-gnu/):$(echo ${CWD}/../vpp/vpp/build-root/install-vpp-native/vpp/lib/*-linux-gnu/)"
+VPP_LIB_CHECK_PATH="$(echo ${CWD}/../vpp/vpp/build-root/build-vpp-native/vpp/CMakeFiles/debian/libvppinfra/usr/lib/*-linux-gnu/)"
+
 if [ ! -d ${VPP_LIB_CHECK_PATH} ]; then
-    echo "VPP source libraries not found"
+    echo "fatal: VPP source libraries not found"
     exit 1
 fi
 
 if [ ! -d ${ACCEL_SRC} ]; then
-    echo "Accel-PPP source not found"
+    echo "fatal: Accel-PPP source not found"
     exit 1
 fi
 
 if [ ! -f ${KERNEL_VAR_FILE} ]; then
-    echo "Kernel variable file '${KERNEL_VAR_FILE}' does not exist, run ./build_kernel.sh first"
+    echo "fatal: Kernel variable file '${KERNEL_VAR_FILE}' does not exist, run ./build_kernel.sh first"
     exit 1
 fi
 

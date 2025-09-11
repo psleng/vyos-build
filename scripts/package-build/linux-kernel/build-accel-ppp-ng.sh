@@ -1,10 +1,11 @@
 #!/bin/sh
 
+ARCH_TRIPLET=$(dpkg-architecture -qDEB_HOST_MULTIARCH)
 CWD=$(pwd)
 KERNEL_VAR_FILE=${CWD}/kernel-vars
 VPP_INCLUDE_PATH="${CWD}/../vpp/vpp/src/vpp-api:${CWD}/../vpp/vpp/src:${CWD}/../vpp/vpp/build-root/build-vpp-native/vpp/CMakeFiles/vpp-api"
-VPP_LIBRARY_PATH="${CWD}/../vpp/vpp/build-root/build-vpp-native/vpp/CMakeFiles/debian/libvppinfra/usr/lib/x86_64-linux-gnu/:${CWD}/../vpp/vpp/build-root/install-vpp-native/vpp/lib/x86_64-linux-gnu/"
-VPP_LIB_CHECK_PATH="${CWD}/../vpp/vpp/build-root/build-vpp-native/vpp/CMakeFiles/debian/libvppinfra/usr/lib/x86_64-linux-gnu/"
+VPP_LIBRARY_PATH="${CWD}/../vpp/vpp/build-root/build-vpp-native/vpp/CMakeFiles/debian/libvppinfra/usr/lib/${ARCH_TRIPLET}:${CWD}/../vpp/vpp/build-root/install-vpp-native/vpp/lib/${ARCH_TRIPLET}"
+VPP_LIB_CHECK_PATH="${CWD}/../vpp/vpp/build-root/build-vpp-native/vpp/CMakeFiles/debian/libvppinfra/usr/lib/${ARCH_TRIPLET}"
 
 ACCEL_SRC=${CWD}/accel-ppp-ng
 

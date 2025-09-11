@@ -177,17 +177,6 @@ def build_package(package: dict, dependencies: list) -> None:
         pass
 
 
-def cleanup_build_deps(repo_dir: Path) -> None:
-    """Clean up build dependency packages"""
-    try:
-        if repo_dir.exists():
-            for file in glob.glob(str(repo_dir / '*build-deps*.deb')):
-                os.remove(file)
-            print("Cleaned up build dependency packages")
-    except Exception as e:
-        print(f"Error cleaning up build dependencies: {e}")
-
-
 def copy_packages(repo_dir: Path) -> None:
     """Copy generated .deb packages to the parent directory"""
     try:
@@ -320,9 +309,6 @@ if __name__ == '__main__':
 
         # Build the package
         build_package(package, dependencies)
-
-        # Clean up build dependency packages after build
-        cleanup_build_deps(Path(package['name']))
 
         # Copy generated .deb packages to parent directory
         copy_packages(Path(package['name']))

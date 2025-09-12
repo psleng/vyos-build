@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/arm64 6.6.96 Kernel Configuration
+# Linux/arm64 6.6.100 Kernel Configuration
 #
 CONFIG_CC_VERSION_TEXT="gcc (Debian 12.2.0-14+deb12u1) 12.2.0"
 CONFIG_CC_IS_GCC=y
@@ -6350,7 +6350,7 @@ CONFIG_NFS_V4_SECURITY_LABEL=y
 CONFIG_ROOT_NFS=y
 # CONFIG_NFS_USE_LEGACY_DNS is not set
 CONFIG_NFS_USE_KERNEL_DNS=y
-CONFIG_NFS_DISABLE_UDP_SUPPORT=y
+# CONFIG_NFS_DISABLE_UDP_SUPPORT is not set
 # CONFIG_NFS_V4_2_READ_PLUS is not set
 # CONFIG_NFSD is not set
 CONFIG_GRACE_PERIOD=y

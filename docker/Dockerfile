@@ -230,7 +230,7 @@ RUN pip --no-cache --no-cache-dir install --break-system-packages \
       python3-inotify \
       python3-xmltodict \
       python3-lxml \
-      python3-nose \
+      python3-nose2 \
       python3-netifaces \
       python3-jinja2 \
       python3-jmespath \

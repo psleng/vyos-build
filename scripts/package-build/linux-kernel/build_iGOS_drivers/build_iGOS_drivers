@@ -27,6 +27,13 @@ do
         if [ -f $PATCH ]; then
             echo "=== Applying patch $PATCH to $(realpath $i)"
             patch -d $i -p1 < $PATCH
+        elif [ "$i" = 'imx-firmware' ]; then
+            # No patch seems REALLY unlikely since we always need PSL custom
+            # wifi_mod_para.conf
+            echo "=== fatal: cannot find patch $PATCH which seems unlikely."
+            echo "=== If you have updated the branch number you will need to"
+            echo "=== regenerate a suitable patch"
+            exit 1
         fi
     fi
 done

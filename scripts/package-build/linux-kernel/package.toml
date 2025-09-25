@@ -6,8 +6,8 @@
 
 [[packages]]
 name = "linux-kernel"
-commit_id = "" # Uses defaults.kernel_version
-scm_url = ""
+commit_id = "lf-6.6.y"
+scm_url = "https://github.com/nxp-imx/linux-imx"
 build_cmd = "build_kernel"
 
 [[packages]]

@@ -138,7 +138,8 @@ def build_package(package: dict, dependencies: list) -> None:
 
         # Execute the build command
         if package['build_cmd'] == 'build_kernel':
-            build_kernel(package['kernel_version'])
+#            build_kernel(package['kernel_version'])
+            build_kernel(package['commit_id'], package['scm_url'])
             create_tarball(f'{package["name"]}-{package["kernel_version"]}', f'linux-{package["kernel_version"]}')
         elif package['build_cmd'] == 'build_linux_firmware':
             build_linux_firmware(package['commit_id'], package['scm_url'])
@@ -196,20 +197,24 @@ def merge_dicts(defaults, package):
     return {**defaults, **package}
 
 
-def build_kernel(kernel_version):
+#def build_kernel(kernel_version):
+def build_kernel(commit_id, scm_url):
     """Build the Linux kernel"""
-    run(['gpg2', '--locate-keys', 'torvalds@kernel.org', 'gregkh@kernel.org'], check=True)
-    run(['curl', '-OL', f'https://www.kernel.org/pub/linux/kernel/v6.x/linux-{kernel_version}.tar.xz'], check=True)
-    run(['curl', '-OL', f'https://www.kernel.org/pub/linux/kernel/v6.x/linux-{kernel_version}.tar.sign'], check=True)
+#    run(['gpg2', '--locate-keys', 'torvalds@kernel.org', 'gregkh@kernel.org'], check=True)
+#    run(['curl', '-OL', f'https://www.kernel.org/pub/linux/kernel/v6.x/linux-{kernel_version}.tar.xz'], check=True)
+#    run(['curl', '-OL', f'https://www.kernel.org/pub/linux/kernel/v6.x/linux-{kernel_version}.tar.sign'], check=True)
     # Using pipes to handle decompression and verification
-    with subprocess.Popen(['xz', '-cd', f'linux-{kernel_version}.tar.xz'], stdout=subprocess.PIPE) as proc_xz:
-        run(['gpg2', '--verify', f'linux-{kernel_version}.tar.sign', '-'], stdin=proc_xz.stdout, check=True)
-    run(['tar', 'xf', f'linux-{kernel_version}.tar.xz'], check=True)
+#    with subprocess.Popen(['xz', '-cd', f'linux-{kernel_version}.tar.xz'], stdout=subprocess.PIPE) as proc_xz:
+#        run(['gpg2', '--verify', f'linux-{kernel_version}.tar.sign', '-'], stdin=proc_xz.stdout, check=True)
+#    run(['tar', 'xf', f'linux-{kernel_version}.tar.xz'], check=True)
+
+    repo_dir = Path('linux-kernel')
+    clone_or_update_repo(repo_dir, scm_url, commit_id)
     try:
         os.remove('linux')
     except FileNotFoundError:
         pass
-    os.symlink(f'linux-{kernel_version}', 'linux')
+    os.symlink(f'linux-kernel', 'linux')
     run(['./build-kernel.sh'], check=True)
 
 

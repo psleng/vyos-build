@@ -32,6 +32,7 @@ echo "PLATFORM_DIR      : ${PLATFORM_DIR}"
 
 echo "I: Copy Kernel config (vyos_defconfig) to Kernel Source"
 cp -rv ${PLATFORM_DIR}/arch/ .
+rm -rf .git
 
 KERNEL_VERSION=$(make kernelversion)
 KERNEL_SUFFIX=-$(awk -F "= " '/kernel_flavor/ {print $2}' ../../../../data/defaults.toml | tr -d \")

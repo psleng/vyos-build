@@ -1,0 +1,26 @@
+diff --git a/arch/arm64/boot/dts/ti/k3-am64-main.dtsi b/arch/arm64/boot/dts/ti/k3-am64-main.dtsi
+index d116d485c099..69f987d850d7 100644
+--- a/arch/arm64/boot/dts/ti/k3-am64-main.dtsi
++++ b/arch/arm64/boot/dts/ti/k3-am64-main.dtsi
+@@ -1024,7 +1024,7 @@ pcie0_rc: pcie@f102000 {
+ 		ranges = <0x01000000 0x00 0x68001000  0x00 0x68001000  0x00 0x0010000>,
+ 			 <0x02000000 0x00 0x68011000  0x00 0x68011000  0x00 0x7fef000>;
+ 		dma-ranges = <0x02000000 0x0 0x0 0x0 0x0 0x00000010 0x0>;
+-		status = "disabled";
++		status = "okay";
+ 		#interrupt-cells = <1>;
+ 		interrupt-map-mask = <0 0 0 7>;
+ 		interrupt-map = <0 0 0 1 &pcie0_intc 0>, /* INT A */
+diff --git a/arch/arm64/boot/dts/ti/k3-am642-evm.dts b/arch/arm64/boot/dts/ti/k3-am642-evm.dts
+index 99f4974280b3..a05f5232f642 100644
+--- a/arch/arm64/boot/dts/ti/k3-am642-evm.dts
++++ b/arch/arm64/boot/dts/ti/k3-am642-evm.dts
+@@ -801,7 +801,7 @@ serdes0_pcie_link: phy@0 {
+ 
+ &pcie0_rc {
+ 	status = "okay";
+-	reset-gpios = <&exp1 5 GPIO_ACTIVE_HIGH>;
++	reset-gpios = <&exp1 5 GPIO_ACTIVE_LOW>;
+ 	phys = <&serdes0_pcie_link>;
+ 	phy-names = "pcie-phy";
+ 	num-lanes = <1>;

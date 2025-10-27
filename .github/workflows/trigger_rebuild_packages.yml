@@ -96,6 +96,8 @@ jobs:
               - 'scripts/package-build/wide-dhcpv6/**'
             xen-guest-agent:
               - 'scripts/package-build/xen-guest-agent/**'
+            zerotier-one:
+              - 'scripts/package-build/zerotier-one/**'
 
       - name: Trigger builds for changed packages
         run: |
@@ -255,4 +257,8 @@ jobs:
 
           if [ "${{ steps.changes.outputs.xen-guest-agent }}" == "true" ]; then
             trigger_build "xen-guest-agent"
+          fi
+
+          if [ "${{ steps.changes.outputs.zerotier-one }}" == "true" ]; then
+            trigger_build "zerotier-one"
           fi

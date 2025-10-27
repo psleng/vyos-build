@@ -17,14 +17,8 @@ scm_url = "https://git.kernel.org/pub/scm/linux/kernel/git/firmware/linux-firmwa
 build_cmd = "build_linux_firmware"
 
 [[packages]]
-name = "accel-ppp"
-commit_id = "1.13.0"
-scm_url = "https://github.com/accel-ppp/accel-ppp.git"
-build_cmd = "build_accel_ppp"
-
-[[packages]]
 name = "accel-ppp-ng"
-commit_id = "f5764ea"
+commit_id = "a9ceadc"
 scm_url = "https://github.com/accel-ppp/accel-ppp-ng.git"
 build_cmd = "build_accel_ppp_ng"
 
@@ -75,6 +69,12 @@ name = "mlnx"
 commit_id = ""
 scm_url = ""
 build_cmd = "build_mellanox_ofed"
+
+[[packages]]
+name = "realtek-r8126"
+commit_id = ""
+scm_url = ""
+build_cmd = "build_realtek_r8126"
 
 [[packages]]
 name = "realtek-r8152"

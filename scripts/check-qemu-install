@@ -631,7 +631,7 @@ try:
         def verify_mount():
             # Verify encrypted and mounted
             c.sendline('mount | grep vyos_config')
-            c.expect('/dev/mapper/vyos_config on /config.*')
+            c.expect('/dev/mapper/vyos_config on /opt/vyatta/etc/config.*')
             c.expect(op_mode_prompt)
 
         def verify_config():
@@ -745,7 +745,7 @@ try:
         log.info('Loading encrypted config.boot')
         c.sendline('configure')
         c.expect(cfg_mode_prompt)
-        c.sendline('load /config/config.boot')
+        c.sendline('load /opt/vyatta/etc/config/config.boot')
         c.expect(cfg_mode_prompt)
         c.sendline('commit')
         c.expect(cfg_mode_prompt)
@@ -829,7 +829,7 @@ try:
         log.info('Loading encrypted config.boot')
         c.sendline('configure')
         c.expect(cfg_mode_prompt)
-        c.sendline('load /config/config.boot')
+        c.sendline('load /opt/vyatta/etc/config/config.boot')
         c.expect(cfg_mode_prompt)
         c.sendline('commit')
         c.expect(cfg_mode_prompt)

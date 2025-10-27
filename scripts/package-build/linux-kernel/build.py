@@ -139,9 +139,6 @@ def build_package(package: dict, dependencies: list) -> None:
         elif package['build_cmd'] == 'build_linux_firmware':
             build_linux_firmware(package['commit_id'], package['scm_url'])
             create_tarball(f'{package["name"]}-{package["commit_id"]}', f'{package["name"]}')
-        elif package['build_cmd'] == 'build_accel_ppp':
-            build_accel_ppp(package['commit_id'], package['scm_url'])
-            create_tarball(f'{package["name"]}-{package["commit_id"]}', f'{package["name"]}')
         elif package['build_cmd'] == 'build_accel_ppp_ng':
             build_accel_ppp_ng(package['commit_id'], package['scm_url'])
             create_tarball(f'{package["name"]}-{package["commit_id"]}', f'{package["name"]}')
@@ -155,6 +152,8 @@ def build_package(package: dict, dependencies: list) -> None:
             build_intel(package['name'], package['commit_id'], package['scm_url'])
         elif package['build_cmd'] == 'build_mellanox_ofed':
             build_mellanox_ofed()
+        elif package['build_cmd'] == 'build_realtek_r8126':
+            build_realtek_r8126()
         elif package['build_cmd'] == 'build_realtek_r8152':
             build_realtek_r8152()
         elif package['build_cmd'] == 'build_jool':
@@ -212,13 +211,6 @@ def build_linux_firmware(commit_id, scm_url):
     run(['./build-linux-firmware.sh'], check=True)
 
 
-def build_accel_ppp(commit_id, scm_url):
-    """Build accel-ppp"""
-    repo_dir = Path('accel-ppp')
-    clone_or_update_repo(repo_dir, scm_url, commit_id)
-    run(['./build-accel-ppp.sh'], check=True)
-
-
 def build_accel_ppp_ng(commit_id, scm_url):
     """Build accel-ppp-ng"""
     repo_dir = Path('accel-ppp-ng')
@@ -241,6 +233,11 @@ def build_intel(driver_name: str, commit_id: str, scm_url: str):
 def build_mellanox_ofed():
     """Build Mellanox OFED"""
     run(['sudo', './build-mellanox-ofed.sh'], check=True)
+
+
+def build_realtek_r8126():
+    """Build Realtek r8126"""
+    run(['sudo', './build-realtek-r8126.py'], check=True)
 
 
 def build_realtek_r8152():

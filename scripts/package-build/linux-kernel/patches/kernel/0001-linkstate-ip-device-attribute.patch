@@ -89,10 +89,10 @@ index cf592d7b630f..e8915701aa73 100644
  };
  
 diff --git a/net/ipv4/devinet.c b/net/ipv4/devinet.c
-index c33b1ecc591e..7576d51cd16d 100644
+index 798497c8b192..0b4510b06ab5 100644
 --- a/net/ipv4/devinet.c
 +++ b/net/ipv4/devinet.c
-@@ -2609,6 +2609,7 @@ static struct devinet_sysctl_table {
+@@ -2608,6 +2608,7 @@ static struct devinet_sysctl_table {
  					      "route_localnet"),
  		DEVINET_SYSCTL_FLUSHING_ENTRY(DROP_UNICAST_IN_L2_MULTICAST,
  					      "drop_unicast_in_l2_multicast"),

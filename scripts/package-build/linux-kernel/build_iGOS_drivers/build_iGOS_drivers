@@ -12,6 +12,10 @@ echo === $0 BEGIN in $PWD
 #BRANCH=lf-6.6.52_2.2.0
 BRANCH=lf-6.12.20_2.0.0
 
+# Version for the resulting .deb
+# If you bump BRANCH above, bump this too.
+VERS=1.0.1
+
 echo "Build/Install NXP 88Q9098/88W9098 branch $BRANCH"
 
 # Clone the repos
@@ -23,7 +27,7 @@ do
     else
         echo "=== Cloning $i"
         git clone $REPO_URL/$i.git -b $BRANCH
-        PATCH=$i.$BRANCH.patch
+        PATCH=$i.$(echo $BRANCH | tr / _).patch
         if [ -f $PATCH ]; then
             echo "=== Applying patch $PATCH to $(realpath $i)"
             patch -d $i -p1 < $PATCH
@@ -87,7 +91,6 @@ cp -f 60-Perle-usb-modem.rules fs/lib/udev/rules.d/
 ## tar file for reference
 #tar -C fs --owner 0 --group 0 -zcf fs.tar.gz .
 
-VERS=1.0.1
 ARCH=$(dpkg-architecture -q DEB_BUILD_ARCH)
 PKG=nxp-wifi
 echo "=== Creating debian package $PKG.deb"
@@ -104,7 +107,9 @@ Section: kernel
 Maintainer: Perle Systems <psleng@perle.com>
 Homepage: https://github.com/nxp-imx/mwifiex
 Description: nxp wifi drivers.
- For JODY-W377 from NXP.
+ For JODY-W377 from NXP with PSL mods
+ Repo: $REPO_URL
+ Branch: $BRANCH
 %
 
 # The data

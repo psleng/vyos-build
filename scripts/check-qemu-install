@@ -191,10 +191,10 @@ def get_qemu_cmd(name, enable_uefi, disk_img, raid=None, iso_img=None, tpm=False
         {cdrom} \
         -enable-kvm \
         -monitor unix:/tmp/qemu-monitor-socket-{disk_img},server,nowait \
-        -netdev user,id=n0,net=192.0.2.0/24,dhcpstart=192.0.2.101,dns=192.0.2.10 -device virtio-net-pci,netdev=n0,mac={macbase}:00,romfile="" \
-        -netdev user,id=n1 -device virtio-net-pci,netdev=n1,mac={macbase}:01,romfile="" \
-        -netdev user,id=n2 -device virtio-net-pci,netdev=n2,mac={macbase}:02,romfile="" \
-        -netdev user,id=n3 -device virtio-net-pci,netdev=n3,mac={macbase}:03,romfile="" \
+        -netdev user,id=n0,net=192.0.2.0/24,dhcpstart=192.0.2.101,dns=192.0.2.10 -device virtio-net-pci,netdev=n0,mac={macbase}:00,romfile="",host_mtu=1500 \
+        -netdev user,id=n1 -device virtio-net-pci,netdev=n1,mac={macbase}:01,romfile="",host_mtu=1500 \
+        -netdev user,id=n2 -device virtio-net-pci,netdev=n2,mac={macbase}:02,romfile="",host_mtu=1500 \
+        -netdev user,id=n3 -device virtio-net-pci,netdev=n3,mac={macbase}:03,romfile="",host_mtu=1500 \
         -netdev user,id=n4 -device virtio-net-pci,netdev=n4,mac={macbase}:04,romfile="" \
         -netdev user,id=n5 -device virtio-net-pci,netdev=n5,mac={macbase}:05,romfile="" \
         -netdev user,id=n6 -device virtio-net-pci,netdev=n6,mac={macbase}:06,romfile="" \

@@ -157,7 +157,7 @@ def build_package(package: list, patch_dir: Path) -> None:
 
         # Build the package, check if we have build_cmd in the package.toml
         try:
-            build_cmd = package.get('build_cmd', 'dpkg-buildpackage -uc -us -tc -F')
+            build_cmd = package.get('build_cmd', 'dpkg-buildpackage -uc -us -tc -F --source-option=--tar-ignore=.git --source-option=--tar-ignore=.github')
             run(build_cmd, cwd=repo_dir, check=True, shell=True)
         except CalledProcessError as e:
             print(e)

@@ -10,11 +10,12 @@ echo === $0 BEGIN in $PWD
 
 #BRANCH=lf-6.6.3_1.0.0
 #BRANCH=lf-6.6.52_2.2.0
-BRANCH=lf-6.12.20_2.0.0
+#BRANCH=lf-6.12.20_2.0.0
+BRANCH=hotfix/lf-6.12.34_2.1.0_hotfix
 
 # Version for the resulting .deb
 # If you bump BRANCH above, bump this too.
-VERS=1.0.1
+VERS=1.0.3
 
 echo "Build/Install NXP 88Q9098/88W9098 branch $BRANCH"
 
@@ -109,7 +110,7 @@ Homepage: https://github.com/nxp-imx/mwifiex
 Description: nxp wifi drivers.
  For JODY-W377 from NXP with PSL mods
  Repo: $REPO_URL
- Branch: $BRANCH
+ Branch $BRANCH with PSL mods
 %
 
 # The data

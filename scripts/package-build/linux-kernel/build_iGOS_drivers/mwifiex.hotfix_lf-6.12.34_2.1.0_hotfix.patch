@@ -1,0 +1,29 @@
+diff --git a/mlinux/moal_uap_cfg80211.c b/mlinux/moal_uap_cfg80211.c
+index 4e1871e..f9784a8 100644
+--- a/mlinux/moal_uap_cfg80211.c
++++ b/mlinux/moal_uap_cfg80211.c
+@@ -3061,6 +3061,10 @@ int woal_cfg80211_del_virt_if(struct wiphy *wiphy, struct net_device *dev)
+ 		}
+ 	}
+ 
++	if(vir_priv && !vir_priv->bss_virtual){
++		PRINTM(MERROR, "Block delete interface %s\n", dev->name);
++		return ret;
++	}
+ 	priv = (moal_private *)woal_get_priv_bss_type(handle,
+ 						      MLAN_BSS_TYPE_WIFIDIRECT);
+ 	if (!priv)
+@@ -4360,11 +4364,12 @@ int woal_uap_cfg80211_dump_station(struct wiphy *wiphy, struct net_device *dev,
+ 			BIT(NL80211_STA_INFO_TX_BYTES) |
+ 			BIT(NL80211_STA_INFO_RX_PACKETS) |
+ 			BIT(NL80211_STA_INFO_TX_PACKETS) |
+-			BIT(NL80211_STA_INFO_SIGNAL);
++			BIT(NL80211_STA_INFO_SIGNAL_AVG);
+ 	sinfo->rx_bytes = info->param.sta_list.info[idx].stats.rx_bytes;
+ 	sinfo->tx_bytes = info->param.sta_list.info[idx].stats.tx_bytes;
+ 	sinfo->rx_packets = info->param.sta_list.info[idx].stats.rx_packets;
+ 	sinfo->tx_packets = info->param.sta_list.info[idx].stats.tx_packets;
++	sinfo->signal_avg = info->param.sta_list.info[idx].rssi;
+ #else
+ 	sinfo->filled = STATION_INFO_INACTIVE_TIME | STATION_INFO_SIGNAL;
+ #endif

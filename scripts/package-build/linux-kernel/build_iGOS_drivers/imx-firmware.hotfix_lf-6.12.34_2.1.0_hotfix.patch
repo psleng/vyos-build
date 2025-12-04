@@ -1,14 +1,13 @@
 diff --git a/nxp/wifi_mod_para.conf b/nxp/wifi_mod_para.conf
-index 294a7b7..3292069 100644
+index 294a7b7..d4be86d 100644
 --- a/nxp/wifi_mod_para.conf
 +++ b/nxp/wifi_mod_para.conf
-@@ -80,10 +80,20 @@ PCIE8997 = {
+@@ -80,10 +80,18 @@ PCIE8997 = {
  
  PCIE9098_0 = {
  	cal_data_cfg=none
 +	# PSL: increase connections from the default 8 (client and AP).
 +	uap_max_sta = 48
-+	max_sta_conn = 48
 +	# PSL: use only ANT1 (J3), "Path A" for 2GHz and 5GHz
 +	antcfg = 0x101
  }
@@ -17,7 +16,6 @@ index 294a7b7..3292069 100644
  	cal_data_cfg=none
 +	# PSL: increase connections from the default 8 (client and AP).
 +	uap_max_sta = 48
-+	max_sta_conn = 48
 +	# PSL: use only ANT1 (J3), "Path A" for 2GHz and 5GHz
 +	antcfg = 0x101
  }

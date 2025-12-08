@@ -11,11 +11,12 @@ echo === $0 BEGIN in $PWD
 #BRANCH=lf-6.6.3_1.0.0
 #BRANCH=lf-6.6.52_2.2.0
 #BRANCH=lf-6.12.20_2.0.0
-BRANCH=hotfix/lf-6.12.34_2.1.0_hotfix
+#BRANCH=hotfix/lf-6.12.34_2.1.0_hotfix
+BRANCH=lf-6.12.49_2.2.0
 
 # Version for the resulting .deb
 # If you bump BRANCH above, bump this too.
-VERS=1.0.3
+VERS=1.0.4
 
 echo "Build/Install NXP 88Q9098/88W9098 branch $BRANCH"
 
@@ -79,8 +80,10 @@ cp -f nxp.service $DST
 echo "=== Installing NXP firmware"
 DST=fs/lib/firmware/nxp/
 mkdir -p $DST
-cp -f imx-firmware/nxp/FwImage_9098_PCIE/* $DST
-cp -f imx-firmware/nxp/wifi_mod_para.conf $DST
+SRC=$(find imx-firmware -type d -name FwImage_9098_PCIE)
+cp -f $SRC/* $DST
+SRC=$(find imx-firmware -type f -name wifi_mod_para.conf)
+cp -f $SRC $DST
 
 # Some useful rules
 echo "=== Installing NXP related rules"

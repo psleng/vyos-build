@@ -913,18 +913,19 @@ try:
 
     elif args.smoketest:
         # run default smoketest suite
+        smoketests_path = '/usr/libexec/vyos/tests/smoke'
         if args.match:
             # Remove tests that we don't want to run
             match_str = '-o '.join([f'-name "test_*{name}*.py" ' for name in args.match.split("|")]).strip()
-            c.sendline(f'sudo find /usr/libexec/vyos/tests/smoke -maxdepth 2 -type f -name test_* ! \( {match_str} \) -delete')
+            c.sendline(f'sudo find {smoketests_path} -maxdepth 2 -type f -name test_* ! \( {match_str} \) -delete')
             c.expect(op_mode_prompt)
         if args.no_interfaces:
             # remove interface tests as they consume a lot of time
-            c.sendline('sudo rm -f /usr/libexec/vyos/tests/smoke/cli/test_interfaces_*')
+            c.sendline('sudo rm -f {smoketests_path}/cli/test_interfaces_*')
             c.expect(op_mode_prompt)
         if args.no_vpp:
             # remove VPP tests
-            c.sendline('sudo rm -f /usr/libexec/vyos/tests/smoke/cli/test_vpp*')
+            c.sendline('sudo rm -f {smoketests_path}/cli/test_vpp*')
             c.expect(op_mode_prompt)
 
         if args.vyconf:
@@ -959,23 +960,25 @@ try:
     elif args.configtest:
         # Remove config-tests that we don't want to run
         if args.match:
+            configs_path = '/usr/libexec/vyos/tests/configs'
             if args.match.startswith("!"):
                 # Exclude mode — delete only the matched names
                 names = args.match[1:].split("|")
                 match_str = '-o '.join([f'-name "{name}"' for name in names])
-                cleanup_config_dir_cmd = f'sudo find /usr/libexec/vyos/tests/config -mindepth 1 -maxdepth 1 \\( {match_str} \\) -exec rm -rf {{}} +'
-                cleanup_config_tests_dir_cmd = f'sudo find /usr/libexec/vyos/tests/config-tests -mindepth 1 -maxdepth 1 \\( {match_str} \\) -exec rm -rf {{}} +'
+                cleanup_config_dir_cmd = f'sudo find {configs_path} -mindepth 1 -maxdepth 1 -type f \\( {match_str} \\) -exec rm -rf {{}} +'
+                cleanup_config_tests_dir_cmd = f'sudo find {configs_path}/assert -mindepth 1 -maxdepth 1 -type f \\( {match_str} \\) -exec rm -rf {{}} +'
             else:
                 # Include mode — keep only the matched names, delete the rest
                 names = args.match.split("|")
                 match_str = '-o '.join([f'-name "{name}"' for name in names])
-                cleanup_config_dir_cmd = f'sudo find /usr/libexec/vyos/tests/config -mindepth 1 -maxdepth 1 ! \\( {match_str} \\) -exec rm -rf {{}} +'
-                cleanup_config_tests_dir_cmd = f'sudo find /usr/libexec/vyos/tests/config-tests -mindepth 1 -maxdepth 1 ! \\( {match_str} \\) -exec rm -rf {{}} +'
+                cleanup_config_dir_cmd = f'sudo find {configs_path} -mindepth 1 -maxdepth 1 -type f ! \\( {match_str} \\) -exec rm -rf {{}} +'
+                cleanup_config_tests_dir_cmd = f'sudo find {configs_path}/assert -mindepth 1 -maxdepth 1 -type f ! \\( {match_str} \\) -exec rm -rf {{}} +'
 
             c.sendline(cleanup_config_dir_cmd)
             c.expect(op_mode_prompt)
             c.sendline(cleanup_config_tests_dir_cmd)
             c.expect(op_mode_prompt)
+
 
         log.info('Adding a legacy WireGuard default keypair for migrations')
         c.sendline('sudo mkdir -p /config/auth/wireguard/default')

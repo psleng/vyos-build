@@ -3,11 +3,12 @@ CWD=$(pwd)
 KERNEL_SRC=linux
 ROOT_DIR=$(dirname $(dirname $(dirname $(dirname ${CWD}))))
 DEFS_FILE=".defs.mk"
+ARCH=$(dpkg --print-architecture)
 
 set -e
 
 if [ ! -f "${ROOT_DIR}/${DEFS_FILE}" ] ; then
-    echo "E: DEF file (${ROOT_DIR}/${DEFS_FILE}) is not exist."
+    echo "E: DEF file (${ROOT_DIR}/${DEFS_FILE}) does not exist."
     exit 1
 fi
 . ${ROOT_DIR}/${DEFS_FILE}
@@ -36,13 +37,14 @@ cp -rv ${PLATFORM_DIR}/arch/ .
 KERNEL_VERSION=$(make kernelversion)
 KERNEL_SUFFIX=-$(awk -F "= " '/kernel_flavor/ {print $2}' ../../../../data/defaults.toml | tr -d \")
 
-# Check if the target is ARM or x86
-if [[ ${BUILDTARG} == "x86_64" ]]; then
-    KERNEL_CONFIG=arch/x86/configs/vyos_defconfig
-else
+if [ "${ARCH}" = "arm64" ]; then
     KERNEL_CONFIG=arch/arm64/configs/vyos_defconfig
+else
+    KERNEL_CONFIG=arch/x86/configs/vyos_defconfig
 fi
-echo "I: $0 using KERNEL_CONFIG=$KERNEL_CONFIG"
+
+echo "KERNEL_CONFIG: ${KERNEL_CONFIG}"
+
 # VyOS requires some small Kernel Patches - apply them here
 # It's easier to habe them here and make use of the upstream
 # repository instead of maintaining a full Kernel Fork.

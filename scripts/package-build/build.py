@@ -33,7 +33,6 @@ def ensure_dependencies(dependencies: list) -> None:
         return
 
     print("I: Ensure Debian build dependencies are met")
-    run(['sudo', 'apt-get', 'update'], check=True)
     run(['sudo', 'apt-get', 'install', '-y'] + dependencies, check=True)
 
 
@@ -212,6 +211,9 @@ if __name__ == '__main__':
 
     packages = config['packages']
     patch_dir = Path(args.patch_dir)
+
+    # Update APT mirror list before the build
+    run(['sudo', 'apt-get', 'update'], check=True)
 
     # Load global dependencies
     global_dependencies = config.get('dependencies', {}).get('packages', [])

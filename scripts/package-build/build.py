@@ -83,6 +83,7 @@ def build_package(package: dict, patch_dir: Path) -> None:
     """
     repo_name = package['name']
     repo_dir = Path(repo_name)
+    print(f"I: build_package {repo_name} in {repo_dir}")
 
     try:
         # Clone the repository if it does not exist
@@ -148,9 +149,13 @@ def build_package(package: dict, patch_dir: Path) -> None:
 
         # Build dependency package and install it
         if (repo_dir / 'debian/control').exists():
+            cmd = package.get('mk_build_deps_cmd', False)  # PSL: allow override
             try:
-                run('sudo mk-build-deps --install --tool "apt-get --yes --no-install-recommends" 2>&1', cwd=repo_dir, check=True, shell=True)
-                run('sudo dpkg -i *build-deps*.deb 2>&1', cwd=repo_dir, check=True, shell=True)
+                if cmd:
+                    run(cmd, cwd=repo_dir, check=True, shell=True)
+                else:
+                    run('sudo mk-build-deps --install --tool "apt-get --yes --no-install-recommends" 2>&1', cwd=repo_dir, check=True, shell=True)
+                    run('sudo dpkg -i *build-deps*.deb 2>&1', cwd=repo_dir, check=True, shell=True)
             except CalledProcessError as e:
                 print(f"Failed to build package {repo_name}: {e}")
                 #exit(e.returncode)  # Really fail

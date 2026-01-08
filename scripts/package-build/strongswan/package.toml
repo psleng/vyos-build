@@ -2,6 +2,8 @@
 name = "strongswan"
 commit_id = "debian/5.9.11-2"
 scm_url = "https://salsa.debian.org/debian/strongswan.git"
+# PSL: do not try to build dependencies; not needed and breaks systemd
+mk_build_deps_cmd = "true"
 
 # build_cmd = "cd ..; yes | ./build.sh; ./build-vici.sh"
 build_cmd = """

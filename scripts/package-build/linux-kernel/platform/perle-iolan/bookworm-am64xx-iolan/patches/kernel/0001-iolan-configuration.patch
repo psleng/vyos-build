@@ -1,0 +1,674 @@
+diff --git a/arch/arm64/Kconfig.platforms b/arch/arm64/Kconfig.platforms
+index 6069120199bb..e28e38d3344b 100644
+--- a/arch/arm64/Kconfig.platforms
++++ b/arch/arm64/Kconfig.platforms
+@@ -135,6 +135,12 @@ config ARCH_K3
+ 	  This enables support for Texas Instruments' K3 multicore SoC
+ 	  architecture.
+ 
++config TARGET_AM6412_IOLAN
++	bool "AM6412 IOLAN Board"
++	depends on ARCH_K3
++	help
++	  Support for the Perle IOLAN board using the AM6412 SoC
++
+ config ARCH_LG1K
+ 	bool "LG Electronics LG1K SoC Family"
+ 	help
+diff --git a/arch/arm64/boot/dts/ti/Makefile b/arch/arm64/boot/dts/ti/Makefile
+index 8bd5acc6d683..62a37f5dd027 100644
+--- a/arch/arm64/boot/dts/ti/Makefile
++++ b/arch/arm64/boot/dts/ti/Makefile
+@@ -35,6 +35,7 @@ dtb-$(CONFIG_ARCH_K3) += k3-am642-evm.dtb
+ dtb-$(CONFIG_ARCH_K3) += k3-am642-phyboard-electra-rdk.dtb
+ dtb-$(CONFIG_ARCH_K3) += k3-am642-sk.dtb
+ dtb-$(CONFIG_ARCH_K3) += k3-am642-tqma64xxl-mbax4xxl.dtb
++dtb-$(CONFIG_ARCH_K3) += k3-am642-iolan.dtb
+ 
+ k3-am642-tqma64xxl-mbax4xxl-sdcard-dtbs := \
+ 	k3-am642-tqma64xxl-mbax4xxl.dtb k3-am64-tqma64xxl-mbax4xxl-sdcard.dtbo
+diff --git a/arch/arm64/boot/dts/ti/k3-am64-main.dtsi b/arch/arm64/boot/dts/ti/k3-am64-main.dtsi
+index 064eb062bb54..578dca9e150b 100644
+--- a/arch/arm64/boot/dts/ti/k3-am64-main.dtsi
++++ b/arch/arm64/boot/dts/ti/k3-am64-main.dtsi
+@@ -378,7 +378,7 @@ main_uart0: serial@2800000 {
+ 		power-domains = <&k3_pds 146 TI_SCI_PD_EXCLUSIVE>;
+ 		clocks = <&k3_clks 146 0>;
+ 		clock-names = "fclk";
+-		status = "disabled";
++		status = "okay";
+ 	};
+ 
+ 	main_uart1: serial@2810000 {
+@@ -389,7 +389,7 @@ main_uart1: serial@2810000 {
+ 		power-domains = <&k3_pds 152 TI_SCI_PD_EXCLUSIVE>;
+ 		clocks = <&k3_clks 152 0>;
+ 		clock-names = "fclk";
+-		status = "disabled";
++		status = "okay";
+ 	};
+ 
+ 	main_uart2: serial@2820000 {
+@@ -411,7 +411,7 @@ main_uart3: serial@2830000 {
+ 		power-domains = <&k3_pds 154 TI_SCI_PD_EXCLUSIVE>;
+ 		clocks = <&k3_clks 154 0>;
+ 		clock-names = "fclk";
+-		status = "disabled";
++		status = "okay";
+ 	};
+ 
+ 	main_uart4: serial@2840000 {
+@@ -1025,6 +1025,19 @@ pcie0_rc: pcie@f102000 {
+ 			 <0x02000000 0x00 0x68011000  0x00 0x68011000  0x00 0x7fef000>;
+ 		dma-ranges = <0x02000000 0x0 0x0 0x0 0x0 0x00000010 0x0>;
+ 		status = "disabled";
++		#interrupt-cells = <1>;
++		interrupt-map-mask = <0 0 0 7>;
++		interrupt-map = <0 0 0 1 &pcie0_intc 0>, /* INT A */
++				<0 0 0 2 &pcie0_intc 0>, /* INT B */
++				<0 0 0 3 &pcie0_intc 0>, /* INT C */
++				<0 0 0 4 &pcie0_intc 0>; /* INT D */
++
++		pcie0_intc: interrupt-controller {
++			interrupt-controller;
++			#interrupt-cells = <1>;
++			interrupt-parent = <&gic500>;
++			interrupts = <GIC_SPI 202 IRQ_TYPE_EDGE_RISING>;
++		};
+ 	};
+ 
+ 	pcie0_ep: pcie-ep@f102000 {
+diff --git a/arch/arm64/boot/dts/ti/k3-am642-iolan.dts b/arch/arm64/boot/dts/ti/k3-am642-iolan.dts
+new file mode 100644
+index 000000000000..7a1294b530f8
+--- /dev/null
++++ b/arch/arm64/boot/dts/ti/k3-am642-iolan.dts
+@@ -0,0 +1,588 @@
++// SPDX-License-Identifier: GPL-2.0
++/*
++ * Copyright (C) 2020-2021 Texas Instruments Incorporated - https://www.ti.com/
++ */
++
++/dts-v1/;
++
++#include <dt-bindings/phy/phy.h>
++#include <dt-bindings/leds/common.h>
++#include <dt-bindings/gpio/gpio.h>
++#include <dt-bindings/net/ti-dp83867.h>
++#include "k3-am642.dtsi"
++
++#include "k3-serdes.h"
++
++/ {
++	compatible = "perle,am6412-iolan", "ti,am642";
++	model = "Perle AM6412 IOLAN";
++
++	chosen {
++		stdout-path = &main_uart3;
++	};
++
++	aliases {
++		serial0 = &main_uart3;
++		serial1 = &main_uart1;
++		serial2 = &mcu_uart0;
++		serial3 = &main_uart0;
++		i2c0 = &main_i2c0;
++		mmc0 = &sdhci0;
++		ethernet0 = &cpsw_port2;
++		rtc0 = &rtc_rv3028;
++	};
++
++	memory@80000000 {
++		bootph-all;
++		device_type = "memory";
++		/* 2G RAM */
++		reg = <0x00000000 0x80000000 0x00000000 0x80000000>;
++	};
++
++	reserved-memory {
++		#address-cells = <2>;
++		#size-cells = <2>;
++		ranges;
++
++		secure_ddr: optee@9e800000 {
++			reg = <0x00 0x9e800000 0x00 0x01800000>; /* for OP-TEE */
++			alignment = <0x1000>;
++			no-map;
++		};
++
++		main_r5fss0_core0_dma_memory_region: r5f-dma-memory@a0000000 {
++			compatible = "shared-dma-pool";
++			reg = <0x00 0xa0000000 0x00 0x100000>;
++			no-map;
++		};
++
++		main_r5fss0_core0_memory_region: r5f-memory@a0100000 {
++			compatible = "shared-dma-pool";
++			reg = <0x00 0xa0100000 0x00 0xf00000>;
++			no-map;
++		};
++
++		main_r5fss0_core1_dma_memory_region: r5f-dma-memory@a1000000 {
++			compatible = "shared-dma-pool";
++			reg = <0x00 0xa1000000 0x00 0x100000>;
++			no-map;
++		};
++
++		main_r5fss0_core1_memory_region: r5f-memory@a1100000 {
++			compatible = "shared-dma-pool";
++			reg = <0x00 0xa1100000 0x00 0xf00000>;
++			no-map;
++		};
++
++		rtos_ipc_memory_region: ipc-memories@a5000000 {
++			reg = <0x00 0xa5000000 0x00 0x00800000>;
++			alignment = <0x1000>;
++			no-map;
++		};
++	};
++
++	vusb_main: regulator-0 {
++		/* USB MAIN INPUT 5V DC */
++		bootph-all;
++		compatible = "regulator-fixed";
++		regulator-name = "vusb_main5v0";
++		regulator-min-microvolt = <5000000>;
++		regulator-max-microvolt = <5000000>;
++		regulator-always-on;
++		regulator-boot-on;
++	};
++
++	vcc_3v3_sys: regulator-1 {
++		/* output of LP8733xx */
++		bootph-all;
++		compatible = "regulator-fixed";
++		regulator-name = "vcc_3v3_sys";
++		regulator-min-microvolt = <3300000>;
++		regulator-max-microvolt = <3300000>;
++		vin-supply = <&vusb_main>;
++		regulator-always-on;
++		regulator-boot-on;
++	};
++
++	leds {
++		compatible = "gpio-leds";
++
++		led-0 {
++			color = <LED_COLOR_ID_GREEN>;
++			function = LED_FUNCTION_INDICATOR;
++			function-enumerator = <1>;
++			gpios = <&main_gpio0 46 GPIO_ACTIVE_HIGH>;	/* PRG1_PRU0_GPO1 (U8) */
++			default-state = "off";
++		};
++
++		led-1 {
++			color = <LED_COLOR_ID_BLUE>;
++			function = LED_FUNCTION_INDICATOR;
++			function-enumerator = <2>;
++			gpios = <&main_gpio0 57 GPIO_ACTIVE_HIGH>;	/* PRG1_PRU0_GPO12 (U9) */
++			default-state = "off";
++		};
++
++		led-2 {
++			color = <LED_COLOR_ID_RED>;
++			function = LED_FUNCTION_INDICATOR;
++			function-enumerator = <3>;
++			gpios = <&main_gpio0 62 GPIO_ACTIVE_HIGH>;	/* PRG1_PRU0_GPO17 (U7) */
++			default-state = "off";
++		};
++
++		led-3 {
++			color = <LED_COLOR_ID_GREEN>;
++			function = LED_FUNCTION_INDICATOR;
++			function-enumerator = <4>;
++			gpios = <&main_gpio0 47 GPIO_ACTIVE_HIGH>;	/* PRG1_PRU0_GPO2 (W8) */
++			default-state = "off";
++		};
++
++		led-4 {
++			color = <LED_COLOR_ID_BLUE>;
++			function = LED_FUNCTION_INDICATOR;
++			function-enumerator = <5>;
++			gpios = <&main_gpio0 58 GPIO_ACTIVE_HIGH>;	/* PRG1_PRU0_GPO13 (W9) */
++			default-state = "off";
++		};
++
++		led-5 {
++			color = <LED_COLOR_ID_RED>;
++			function = LED_FUNCTION_INDICATOR;
++			function-enumerator = <6>;
++			gpios = <&main_gpio0 64 GPIO_ACTIVE_HIGH>;	/* PRG1_PRU0_GPO19 (W7) */
++			default-state = "off";
++		};
++
++		led-6 {
++			color = <LED_COLOR_ID_GREEN>;
++			function = LED_FUNCTION_INDICATOR;
++			function-enumerator = <7>;
++			gpios = <&main_gpio0 48 GPIO_ACTIVE_HIGH>;	/* PRG1_PRU0_GPO3 (V8) */
++			default-state = "off";
++		};
++
++		led-7 {
++			color = <LED_COLOR_ID_BLUE>;
++			function = LED_FUNCTION_INDICATOR;
++			function-enumerator = <8>;
++			gpios = <&main_gpio0 61 GPIO_ACTIVE_HIGH>;	/* PRG1_PRU0_GPO16 (V9) */
++			default-state = "off";
++		};
++
++		led-8 {
++			color = <LED_COLOR_ID_RED>;
++			function = LED_FUNCTION_INDICATOR;
++			function-enumerator = <9>;
++			gpios = <&main_gpio0 63 GPIO_ACTIVE_HIGH>;	/* PRG1_PRU0_GPO16 (V7) */
++			default-state = "off";
++		};
++	};
++
++        firmware {
++                optee {
++                        compatible = "linaro,optee-tz";
++                        method = "smc";
++                };
++        };
++
++        tpm@0 {
++             name = "tpm";
++             status = "okay";
++             compatible = "microsoft,ftpm";
++             uuid = /bits/ 8 <0xbc 0x50 0xd9 0x71 0xd4 0xc9 0x42 0xc4 0x82 0xcb 0x34 0x3f 0xb7 0xf3 0x78 0x96>;
++        };
++};
++
++&main_pmx0 {
++	main_uart1_pins_default: main-uart1-default-pins {
++		pinctrl-single,pins = <
++			AM64X_IOPAD(0x0240, PIN_INPUT, 0)		/* (E15) UART1_RXD */
++			AM64X_IOPAD(0x0244, PIN_OUTPUT, 0)		/* (E14) UART1_TXD */
++		>;
++	};
++
++	main_uart0_pins_default: main-uart0-default-pins {
++		bootph-all;
++		pinctrl-single,pins = <
++			AM64X_IOPAD(0x0238, PIN_INPUT, 0) /* (B16) UART0_CTSn */
++			AM64X_IOPAD(0x023c, PIN_OUTPUT, 0) /* (A16) UART0_RTSn */
++			AM64X_IOPAD(0x0230, PIN_INPUT, 0) /* (D15) UART0_RXD */
++			AM64X_IOPAD(0x0234, PIN_OUTPUT, 0) /* (C16) UART0_TXD */
++		>;
++	};
++
++	main_uart3_pins_default: main-uart3-default-pins {
++		bootph-all;
++		pinctrl-single,pins = <
++ 			AM64X_IOPAD(0x0188, PIN_INPUT_PULLUP, 10) /* (AA5) UART3_RXD */
++ 			AM64X_IOPAD(0x0170, PIN_OUTPUT, 10)       /* (AA2) UART3_TXD */
++		>;
++	};
++
++	main_i2c0_pins_default: main-i2c0-default-pins {
++		bootph-all;
++		pinctrl-single,pins = <
++			AM64X_IOPAD(0x0260, PIN_INPUT_PULLUP, 0) /* (A18) I2C0_SCL */
++			AM64X_IOPAD(0x0264, PIN_INPUT_PULLUP, 0) /* (B18) I2C0_SDA */
++		>;
++	};
++
++	/* Digital IOs */
++	main_gpio0_digital_pins: main-gpio0-digital-pins {
++		pinctrl-single,pins = <
++			AM64X_IOPAD(0x0030, PIN_OUTPUT, 7) /* (L18) GPIO0_12 - OSPI0_CSN1 => UARTLED5.TX */
++			AM64X_IOPAD(0x0034, PIN_INPUT, 7)  /* (K17) GPIO0_13 - OSPI0_CSN2 => UARTLED5.RX */
++			AM64X_IOPAD(0x0088, PIN_OUTPUT, 7) /* (R18) GPIO0_33 - VPP_LDO_EN => GPMC0_OEN_REN */
++		>;
++	};
++
++	/* Digital IOs */
++	main_gpio1_digital_pins: main-gpio1-digital-pins {
++		pinctrl-single,pins = <
++			AM64X_IOPAD(0x0208, PIN_OUTPUT, 7) /* (D12) GPIO1_42 => SPI0_CS0 */
++			AM64X_IOPAD(0x020C, PIN_OUTPUT, 7) /* (C13) GPIO1_43 => SPI0_CS1 */
++			AM64X_IOPAD(0x0210, PIN_OUTPUT, 7) /* (D13) GPIO1_44 => SPI0_CLK */
++			AM64X_IOPAD(0x0214, PIN_OUTPUT, 7) /* (A13) GPIO1_45 => SPI0_D0 */
++			AM64X_IOPAD(0x0218, PIN_OUTPUT, 7) /* (A14) GPIO1_46 => SPI0_D1 */
++			AM64X_IOPAD(0x0224, PIN_OUTPUT, 7) /* (C14) GPIO1_49 => SPI1_CLK */
++			AM64X_IOPAD(0x0228, PIN_OUTPUT, 7) /* (B15) GPIO1_50 => SPI1_D0 */
++		>;
++	};
++
++	mdio1_pins_default: mdio1-default-pins {
++		bootph-all;
++		pinctrl-single,pins = <
++			AM64X_IOPAD(0x01fc, PIN_OUTPUT, 4) /* (R2) PRG0_PRU1_GPO19.MDIO0_MDC */
++			AM64X_IOPAD(0x01f8, PIN_INPUT, 4) /* (P5) PRG0_PRU1_GPO18.MDIO0_MDIO */
++		>;
++	};
++
++	rgmii1_pins_default: rgmii1-default-pins {
++		bootph-all;
++		pinctrl-single,pins = <
++			AM64X_IOPAD(0x011c, PIN_INPUT, 4) /* (AA13) PRG1_PRU1_GPO5.RGMII1_RD0 */
++			AM64X_IOPAD(0x0128, PIN_INPUT, 4) /* (U12) PRG1_PRU1_GPO8.RGMII1_RD1 */
++			AM64X_IOPAD(0x0150, PIN_INPUT, 4) /* (Y13) PRG1_PRU1_GPO18.RGMII1_RD2 */
++			AM64X_IOPAD(0x0154, PIN_INPUT, 4) /* (V12) PRG1_PRU1_GPO19.RGMII1_RD3 */
++			AM64X_IOPAD(0x00d8, PIN_INPUT, 4) /* (W13) PRG1_PRU0_GPO8.RGMII1_RXC */
++			AM64X_IOPAD(0x00cc, PIN_INPUT, 4) /* (V13) PRG1_PRU0_GPO5.RGMII1_RX_CTL */
++			AM64X_IOPAD(0x0124, PIN_OUTPUT, 4) /* (V15) PRG1_PRU1_GPO7.RGMII1_TD0 */
++			AM64X_IOPAD(0x012c, PIN_OUTPUT, 4) /* (V14) PRG1_PRU1_GPO9.RGMII1_TD1 */
++			AM64X_IOPAD(0x0130, PIN_OUTPUT, 4) /* (W14) PRG1_PRU1_GPO10.RGMII1_TD2 */
++			AM64X_IOPAD(0x014c, PIN_OUTPUT, 4) /* (AA14) PRG1_PRU1_GPO17.RGMII1_TD3 */
++			AM64X_IOPAD(0x00e0, PIN_OUTPUT, 4) /* (U14) PRG1_PRU0_GPO10.RGMII1_TXC */
++			AM64X_IOPAD(0x00dc, PIN_OUTPUT, 4) /* (U15) PRG1_PRU0_GPO9.RGMII1_TX_CTL */
++		>;
++	};
++
++       rgmii2_pins_default: rgmii2-default-pins {
++		bootph-all;
++		pinctrl-single,pins = <
++			AM64X_IOPAD(0x0108, PIN_INPUT, 4) /* (W11) PRG1_PRU1_GPO0.RGMII2_RD0 */
++			AM64X_IOPAD(0x010c, PIN_INPUT, 4) /* (V11) PRG1_PRU1_GPO1.RGMII2_RD1 */
++			AM64X_IOPAD(0x0110, PIN_INPUT, 4) /* (AA12) PRG1_PRU1_GPO2.RGMII2_RD2 */
++			AM64X_IOPAD(0x0114, PIN_INPUT, 4) /* (Y12) PRG1_PRU1_GPO3.RGMII2_RD3 */
++			AM64X_IOPAD(0x0120, PIN_INPUT, 4) /* (U11) PRG1_PRU1_GPO6.RGMII2_RXC */
++			AM64X_IOPAD(0x0118, PIN_INPUT, 4) /* (W12) PRG1_PRU1_GPO4.RGMII2_RX_CTL */
++			AM64X_IOPAD(0x0134, PIN_OUTPUT, 4) /* (AA10) PRG1_PRU1_GPO11.RGMII2_TD0 */
++			AM64X_IOPAD(0x0138, PIN_OUTPUT, 4) /* (V10) PRG1_PRU1_GPO12.RGMII2_TD1 */
++			AM64X_IOPAD(0x013c, PIN_OUTPUT, 4) /* (U10) PRG1_PRU1_GPO13.RGMII2_TD2 */
++			AM64X_IOPAD(0x0140, PIN_OUTPUT, 4) /* (AA11) PRG1_PRU1_GPO14.RGMII2_TD3 */
++			AM64X_IOPAD(0x0148, PIN_OUTPUT, 4) /* (Y10) PRG1_PRU1_GPO16.RGMII2_TXC */
++			AM64X_IOPAD(0x0144, PIN_OUTPUT, 4) /* (Y11) PRG1_PRU1_GPO15.RGMII2_TX_CTL */
++		>;
++	};
++
++	main_usb0_pins_default: main-usb0-default-pins {
++		bootph-all;
++		pinctrl-single,pins = <
++			AM64X_IOPAD(0x02a8, PIN_OUTPUT, 0) /* (E19) USB0_DRVVBUS */
++		>;
++	};
++};
++
++&main_uart0 {
++	bootph-all;
++	status = "okay";
++	pinctrl-names = "default";
++	pinctrl-0 = <&main_uart0_pins_default>;
++	/* dcd-gpios = <&main_gpio1 20 GPIO_ACTIVE_LOW>; */
++	/* dsr-gpios = <&main_gpio1 12 GPIO_ACTIVE_LOW>; */
++	/* dtr-gpios = <&main_gpio1 21 GPIO_ACTIVE_LOW>; */
++	/* rng-gpios = <&main_gpio1 4 GPIO_ACTIVE_LOW>; */
++	current-speed = <115200>;
++};
++
++/* main_uart1 is reserved for firmware usage */
++&main_uart1 {
++	bootph-all;
++	status = "okay";
++	pinctrl-names = "default";
++	pinctrl-0 = <&main_uart1_pins_default>;
++	current-speed = <115200>;
++};
++
++&main_uart3 {
++	bootph-all;
++	status = "okay";
++	pinctrl-names = "default";
++	pinctrl-0 = <&main_uart3_pins_default>;
++	current-speed = <115200>;
++};
++
++&main_i2c0 {
++	bootph-all;
++	status = "okay";
++	pinctrl-names = "default";
++	pinctrl-0 = <&main_i2c0_pins_default>;
++	clock-frequency = <400000>;
++
++	eeprom@50 {
++		/* AT24CM01 */
++		compatible = "atmel,24c1024";
++		reg = <0x50>;
++	};
++
++	rtc_rv3028: rtc@52 {
++		compatible = "microcrystal,rv3028";
++		reg = <0x52>;
++		trickle-resistor-ohms = <3000>;
++		aux-voltage-chargeable = <1>;
++	};
++
++	tps65219: pmic@30 {
++		compatible = "ti,tps65219";
++		reg = <0x30>;
++
++		regulators {
++			buck1_reg: buck1 {
++				regulator-name = "VDD_CORE";
++				regulator-min-microvolt = <750000>;
++				regulator-max-microvolt = <750000>;
++				regulator-boot-on;
++				regulator-always-on;
++			};
++
++			buck2_reg: buck2 {
++				regulator-name = "VCC1V8";
++				regulator-min-microvolt = <1800000>;
++				regulator-max-microvolt = <1800000>;
++				regulator-boot-on;
++				regulator-always-on;
++			};
++
++			buck3_reg: buck3 {
++				regulator-name = "VDD_LPDDR4";
++				regulator-min-microvolt = <1100000>;
++				regulator-max-microvolt = <1100000>;
++				regulator-boot-on;
++				regulator-always-on;
++			};
++
++			ldo1_reg: ldo1 {
++				regulator-name = "VDDSHV_SD_IO_PMIC";
++				regulator-min-microvolt = <33000000>;
++				regulator-max-microvolt = <33000000>;
++			};
++
++			ldo2_reg: ldo2 {
++				regulator-name = "VDDAR_CORE";
++				regulator-min-microvolt = <850000>;
++				regulator-max-microvolt = <850000>;
++				regulator-boot-on;
++				regulator-always-on;
++			};
++
++			ldo3_reg: ldo3 {
++				regulator-name = "VDDA_1V8";
++				regulator-min-microvolt = <18000000>;
++				regulator-max-microvolt = <18000000>;
++				regulator-boot-on;
++				regulator-always-on;
++			};
++
++			ldo4_reg: ldo4 {
++				regulator-name = "VDD_PHY_2V5";
++				regulator-min-microvolt = <25000000>;
++				regulator-max-microvolt = <25000000>;
++				regulator-boot-on;
++				regulator-always-on;
++			};
++		};
++	};
++};
++
++&main_i2c1 {
++    status = "disabled";
++};
++
++/* mcu_gpio0 is reserved for mcu firmware usage */
++&mcu_gpio0 {
++	status = "reserved";
++};
++
++&main_gpio0 {
++	bootph-all;
++	pinctrl-names = "default";
++	pinctrl-0 = <&main_gpio0_digital_pins>;
++};
++
++&main_gpio1 {
++	bootph-all;
++	pinctrl-names = "default";
++	pinctrl-0 = <&main_gpio1_digital_pins>;
++};
++
++/* eMMC */
++&sdhci0 {
++	status = "okay";
++	bus-width = <8>;
++	non-removable;
++	ti,driver-strength-ohm = <50>;
++	disable-wp;
++};
++
++/* SD/MMC */
++&sdhci1 {
++    status = "disabled";
++};
++
++&usbss0 {
++	bootph-all;
++	ti,vbus-divider;
++	ti,usb2-only;
++};
++
++&usb0 {
++	bootph-all;
++	dr_mode = "otg";
++	maximum-speed = "high-speed";
++	pinctrl-names = "default";
++	pinctrl-0 = <&main_usb0_pins_default>;
++};
++
++&cpsw3g {
++	bootph-all;
++	pinctrl-names = "default";
++	pinctrl-0 = <&rgmii1_pins_default>, <&rgmii2_pins_default>;
++};
++
++&cpsw_port1 {
++	status = "disabled";
++	bootph-all;
++	phy-mode = "rgmii-rxid";
++	phy-handle = <&cpsw3g_phy0>;
++};
++
++&cpsw_port2 {
++	bootph-all;
++	phy-mode = "rgmii-rxid";
++	phy-handle = <&cpsw3g_phy1>;
++};
++
++&cpsw3g_mdio {
++	bootph-all;
++	status = "okay";
++	pinctrl-names = "default";
++	pinctrl-0 = <&mdio1_pins_default>;
++
++	cpsw3g_phy0: ethernet-phy@0 {
++		bootph-all;
++		reg = <0>;
++		ti,rx-internal-delay = <DP83867_RGMIIDCTL_2_00_NS>;
++		ti,fifo-depth = <DP83867_PHYCR_FIFO_DEPTH_4_B_NIB>;
++	};
++
++	cpsw3g_phy1: ethernet-phy@1 {
++		bootph-all;
++		reg = <1>;
++		ti,rx-internal-delay = <DP83867_RGMIIDCTL_2_00_NS>;
++		ti,fifo-depth = <DP83867_PHYCR_FIFO_DEPTH_4_B_NIB>;
++	};
++};
++
++&tscadc0 {
++	/* ADC is reserved for R5 usage */
++	status = "reserved";
++};
++
++&mailbox0_cluster2 {
++	status = "okay";
++
++	mbox_main_r5fss0_core0: mbox-main-r5fss0-core0 {
++		ti,mbox-rx = <0 0 2>;
++		ti,mbox-tx = <1 0 2>;
++	};
++
++	mbox_main_r5fss0_core1: mbox-main-r5fss0-core1 {
++		ti,mbox-rx = <2 0 2>;
++		ti,mbox-tx = <3 0 2>;
++	};
++};
++
++&mailbox0_cluster4 {
++	status = "disabled";
++};
++
++&mailbox0_cluster6 {
++	status = "okay";
++
++	mbox_m4_0: mbox-m4-0 {
++		ti,mbox-rx = <0 0 2>;
++		ti,mbox-tx = <1 0 2>;
++	};
++};
++
++&main_r5fss0_core0 {
++	mboxes = <&mailbox0_cluster2>, <&mbox_main_r5fss0_core0>;
++	memory-region = <&main_r5fss0_core0_dma_memory_region>,
++			<&main_r5fss0_core0_memory_region>;
++};
++
++&main_r5fss0_core1 {
++	mboxes = <&mailbox0_cluster2>, <&mbox_main_r5fss0_core1>;
++	memory-region = <&main_r5fss0_core1_dma_memory_region>,
++			<&main_r5fss0_core1_memory_region>;
++};
++
++&main_r5fss1 {
++    status = "disabled";
++};
++
++&main_r5fss1_core0 {
++    status = "disabled";
++};
++
++&main_r5fss1_core1 {
++    status = "disabled";
++};
++
++&serdes_ln_ctrl {
++	idle-states = <AM64_SERDES0_LANE0_PCIE0>;
++};
++
++&serdes0 {
++	serdes0_pcie_link: phy@0 {
++		reg = <0>;
++		cdns,num-lanes = <1>;
++		#phy-cells = <0>;
++		cdns,phy-type = <PHY_TYPE_PCIE>;
++		resets = <&serdes_wiz0 1>;
++	};
++};
++
++&pcie0_rc {
++	status = "okay";
++	reset-gpios = <&main_gpio0 38 GPIO_ACTIVE_HIGH>;	/* GPMC0_WAIT1 (Y18) */
++	phys = <&serdes0_pcie_link>;
++	phy-names = "pcie-phy";
++	num-lanes = <1>;
++};
++
++&pcie0_ep {
++	phys = <&serdes0_pcie_link>;
++	phy-names = "pcie-phy";
++	num-lanes = <1>;
++};

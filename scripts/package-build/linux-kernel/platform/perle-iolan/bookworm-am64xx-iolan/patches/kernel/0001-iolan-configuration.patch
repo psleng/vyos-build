@@ -28,36 +28,9 @@ index 8bd5acc6d683..62a37f5dd027 100644
  k3-am642-tqma64xxl-mbax4xxl-sdcard-dtbs := \
  	k3-am642-tqma64xxl-mbax4xxl.dtb k3-am64-tqma64xxl-mbax4xxl-sdcard.dtbo
 diff --git a/arch/arm64/boot/dts/ti/k3-am64-main.dtsi b/arch/arm64/boot/dts/ti/k3-am64-main.dtsi
-index 064eb062bb54..578dca9e150b 100644
+index 064eb062bb54..9cf563e5738d 100644
 --- a/arch/arm64/boot/dts/ti/k3-am64-main.dtsi
 +++ b/arch/arm64/boot/dts/ti/k3-am64-main.dtsi
-@@ -378,7 +378,7 @@ main_uart0: serial@2800000 {
- 		power-domains = <&k3_pds 146 TI_SCI_PD_EXCLUSIVE>;
- 		clocks = <&k3_clks 146 0>;
- 		clock-names = "fclk";
--		status = "disabled";
-+		status = "okay";
- 	};
- 
- 	main_uart1: serial@2810000 {
-@@ -389,7 +389,7 @@ main_uart1: serial@2810000 {
- 		power-domains = <&k3_pds 152 TI_SCI_PD_EXCLUSIVE>;
- 		clocks = <&k3_clks 152 0>;
- 		clock-names = "fclk";
--		status = "disabled";
-+		status = "okay";
- 	};
- 
- 	main_uart2: serial@2820000 {
-@@ -411,7 +411,7 @@ main_uart3: serial@2830000 {
- 		power-domains = <&k3_pds 154 TI_SCI_PD_EXCLUSIVE>;
- 		clocks = <&k3_clks 154 0>;
- 		clock-names = "fclk";
--		status = "disabled";
-+		status = "okay";
- 	};
- 
- 	main_uart4: serial@2840000 {
 @@ -1025,6 +1025,19 @@ pcie0_rc: pcie@f102000 {
  			 <0x02000000 0x00 0x68011000  0x00 0x68011000  0x00 0x7fef000>;
  		dma-ranges = <0x02000000 0x0 0x0 0x0 0x0 0x00000010 0x0>;
@@ -79,11 +52,11 @@ index 064eb062bb54..578dca9e150b 100644
  
  	pcie0_ep: pcie-ep@f102000 {
 diff --git a/arch/arm64/boot/dts/ti/k3-am642-iolan.dts b/arch/arm64/boot/dts/ti/k3-am642-iolan.dts
-new file mode 100644
-index 000000000000..7a1294b530f8
+new file mode 100755
+index 000000000000..495acec78eeb
 --- /dev/null
 +++ b/arch/arm64/boot/dts/ti/k3-am642-iolan.dts
-@@ -0,0 +1,588 @@
+@@ -0,0 +1,537 @@
 +// SPDX-License-Identifier: GPL-2.0
 +/*
 + * Copyright (C) 2020-2021 Texas Instruments Incorporated - https://www.ti.com/
@@ -190,95 +163,19 @@ index 000000000000..7a1294b530f8
 +		regulator-boot-on;
 +	};
 +
-+	leds {
-+		compatible = "gpio-leds";
-+
-+		led-0 {
-+			color = <LED_COLOR_ID_GREEN>;
-+			function = LED_FUNCTION_INDICATOR;
-+			function-enumerator = <1>;
-+			gpios = <&main_gpio0 46 GPIO_ACTIVE_HIGH>;	/* PRG1_PRU0_GPO1 (U8) */
-+			default-state = "off";
-+		};
-+
-+		led-1 {
-+			color = <LED_COLOR_ID_BLUE>;
-+			function = LED_FUNCTION_INDICATOR;
-+			function-enumerator = <2>;
-+			gpios = <&main_gpio0 57 GPIO_ACTIVE_HIGH>;	/* PRG1_PRU0_GPO12 (U9) */
-+			default-state = "off";
-+		};
-+
-+		led-2 {
-+			color = <LED_COLOR_ID_RED>;
-+			function = LED_FUNCTION_INDICATOR;
-+			function-enumerator = <3>;
-+			gpios = <&main_gpio0 62 GPIO_ACTIVE_HIGH>;	/* PRG1_PRU0_GPO17 (U7) */
-+			default-state = "off";
-+		};
-+
-+		led-3 {
-+			color = <LED_COLOR_ID_GREEN>;
-+			function = LED_FUNCTION_INDICATOR;
-+			function-enumerator = <4>;
-+			gpios = <&main_gpio0 47 GPIO_ACTIVE_HIGH>;	/* PRG1_PRU0_GPO2 (W8) */
-+			default-state = "off";
-+		};
-+
-+		led-4 {
-+			color = <LED_COLOR_ID_BLUE>;
-+			function = LED_FUNCTION_INDICATOR;
-+			function-enumerator = <5>;
-+			gpios = <&main_gpio0 58 GPIO_ACTIVE_HIGH>;	/* PRG1_PRU0_GPO13 (W9) */
-+			default-state = "off";
-+		};
-+
-+		led-5 {
-+			color = <LED_COLOR_ID_RED>;
-+			function = LED_FUNCTION_INDICATOR;
-+			function-enumerator = <6>;
-+			gpios = <&main_gpio0 64 GPIO_ACTIVE_HIGH>;	/* PRG1_PRU0_GPO19 (W7) */
-+			default-state = "off";
-+		};
-+
-+		led-6 {
-+			color = <LED_COLOR_ID_GREEN>;
-+			function = LED_FUNCTION_INDICATOR;
-+			function-enumerator = <7>;
-+			gpios = <&main_gpio0 48 GPIO_ACTIVE_HIGH>;	/* PRG1_PRU0_GPO3 (V8) */
-+			default-state = "off";
-+		};
-+
-+		led-7 {
-+			color = <LED_COLOR_ID_BLUE>;
-+			function = LED_FUNCTION_INDICATOR;
-+			function-enumerator = <8>;
-+			gpios = <&main_gpio0 61 GPIO_ACTIVE_HIGH>;	/* PRG1_PRU0_GPO16 (V9) */
-+			default-state = "off";
-+		};
-+
-+		led-8 {
-+			color = <LED_COLOR_ID_RED>;
-+			function = LED_FUNCTION_INDICATOR;
-+			function-enumerator = <9>;
-+			gpios = <&main_gpio0 63 GPIO_ACTIVE_HIGH>;	/* PRG1_PRU0_GPO16 (V7) */
-+			default-state = "off";
++	firmware {
++		optee {
++			compatible = "linaro,optee-tz";
++			method = "smc";
 +		};
 +	};
 +
-+        firmware {
-+                optee {
-+                        compatible = "linaro,optee-tz";
-+                        method = "smc";
-+                };
-+        };
-+
-+        tpm@0 {
-+             name = "tpm";
-+             status = "okay";
-+             compatible = "microsoft,ftpm";
-+             uuid = /bits/ 8 <0xbc 0x50 0xd9 0x71 0xd4 0xc9 0x42 0xc4 0x82 0xcb 0x34 0x3f 0xb7 0xf3 0x78 0x96>;
-+        };
++	tpm@0 {
++		name = "tpm";
++		status = "okay";
++		compatible = "microsoft,ftpm";
++		uuid = /bits/ 8 <0xbc 0x50 0xd9 0x71 0xd4 0xc9 0x42 0xc4 0x82 0xcb 0x34 0x3f 0xb7 0xf3 0x78 0x96>;
++	};
 +};
 +
 +&main_pmx0 {
@@ -292,10 +189,14 @@ index 000000000000..7a1294b530f8
 +	main_uart0_pins_default: main-uart0-default-pins {
 +		bootph-all;
 +		pinctrl-single,pins = <
-+			AM64X_IOPAD(0x0238, PIN_INPUT, 0) /* (B16) UART0_CTSn */
-+			AM64X_IOPAD(0x023c, PIN_OUTPUT, 0) /* (A16) UART0_RTSn */
-+			AM64X_IOPAD(0x0230, PIN_INPUT, 0) /* (D15) UART0_RXD */
-+			AM64X_IOPAD(0x0234, PIN_OUTPUT, 0) /* (C16) UART0_TXD */
++			AM64X_IOPAD(0x0230, PIN_INPUT, 0)	/* (D15) UART0_RXD */
++			AM64X_IOPAD(0x0234, PIN_OUTPUT, 0)	/* (C16) UART0_TXD */
++			AM64X_IOPAD(0x0238, PIN_INPUT, 0)	/* (B16) UART0_CTSn */
++			AM64X_IOPAD(0x023c, PIN_OUTPUT, 0)	/* (A16) UART0_RTSn */
++			AM64X_IOPAD(0x0250, PIN_OUTPUT, 9)	/* (A17) UART0_DTRn */
++			AM64X_IOPAD(0x0254, PIN_INPUT, 9)	/* (B17) UART0_RIn */
++			AM64X_IOPAD(0x0258, PIN_INPUT, 9)	/* (C17) UART0_DCDn */
++			AM64X_IOPAD(0x025C, PIN_INPUT, 9)	/* (D17) UART0_DSRn */
 +		>;
 +	};
 +
@@ -318,22 +219,43 @@ index 000000000000..7a1294b530f8
 +	/* Digital IOs */
 +	main_gpio0_digital_pins: main-gpio0-digital-pins {
 +		pinctrl-single,pins = <
-+			AM64X_IOPAD(0x0030, PIN_OUTPUT, 7) /* (L18) GPIO0_12 - OSPI0_CSN1 => UARTLED5.TX */
-+			AM64X_IOPAD(0x0034, PIN_INPUT, 7)  /* (K17) GPIO0_13 - OSPI0_CSN2 => UARTLED5.RX */
-+			AM64X_IOPAD(0x0088, PIN_OUTPUT, 7) /* (R18) GPIO0_33 - VPP_LDO_EN => GPMC0_OEN_REN */
++			AM64X_IOPAD(0x00BC, PIN_INPUT_PULLDOWN, 7) /* (U8)  PRG1_PRU0_GPO1   => GPIO0_46 (STAT_SYS.GREEN)            */
++			AM64X_IOPAD(0x00C0, PIN_INPUT_PULLDOWN, 7) /* (W8)  PRG1_PRU0_GPO2   => GPIO0_47 (STAT_WIFI.GREEN)           */
++			AM64X_IOPAD(0x00C4, PIN_INPUT_PULLDOWN, 7) /* (V8)  PRG1_PRU0_GPO3   => GPIO0_48 (STAT_LTE.GREEN)            */
++			AM64X_IOPAD(0x00E8, PIN_INPUT_PULLDOWN, 7) /* (U9)  PRG1_PRU0_GPO12  => GPIO0_57 (STAT_SYS.BLUE)             */
++			AM64X_IOPAD(0x00EC, PIN_INPUT_PULLDOWN, 7) /* (W9)  PRG1_PRU0_GPO13  => GPIO0_58 (STAT_WIFI.BLUE)            */
++			AM64X_IOPAD(0x00F8, PIN_INPUT_PULLDOWN, 7) /* (V9)  PRG1_PRU0_GPO16  => GPIO0_61 (STAT_LTE.BLUE)             */
++			AM64X_IOPAD(0x00FC, PIN_INPUT_PULLUP,   7) /* (U7)  PRG1_PRU0_GPO17  => GPIO0_62 (STAT_SYS.RED)              */
++			AM64X_IOPAD(0x0100, PIN_INPUT_PULLUP,   7) /* (V7)  PRG1_PRU0_GPO18  => GPIO0_63 (STAT_LTE.RED)              */
++			AM64X_IOPAD(0x0104, PIN_INPUT_PULLUP,   7) /* (W7)  PRG1_PRU0_GPO19  => GPIO0_64 (STAT_WIFI.RED)             */
++			AM64X_IOPAD(0x0038, PIN_INPUT_PULLUP,   7) /* (L17) OSPI0_CSn3       => GPIO0_14 (WIFI_PDN_GPIO)             */
++			AM64X_IOPAD(0x0088, PIN_INPUT_PULLDOWN, 7) /* (R18) GPMC0_OEn_REn    => GPIO0_33 (VPP_LDO_EN)                */
++			AM64X_IOPAD(0x0098, PIN_INPUT_PULLDOWN, 7) /* (W19) GPMC0_WAIT0      => GPIO0_37 (PATH_THROUGH_SEL)          */
++			AM64X_IOPAD(0x00B8, PIN_INPUT_PULLUP,   7) /* (Y7)  PRG1_PRU0_GPO0   => GPIO0_45 (VSEL_SD_SWITCH)            */
++			AM64X_IOPAD(0x00C8, PIN_INPUT_PULLUP,   7) /* (Y8)  PRG1_PRU0_GPO4   => GPIO0_49 (SIM2_DETECT)               */
++			AM64X_IOPAD(0x00D0, PIN_INPUT_PULLUP,   7) /* (AA7) PRG1_PRU0_GPO6   => GPIO0_51 (PMIC_STBY)                 */
++			AM64X_IOPAD(0x00D4, PIN_INPUT_PULLUP,   7) /* (U13) PRG1_PRU0_GPO7   => GPIO0_52 (SIM1_DETECT)               */
++			AM64X_IOPAD(0x00E4, PIN_INPUT_PULLUP,   7) /* (AA8) PRG1_PRU0_GPO11  => GPIO0_56 (CELL_SHUTDOWN_N)           */
++			AM64X_IOPAD(0x00F0, PIN_INPUT_PULLDOWN, 7) /* (AA9) PRG1_PRU0_GPO14  => GPIO0_59 (CELL_UNCONDITIONAL_RESET)  */
++			AM64X_IOPAD(0x00F4, PIN_INPUT_PULLDOWN, 7) /* (Y9)  PRG1_PRU0_GPO15  => GPIO0_60 (SIM_SELECT1N_2)            */
++			AM64X_IOPAD(0x0158, PIN_INPUT_PULLDOWN, 7) /* (AA6) PRG1_MDIO0_MDIO  => GPIO0_85 (CELL_FLIGHT_MODE)          */
++			AM64X_IOPAD(0x015C, PIN_INPUT_PULLDOWN, 7) /* (Y6)  PRG1_MDIO0_MDC   => GPIO0_86 (CELL_GNSS_DISABLE)         */
 +		>;
 +	};
 +
 +	/* Digital IOs */
 +	main_gpio1_digital_pins: main-gpio1-digital-pins {
 +		pinctrl-single,pins = <
-+			AM64X_IOPAD(0x0208, PIN_OUTPUT, 7) /* (D12) GPIO1_42 => SPI0_CS0 */
-+			AM64X_IOPAD(0x020C, PIN_OUTPUT, 7) /* (C13) GPIO1_43 => SPI0_CS1 */
-+			AM64X_IOPAD(0x0210, PIN_OUTPUT, 7) /* (D13) GPIO1_44 => SPI0_CLK */
-+			AM64X_IOPAD(0x0214, PIN_OUTPUT, 7) /* (A13) GPIO1_45 => SPI0_D0 */
-+			AM64X_IOPAD(0x0218, PIN_OUTPUT, 7) /* (A14) GPIO1_46 => SPI0_D1 */
-+			AM64X_IOPAD(0x0224, PIN_OUTPUT, 7) /* (C14) GPIO1_49 => SPI1_CLK */
-+			AM64X_IOPAD(0x0228, PIN_OUTPUT, 7) /* (B15) GPIO1_50 => SPI1_D0 */
++			AM64X_IOPAD(0x01F0, PIN_INPUT_PULLUP,   7) /* (AA4) PRG0_PRU1_GPO16  => GPIO1_36 (PUSH_KEY)                  */
++			AM64X_IOPAD(0x0208, PIN_INPUT_PULLUP,   7) /* (D12) SPI0_CS0         => GPIO1_42 (UARTC_MODE1)               */
++			AM64X_IOPAD(0x020C, PIN_INPUT_PULLUP,   7) /* (C13) SPI0_CS1         => GPIO1_43 (UARTC_MODE2)               */
++			AM64X_IOPAD(0x0210, PIN_INPUT_PULLDOWN, 7) /* (D13) SPI0_CLK         => GPIO1_44 (UARTC_TERM_TX)             */
++			AM64X_IOPAD(0x0214, PIN_INPUT_PULLDOWN, 7) /* (A13) SPI0_D0          => GPIO1_45 (UARTC_TERM_RX)             */
++			AM64X_IOPAD(0x0218, PIN_INPUT_PULLUP,   7) /* (A14) SPI0_D1          => GPIO1_46 (UARTC_MODE0)               */
++			AM64X_IOPAD(0x0224, PIN_INPUT_PULLUP,   7) /* (C14) SPI1_CLK         => GPIO1_49 (UARTC_SLR)                 */
++			AM64X_IOPAD(0x0228, PIN_INPUT_PULLDOWN, 7) /* (B15) SPI1_D0          => GPIO1_50 (UARTC_SHUT_N)              */
++			AM64X_IOPAD(0x0284, PIN_INPUT_PULLDOWN, 7) /* (L21) MMC1_DAT1        => GPIO1_73 (DC_VALIDN)                 */
++			AM64X_IOPAD(0x0288, PIN_INPUT_PULLUP,   7) /* (K21) MMC1_DAT0        => GPIO1_74 (POE_VALIDN)                */
 +		>;
 +	};
 +

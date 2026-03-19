@@ -18,6 +18,7 @@ rsync -av ../vyos-vpp-patches/patches/vpp/ ../patches/vpp/
 """
 
 build_cmd = """
+test -f ../vpp_*.deb && { echo I: vpp already built; exit 0; } # PSL
 # Patches for vpp should applied here
 for patch in ../patches/vpp/*.patch; do
     echo "I: build_cmd applying patch $patch..."

@@ -3,7 +3,6 @@ CWD=$(pwd)
 KERNEL_SRC=linux
 ROOT_DIR=$(dirname $(dirname $(dirname $(dirname ${CWD}))))
 DEFS_FILE=".defs.mk"
-ARCH=$(dpkg --print-architecture)
 
 set -e
 
@@ -32,16 +31,37 @@ echo "BUILDTYPE         : ${BUILDTYPE}"
 echo "PLATFORM_DIR      : ${PLATFORM_DIR}"
 
 echo "I: Copy Kernel config (vyos_defconfig) to Kernel Source"
+# PSL: See https://vyos.dev/T8134 . Use a straight config for now; no snippets
+PSLIGNORE="I: PSL: ignore d86559a5c 2d0c394fee for now for $ARCH"
+echo $PSLIGNORE
 cp -rv ${PLATFORM_DIR}/arch/ .
+
+if [ -d /usr/lib/ccache/ ]; then
+    export PATH=/usr/lib/ccache:$PATH
+fi
 
 KERNEL_VERSION=$(make kernelversion)
 KERNEL_SUFFIX=-$(awk -F "= " '/kernel_flavor/ {print $2}' ../../../../data/defaults.toml | tr -d \")
 
+echo "I: Generate Kernel config"
+ARCH=$(dpkg --print-architecture)
 if [ "${ARCH}" = "arm64" ]; then
     KERNEL_CONFIG=arch/arm64/configs/vyos_defconfig
-else
+    #cp ${CWD}/config/arm64/vyos_defconfig ${KERNEL_CONFIG} # $PSLIGNORE
+elif [ "${ARCH}" = "amd64" ]; then
     KERNEL_CONFIG=arch/x86/configs/vyos_defconfig
+    #cp ${CWD}/config/x86/vyos_defconfig ${KERNEL_CONFIG} # $PSLIGNORE
+else
+    echo "E: unsupported architecture"
+    exit 1
 fi
+
+# $PSLIGNORE
+#for KRN_CONF_SNIPPET in $(ls ${CWD}/config/*.config)
+#do
+#    echo "I: adding configuration snippet ${KRN_CONF_SNIPPET}"
+#    cat ${KRN_CONF_SNIPPET} >> ${KERNEL_CONFIG}
+#done
 
 echo "KERNEL_CONFIG: ${KERNEL_CONFIG}"
 

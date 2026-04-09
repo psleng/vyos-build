@@ -88,9 +88,9 @@ cp -f $SRC $DST
 # Some useful rules
 echo "=== Installing NXP related rules"
 mkdir -p fs/etc/systemd/network/ fs/lib/udev/rules.d/
-cp -f 99-default.link fs/etc/systemd/network/
-cp -f 60-Perle-pcie-card-nxp9098.rules fs/lib/udev/rules.d/
-cp -f 60-Perle-usb-modem.rules fs/lib/udev/rules.d/
+#cp -f 99-default.link fs/etc/systemd/network/
+#cp -f 60-Perle-pcie-card-nxp9098.rules fs/lib/udev/rules.d/
+#cp -f 60-Perle-usb-modem.rules fs/lib/udev/rules.d/
 
 ## tar file for reference
 #tar -C fs --owner 0 --group 0 -zcf fs.tar.gz .

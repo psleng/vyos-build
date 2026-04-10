@@ -5,4 +5,6 @@ packages = [
 ]
 bootloaders = "grub-efi"
 squashfs_compression_type = "xz -b 256k -always-use-fragments -no-recovery"
-serial_interface = "ttyAMA0,115200"
+# PERLE - ttyAMA0 not applicable for TI arm64 processors
+# serial_interface = "ttyAMA0,115200"
+serial_interface = "ttyS0,115200"

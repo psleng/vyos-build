@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/arm64 6.6.117 Kernel Configuration
+# Linux/arm64 6.6.128 Kernel Configuration
 #
 CONFIG_CC_VERSION_TEXT="gcc (Debian 12.2.0-14+deb12u1) 12.2.0"
 CONFIG_CC_IS_GCC=y
@@ -4971,7 +4971,7 @@ CONFIG_LEDS_TRIGGER_PANIC=y
 # CONFIG_LEDS_TRIGGER_NETDEV is not set
 # CONFIG_LEDS_TRIGGER_PATTERN is not set
 # CONFIG_LEDS_TRIGGER_AUDIO is not set
-# CONFIG_LEDS_TRIGGER_TTY is not set
+CONFIG_LEDS_TRIGGER_TTY=y
 
 #
 # Simple LED drivers
@@ -7136,7 +7136,6 @@ CONFIG_LOCK_DEBUGGING_SUPPORT=y
 
 # CONFIG_DEBUG_IRQFLAGS is not set
 CONFIG_STACKTRACE=y
-# CONFIG_WARN_ALL_UNSEEDED_RANDOM is not set
 # CONFIG_DEBUG_KOBJECT is not set
 
 #

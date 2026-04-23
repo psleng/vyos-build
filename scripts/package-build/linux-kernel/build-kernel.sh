@@ -66,7 +66,7 @@ fi
 echo "KERNEL_CONFIG: ${KERNEL_CONFIG}"
 
 # VyOS requires some small Kernel Patches - apply them here
-# It's easier to habe them here and make use of the upstream
+# It's easier to have them here and make use of the upstream
 # repository instead of maintaining a full Kernel Fork.
 # Saving time/resources is essential :-)
 for PATCH_DIR in "$CWD/patches/kernel" "${PLATFORM_DIR}/${BUILDTYPE}/patches/kernel"

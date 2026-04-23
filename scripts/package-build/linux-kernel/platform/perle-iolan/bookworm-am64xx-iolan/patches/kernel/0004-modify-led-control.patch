@@ -1,0 +1,385 @@
+diff --git a/arch/arm64/boot/dts/ti/k3-am642-iolan.dts b/arch/arm64/boot/dts/ti/k3-am642-iolan.dts
+index cfce461e4489..69eebe3f2838 100755
+--- a/arch/arm64/boot/dts/ti/k3-am642-iolan.dts
++++ b/arch/arm64/boot/dts/ti/k3-am642-iolan.dts
+@@ -119,6 +119,146 @@ tpm@0 {
+ 		compatible = "microsoft,ftpm";
+ 		uuid = /bits/ 8 <0xbc 0x50 0xd9 0x71 0xd4 0xc9 0x42 0xc4 0x82 0xcb 0x34 0x3f 0xb7 0xf3 0x78 0x96>;
+ 	};
++
++	leds {
++		compatible = "gpio-leds";
++
++		led-sys-red {
++			label = "sys:red:status";
++			color = <LED_COLOR_ID_RED>;
++			function = LED_FUNCTION_STATUS;
++			gpios = <&main_gpio0 62 GPIO_ACTIVE_HIGH>;	/* PRG1_PRU0_GPO17 (U7) */
++			default-state = "off";
++		};
++		led-sys-green {
++			label = "sys:green:status";
++			color = <LED_COLOR_ID_GREEN>;
++			function = LED_FUNCTION_STATUS;
++			gpios = <&main_gpio0 57 GPIO_ACTIVE_HIGH>;	/* PRG1_PRU0_GPO12 (U9) */
++			default-state = "off";
++		};
++		led-sys-blue {
++			label = "sys:blue:status";
++			color = <LED_COLOR_ID_BLUE>;
++			function = LED_FUNCTION_STATUS;
++			gpios = <&main_gpio0 46 GPIO_ACTIVE_HIGH>;	/* PRG1_PRU0_GPO1 (U8) */
++			default-state = "off";
++		};
++		led-wifi-red {
++			label = "wifi:red:status";
++			color = <LED_COLOR_ID_RED>;
++			function = LED_FUNCTION_WLAN;
++			gpios = <&main_gpio0 64 GPIO_ACTIVE_HIGH>;	/* PRG1_PRU0_GPO19 (W7) */
++			default-state = "off";
++		};
++		led-wifi-green {
++			label = "wifi:green:status";
++			color = <LED_COLOR_ID_GREEN>;
++			function = LED_FUNCTION_WLAN;
++			gpios = <&main_gpio0 58 GPIO_ACTIVE_HIGH>;	/* PRG1_PRU0_GPO13 (W9) */
++			default-state = "off";
++		};
++		led-wifi-blue {
++			label = "wifi:blue:status";
++			color = <LED_COLOR_ID_BLUE>;
++			function = LED_FUNCTION_WLAN;
++			gpios = <&main_gpio0 47 GPIO_ACTIVE_HIGH>;	/* PRG1_PRU0_GPO2 (W8) */
++			default-state = "off";
++		};
++		led-lte-red {
++			label = "lte:red:status";
++			color = <LED_COLOR_ID_RED>;
++			function = LED_FUNCTION_WAN;
++			gpios = <&main_gpio0 63 GPIO_ACTIVE_HIGH>;	/* PRG1_PRU0_GPO18 (V7) */
++			default-state = "off";
++		};
++		led-lte-green {
++			label = "lte:green:status";
++			color = <LED_COLOR_ID_GREEN>;
++			function = LED_FUNCTION_WAN;
++			gpios = <&main_gpio0 61 GPIO_ACTIVE_HIGH>;	/* PRG1_PRU0_GPO16 (V9) */
++			default-state = "off";
++		};
++		led-lte-blue {
++			label = "lte:blue:status";
++			color = <LED_COLOR_ID_BLUE>;
++			function = LED_FUNCTION_WAN;
++			gpios = <&main_gpio0 48 GPIO_ACTIVE_HIGH>;	/* PRG1_PRU0_GPO3 (V8) */
++			default-state = "off";
++		};
++		led-uart0-tx {
++			label = "uart0:tx";
++			color = <LED_COLOR_ID_YELLOW>;
++			function = LED_FUNCTION_TX;
++			gpios = <&main_gpio0 4 GPIO_ACTIVE_HIGH>;	/* OSPI0_D1 (M18) */
++			default-state = "off";
++			linux,default-trigger = "tty";
++			trigger-sources = <&main_uart0>;
++		};
++		led-uart0-rx {
++			label = "uart0:rx";
++			color = <LED_COLOR_ID_YELLOW>;
++			function = LED_FUNCTION_RX;
++			gpios = <&main_gpio0 5 GPIO_ACTIVE_HIGH>;	/* OSPI0_D2 (M20) */
++			default-state = "off";
++			linux,default-trigger = "tty";
++			trigger-sources = <&main_uart0>;
++		};
++		led-uart2-tx {
++			label = "uart2:tx";
++			color = <LED_COLOR_ID_YELLOW>;
++			function = LED_FUNCTION_TX;
++			gpios = <&main_gpio0 6 GPIO_ACTIVE_HIGH>;	/* OSPI0_D3 (M21) */
++			default-state = "off";
++			linux,default-trigger = "tty";
++			trigger-sources = <&main_uart2>;
++		};
++		led-uart2-rx {
++			label = "uart2:rx";
++			color = <LED_COLOR_ID_YELLOW>;
++			function = LED_FUNCTION_RX;
++			gpios = <&main_gpio0 7 GPIO_ACTIVE_HIGH>;	/* OSPI0_D4 (P21) */
++			default-state = "off";
++			linux,default-trigger = "tty";
++			trigger-sources = <&main_uart2>;
++		};
++		led-uart4-tx {
++			label = "uart4:tx";
++			color = <LED_COLOR_ID_YELLOW>;
++			function = LED_FUNCTION_TX;
++			gpios = <&main_gpio0 8 GPIO_ACTIVE_HIGH>;	/* OSPI0_D5 (P20) */
++			default-state = "off";
++			linux,default-trigger = "tty";
++			trigger-sources = <&main_uart4>;
++		};
++		led-uart4-rx {
++			label = "uart4:rx";
++			color = <LED_COLOR_ID_YELLOW>;
++			function = LED_FUNCTION_RX;
++			gpios = <&main_gpio0 9 GPIO_ACTIVE_HIGH>;	/* OSPI0_D6 (N18) */
++			default-state = "off";
++			linux,default-trigger = "tty";
++			trigger-sources = <&main_uart4>;
++		};
++		led-uart5-tx {
++			label = "uart5:tx";
++			color = <LED_COLOR_ID_YELLOW>;
++			function = LED_FUNCTION_TX;
++			gpios = <&main_gpio0 12 GPIO_ACTIVE_HIGH>;	/* OSIP0_CSn1 (L18) */
++			default-state = "off";
++			linux,default-trigger = "tty";
++			trigger-sources = <&main_uart5>;
++		};
++		led-uart5-rx {
++			label = "uart5:rx";
++			color = <LED_COLOR_ID_YELLOW>;
++			function = LED_FUNCTION_RX;
++			gpios = <&main_gpio0 13 GPIO_ACTIVE_HIGH>;	/* OSPI0_CSn2 (K17) */
++			default-state = "off";
++			linux,default-trigger = "tty";
++			trigger-sources = <&main_uart5>;
++		};
++	};
+ };
+ 
+ &main_pmx0 {
+@@ -191,14 +331,14 @@ AM64X_IOPAD(0x0264, PIN_INPUT_PULLUP, 0)    /* (B18) I2C0_SDA */
+ 	/* Digital IOs */
+ 	main_gpio0_digital_pins: main-gpio0-digital-pins {
+ 		pinctrl-single,pins = <
+-			AM64X_IOPAD(0x0010, PIN_INPUT_PULLDOWN, 7) /* (M18) OSPI0_D1         => GPIO0_4  (UARTLED0.TX)               */
+-			AM64X_IOPAD(0x0014, PIN_INPUT_PULLDOWN, 7) /* (M20) OSPI0_D2         => GPIO0_5  (UARTLED0.RX)               */
+-			AM64X_IOPAD(0x0018, PIN_INPUT_PULLDOWN, 7) /* (M21) OSPI0_D3         => GPIO0_6  (UARTLED2.TX)               */
+-			AM64X_IOPAD(0x001C, PIN_INPUT_PULLDOWN, 7) /* (P21) OSPI0_D4         => GPIO0_7  (UARTLED2.RX)               */
+-			AM64X_IOPAD(0x0020, PIN_INPUT_PULLDOWN, 7) /* (P20) OSPI0_D5         => GPIO0_8  (UARTLED4.TX)               */
+-			AM64X_IOPAD(0x0024, PIN_INPUT_PULLDOWN, 7) /* (N18) OSPI0_D6         => GPIO0_9  (UARTLED4.RX)               */
+-			AM64X_IOPAD(0x0030, PIN_INPUT_PULLDOWN, 7) /* (L18) OSIP0_CSn1       => GPIO0_12 (UARTLED5.TX)               */
+-			AM64X_IOPAD(0x0034, PIN_INPUT_PULLDOWN, 7) /* (K17) OSPI0_CSn2       => GPIO0_13 (UARTLED5.RX)               */
++			AM64X_IOPAD(0x0010, PIN_OUTPUT_PULLDOWN,7) /* (M18) OSPI0_D1         => GPIO0_4  (UARTLED0.TX)               */
++			AM64X_IOPAD(0x0014, PIN_OUTPUT_PULLDOWN,7) /* (M20) OSPI0_D2         => GPIO0_5  (UARTLED0.RX)               */
++			AM64X_IOPAD(0x0018, PIN_OUTPUT_PULLDOWN,7) /* (M21) OSPI0_D3         => GPIO0_6  (UARTLED2.TX)               */
++			AM64X_IOPAD(0x001C, PIN_OUTPUT_PULLDOWN,7) /* (P21) OSPI0_D4         => GPIO0_7  (UARTLED2.RX)               */
++			AM64X_IOPAD(0x0020, PIN_OUTPUT_PULLDOWN,7) /* (P20) OSPI0_D5         => GPIO0_8  (UARTLED4.TX)               */
++			AM64X_IOPAD(0x0024, PIN_OUTPUT_PULLDOWN,7) /* (N18) OSPI0_D6         => GPIO0_9  (UARTLED4.RX)               */
++			AM64X_IOPAD(0x0030, PIN_OUTPUT_PULLDOWN,7) /* (L18) OSIP0_CSn1       => GPIO0_12 (UARTLED5.TX)               */
++			AM64X_IOPAD(0x0034, PIN_OUTPUT_PULLDOWN,7) /* (K17) OSPI0_CSn2       => GPIO0_13 (UARTLED5.RX)               */
+ 			AM64X_IOPAD(0x00A4, PIN_INPUT_PULLUP,   7) /* (N17) GPMC0_DIR        => GPIO0_40 (UARTC2.MODE0)              */
+ 			AM64X_IOPAD(0x00B4, PIN_INPUT_PULLUP,   7) /* (R21) GPMC0_CSn3       => GPIO0_44 (UARTC2.MODE1)              */
+ 			AM64X_IOPAD(0x0084, PIN_INPUT_PULLUP,   7) /* (P16) GPMC0_ADVn_ALE   => GPIO0_32 (UARTC2.MODE2)              */
+@@ -206,15 +346,15 @@ main_gpio0_digital_pins: main-gpio0-digital-pins {
+ 			AM64X_IOPAD(0x00AC, PIN_INPUT_PULLDOWN, 7) /* (R20) GPMC0_CSn1       => GPIO0_42 (UARTC2.TERM_RX)            */
+ 			AM64X_IOPAD(0x0090, PIN_INPUT_PULLUP,   7) /* (P17) GPMC0_BE0n_CLE   => GPIO0_35 (UARTC2.SLR)                */
+ 			AM64X_IOPAD(0x0094, PIN_INPUT_PULLDOWN, 7) /* (T19) GPMC0_BE1n       => GPIO0_36 (UARTC2.SHUT_N)             */
+-			AM64X_IOPAD(0x00FC, PIN_INPUT_PULLUP,   7) /* (U7)  PRG1_PRU0_GPO17  => GPIO0_62 (STAT_SYS.RED)              */
+-			AM64X_IOPAD(0x00BC, PIN_INPUT_PULLDOWN, 7) /* (U8)  PRG1_PRU0_GPO1   => GPIO0_46 (STAT_SYS.GREEN)            */
+-			AM64X_IOPAD(0x00E8, PIN_INPUT_PULLDOWN, 7) /* (U9)  PRG1_PRU0_GPO12  => GPIO0_57 (STAT_SYS.BLUE)             */
+-			AM64X_IOPAD(0x0100, PIN_INPUT_PULLUP,   7) /* (V7)  PRG1_PRU0_GPO18  => GPIO0_63 (STAT_LTE.RED)              */
+-			AM64X_IOPAD(0x00C4, PIN_INPUT_PULLDOWN, 7) /* (V8)  PRG1_PRU0_GPO3   => GPIO0_48 (STAT_LTE.GREEN)            */
+-			AM64X_IOPAD(0x00F8, PIN_INPUT_PULLDOWN, 7) /* (V9)  PRG1_PRU0_GPO16  => GPIO0_61 (STAT_LTE.BLUE)             */
+-			AM64X_IOPAD(0x0104, PIN_INPUT_PULLUP,   7) /* (W7)  PRG1_PRU0_GPO19  => GPIO0_64 (STAT_WIFI.RED)             */
+-			AM64X_IOPAD(0x00C0, PIN_INPUT_PULLDOWN, 7) /* (W8)  PRG1_PRU0_GPO2   => GPIO0_47 (STAT_WIFI.GREEN)           */
+-			AM64X_IOPAD(0x00EC, PIN_INPUT_PULLDOWN, 7) /* (W9)  PRG1_PRU0_GPO13  => GPIO0_58 (STAT_WIFI.BLUE)            */
++			AM64X_IOPAD(0x00FC, PIN_OUTPUT_PULLUP,  7) /* (U7)  PRG1_PRU0_GPO17  => GPIO0_62 (STAT_SYS.RED)              */
++			AM64X_IOPAD(0x00BC, PIN_OUTPUT_PULLDOWN,7) /* (U8)  PRG1_PRU0_GPO1   => GPIO0_46 (STAT_SYS.BLUE)             */
++			AM64X_IOPAD(0x00E8, PIN_OUTPUT_PULLDOWN,7) /* (U9)  PRG1_PRU0_GPO12  => GPIO0_57 (STAT_SYS.GREEN)            */
++			AM64X_IOPAD(0x0100, PIN_OUTPUT_PULLUP,  7) /* (V7)  PRG1_PRU0_GPO18  => GPIO0_63 (STAT_LTE.RED)              */
++			AM64X_IOPAD(0x00C4, PIN_OUTPUT_PULLDOWN,7) /* (V8)  PRG1_PRU0_GPO3   => GPIO0_48 (STAT_LTE.BLUE)             */
++			AM64X_IOPAD(0x00F8, PIN_OUTPUT_PULLDOWN,7) /* (V9)  PRG1_PRU0_GPO16  => GPIO0_61 (STAT_LTE.GREEN)            */
++			AM64X_IOPAD(0x0104, PIN_OUTPUT_PULLUP,  7) /* (W7)  PRG1_PRU0_GPO19  => GPIO0_64 (STAT_WIFI.RED)             */
++			AM64X_IOPAD(0x00C0, PIN_OUTPUT_PULLDOWN,7) /* (W8)  PRG1_PRU0_GPO2   => GPIO0_47 (STAT_WIFI.BLUE)            */
++			AM64X_IOPAD(0x00EC, PIN_OUTPUT_PULLDOWN,7) /* (W9)  PRG1_PRU0_GPO13  => GPIO0_58 (STAT_WIFI.GREEN)           */
+ 			AM64X_IOPAD(0x0038, PIN_INPUT_PULLUP,   7) /* (L17) OSPI0_CSn3       => GPIO0_14 (WIFI_PDN_GPIO)             */
+ 			AM64X_IOPAD(0x0088, PIN_INPUT_PULLDOWN, 7) /* (R18) GPMC0_OEn_REn    => GPIO0_33 (VPP_LDO_EN)                */
+ 			AM64X_IOPAD(0x0098, PIN_INPUT_PULLDOWN, 7) /* (W19) GPMC0_WAIT0      => GPIO0_37 (PATH_THROUGH_SEL)          */
+diff --git a/drivers/leds/trigger/ledtrig-tty.c b/drivers/leds/trigger/ledtrig-tty.c
+index 3e69a7bde928..2fa078daed6e 100644
+--- a/drivers/leds/trigger/ledtrig-tty.c
++++ b/drivers/leds/trigger/ledtrig-tty.c
+@@ -5,6 +5,7 @@
+ #include <linux/module.h>
+ #include <linux/slab.h>
+ #include <linux/tty.h>
++#include <linux/of.h>
+ #include <uapi/linux/serial.h>
+ 
+ #define LEDTRIG_TTY_INTERVAL	50
+@@ -16,6 +17,8 @@ struct ledtrig_tty_data {
+ 	const char *ttyname;
+ 	struct tty_struct *tty;
+ 	int rx, tx;
++	bool mode_rx;
++	bool mode_tx;
+ };
+ 
+ static void ledtrig_tty_restart(struct ledtrig_tty_data *trigger_data)
+@@ -78,11 +81,65 @@ static ssize_t ttyname_store(struct device *dev,
+ }
+ static DEVICE_ATTR_RW(ttyname);
+ 
++static ssize_t mode_show(struct device *dev,
++			struct device_attribute *attr, char *buf,
++			bool is_tx)
++{
++	struct ledtrig_tty_data *trigger_data = led_trigger_get_drvdata(dev);
++
++	return sprintf(buf, "%u\n", is_tx ? trigger_data->mode_tx : trigger_data->mode_rx);
++}
++
++static ssize_t tx_show(struct device *dev,
++			struct device_attribute *attr, char *buf)
++{
++	return mode_show(dev, attr, buf, true);
++}
++
++static ssize_t rx_show(struct device *dev,
++			struct device_attribute *attr, char *buf)
++{
++	return mode_show(dev, attr, buf, false);
++}
++
++static ssize_t mode_store(struct device *dev,
++			const char *buf, size_t size, bool is_tx)
++{
++	struct ledtrig_tty_data *trigger_data = led_trigger_get_drvdata(dev);
++	bool val;
++
++	if (kstrtobool(buf, &val))
++		return -EINVAL;
++	if (is_tx)
++		trigger_data->mode_tx = val;
++	else
++		trigger_data->mode_rx = val;
++	return size;
++}
++
++static ssize_t tx_store(struct device *dev,
++			struct device_attribute *attr, const char *buf,
++			size_t size)
++{
++	return mode_store(dev, buf, size, true);
++}
++
++static ssize_t rx_store(struct device *dev,
++			struct device_attribute *attr, const char *buf,
++			size_t size)
++{
++	return mode_store(dev, buf, size, false);
++}
++
++static DEVICE_ATTR_RW(tx);
++static DEVICE_ATTR_RW(rx);
++
+ static void ledtrig_tty_work(struct work_struct *work)
+ {
+ 	struct ledtrig_tty_data *trigger_data =
+ 		container_of(work, struct ledtrig_tty_data, dwork.work);
+ 	struct serial_icounter_struct icount;
++	bool do_blink = false;
+ 	int ret;
+ 
+ 	mutex_lock(&trigger_data->mutex);
+@@ -122,16 +179,19 @@ static void ledtrig_tty_work(struct work_struct *work)
+ 		return;
+ 	}
+ 
+-	if (icount.rx != trigger_data->rx ||
+-	    icount.tx != trigger_data->tx) {
++	if (trigger_data->mode_tx && icount.tx != trigger_data->tx)
++		do_blink = true;
++	if (trigger_data->mode_rx && icount.rx != trigger_data->rx)
++		do_blink = true;
++
++	if (do_blink) {
+ 		unsigned long interval = LEDTRIG_TTY_INTERVAL;
+ 
+ 		led_blink_set_oneshot(trigger_data->led_cdev, &interval,
+ 				      &interval, 0);
+-
+-		trigger_data->rx = icount.rx;
+-		trigger_data->tx = icount.tx;
+ 	}
++	trigger_data->tx = icount.tx;
++	trigger_data->rx = icount.rx;
+ 
+ out:
+ 	mutex_unlock(&trigger_data->mutex);
+@@ -141,6 +201,8 @@ static void ledtrig_tty_work(struct work_struct *work)
+ 
+ static struct attribute *ledtrig_tty_attrs[] = {
+ 	&dev_attr_ttyname.attr,
++	&dev_attr_tx.attr,
++	&dev_attr_rx.attr,
+ 	NULL
+ };
+ ATTRIBUTE_GROUPS(ledtrig_tty);
+@@ -148,17 +210,53 @@ ATTRIBUTE_GROUPS(ledtrig_tty);
+ static int ledtrig_tty_activate(struct led_classdev *led_cdev)
+ {
+ 	struct ledtrig_tty_data *trigger_data;
++	struct device_node *np = led_cdev->dev->of_node;
++	const char *name = led_cdev->name;
++
++	if (!name) {
++		name = dev_name(led_cdev->dev);
++	}
+ 
+ 	trigger_data = kzalloc(sizeof(*trigger_data), GFP_KERNEL);
+ 	if (!trigger_data)
+ 		return -ENOMEM;
+ 
++	/* Default modes */
++	trigger_data->mode_tx = true;
++	trigger_data->mode_rx = true;
++	if (name) {
++		if (strstr(name, "tx")) {
++			trigger_data->mode_rx = false;
++		} else if (strstr(name, "rx")) {
++			trigger_data->mode_tx = false;
++		}
++	}
++
++	/* Attempt to parse trigger-sources from DT */
++	if (np) {
++		struct device_node *uart_np = of_parse_phandle(np, "trigger-sources", 0);
++		if (uart_np) {
++			/* Note: This assumes aliases exist for serial ports */
++			int id = of_alias_get_id(uart_np, "serial");
++			if (id >= 0) {
++				char buf[16];
++				snprintf(buf, sizeof(buf), "ttyS%d", id);
++				trigger_data->ttyname = kstrdup(buf, GFP_KERNEL);
++			}
++			of_node_put(uart_np);
++		}
++	}
++
+ 	led_set_trigger_data(led_cdev, trigger_data);
+ 
+ 	INIT_DELAYED_WORK(&trigger_data->dwork, ledtrig_tty_work);
+ 	trigger_data->led_cdev = led_cdev;
+ 	mutex_init(&trigger_data->mutex);
+ 
++	/* Only start the worker if we actually successfully found a ttyname */
++	if (trigger_data->ttyname)
++		ledtrig_tty_restart(trigger_data);
++
+ 	return 0;
+ }
+ 
+@@ -169,7 +267,9 @@ static void ledtrig_tty_deactivate(struct led_classdev *led_cdev)
+ 	cancel_delayed_work_sync(&trigger_data->dwork);
+ 
+ 	kfree(trigger_data->ttyname);
+-	tty_kref_put(trigger_data->tty);
++	if (trigger_data->tty) {
++		tty_kref_put(trigger_data->tty);
++	}
+ 	trigger_data->tty = NULL;
+ 
+ 	kfree(trigger_data);

@@ -136,6 +136,7 @@ parser.add_argument('--no-vpp', help='Execute testsuite without VPP tests',
                 action='store_true', default=False)
 parser.add_argument('--huge-page-size', help='Huge page size (e.g., 2M, 1G)', type=str)
 parser.add_argument('--huge-page-count', help='Number of huge pages to allocate', type=int)
+parser.add_argument('--isolate-cpus', help='CPU cores to isolate (e.g., 1,3-4', type=str)
 
 args = parser.parse_args()
 
@@ -528,11 +529,43 @@ def basic_cli_tests(c):
     c.expect(op_mode_prompt)
     c.sendline('show system memory detail | no-more')
     c.expect(op_mode_prompt)
-    c.sendline('show configuration commands | match kernel')
+    c.sendline('show configuration commands | match "option kernel"')
     c.expect(op_mode_prompt)
     c.sendline('cat /proc/cmdline')
     c.expect(op_mode_prompt)
     c.sendline('show version all | grep -e "vpp" -e "vyos-1x"')
+    c.expect(op_mode_prompt)
+
+    # Get serial console interface name from flavor definition
+    c.sendline('cat /usr/share/vyos/flavor.json | jq -r ".console_type"')
+    c.expect(op_mode_prompt)
+    lines = [l.strip() for l in c.before.splitlines() if l.strip()]
+    console_type = lines[-1].decode('utf-8').strip() # e.g. ttyS
+
+    # We do only care for ttyS or ttyAMA console types, exit early
+    # for VGA consoles
+    if console_type == 'tty':
+        return
+
+    c.sendline('cat /usr/share/vyos/flavor.json | jq -r ".console_num"')
+    c.expect(op_mode_prompt)
+    lines = [l.strip() for l in c.before.splitlines() if l.strip()]
+    console_num = lines[-1].decode('utf-8').strip() # e.g. 0
+
+    # Get serial console speed from flavor definition
+    c.sendline('cat /usr/share/vyos/flavor.json | jq -r ".console_speed"')
+    c.expect(op_mode_prompt)
+    lines = [l.strip() for l in c.before.splitlines() if l.strip()]
+    console_speed = lines[-1].decode('utf-8').strip() # e.g. 115200
+
+    # Ensure serial console with kernel option is set in CLI, done automatically by image installer
+    c.sendline('show configuration commands | match "system console"')
+    c.expect(rf'set system console device {console_type}{console_num} kernel\r\r\nset system console device {console_type}{console_num} speed \'{console_speed}\'')
+    c.expect(op_mode_prompt)
+
+    # Validate GRUB has the right console_type defined
+    c.sendline('cat /boot/grub/grub.cfg.d/20-vyos-defaults-autoload.cfg | grep "set console_type"')
+    c.expect(f'set console_type="{console_type}"')
     c.expect(op_mode_prompt)
 
 if args.qemu_cmd:
@@ -654,6 +687,9 @@ try:
         c.expect(cfg_mode_prompt)
         c.sendline(f'set system option kernel memory hugepage-size {args.huge_page_size} hugepage-count {args.huge_page_count}')
         c.expect(cfg_mode_prompt)
+        if args.isolate_cpus:
+            c.sendline(f'set system option kernel cpu isolate-cpus {args.isolate_cpus}')
+            c.expect(cfg_mode_prompt)
         c.sendline('set system option kernel disable-mitigations')
         c.expect(cfg_mode_prompt)
         c.sendline('commit')

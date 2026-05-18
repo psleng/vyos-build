@@ -400,6 +400,7 @@ def build():
     #
     # All directory paths from this point must be relative to BUILD_DIR,
     # not to the vyos-build repository root.
+    vyos_build_root = os.getcwd()
     os.chdir(defaults.BUILD_DIR)
 
     ## Initialize build manifest
@@ -655,7 +656,8 @@ DOCUMENTATION_URL="{build_config['documentation_url']}"
         ## ships in vyos-1x; only the pin numbers vary per hardware variant.
         if has_nonempty_key(build_config, "pinmap_file"):
             pinmap_rel = build_config["pinmap_file"]
-            pinmap_src = os.path.join(defaults.IGOS_PINMAPS_DIR, pinmap_rel)
+            pinmap_src = os.path.join(
+                vyos_build_root, defaults.IGOS_PINMAPS_DIR, pinmap_rel)
             if not os.path.isfile(pinmap_src):
                 raise ImageBuildError(
                     f'pinmap_file "{pinmap_rel}" not found '

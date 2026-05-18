@@ -54,6 +54,15 @@ BUILD_TYPES_DIR = 'data/build-types'
 BUILD_ARCHES_DIR = 'data/architectures'
 BUILD_FLAVORS_DIR = 'data/build-flavors'
 
+# Fork-only: igOS processor-family fragments and per-flavor pin maps. A
+# build flavor may declare `platform = "<name>"` to merge in
+# data/igos-platforms/<name>.toml (kernel package, family packages, etc.)
+# and/or `pinmap_file = "<name>/pinmap.py"` to overlay a board pinmap from
+# data/igos-pinmaps/ into the image at /usr/lib/python3/dist-packages/vyos/
+# hardware/pinmap.py via includes.chroot.
+IGOS_PLATFORMS_DIR = 'data/igos-platforms'
+IGOS_PINMAPS_DIR = 'data/igos-pinmaps'
+
 # Relative to the build directory
 
 PBUILDER_CONFIG = 'pbuilderrc'

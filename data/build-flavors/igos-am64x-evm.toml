@@ -1,0 +1,12 @@
+# igOS AM64x hardware image — TI AM64x EVM (TMDS64EVM) board variant.
+#
+# See igos-am64x-all.toml for the layering model. This flavor shares the
+# AM64x processor-family fragment and only swaps the pin map.
+
+image_format = "iso"
+
+platform = "igos-am64x"
+
+pinmap_file = "igos-am64x-evm/pinmap.py"
+
+[architectures.arm64]

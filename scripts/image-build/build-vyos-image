@@ -310,6 +310,21 @@ def build():
         build_arch_config = tomli.load(f)
         build_config = merge_defaults(build_arch_config, defaults=build_config)
 
+    ## Fork-only: load igOS processor-family fragment ("platform"), if any.
+    ## Mix-in order is: defaults < build_type < architecture < platform < flavor
+    ## so a flavor's keys still win over the platform's.
+    platform = flavor_config.get("platform")
+    if platform:
+        platform_path = make_toml_path(defaults.IGOS_PLATFORMS_DIR, platform)
+        if not os.path.exists(platform_path):
+            raise ImageBuildError(
+                f'Platform "{platform}" does not exist '
+                f'(looked for {platform_path})'
+            )
+        with open(platform_path, 'rb') as f:
+            platform_config = tomli.load(f)
+            build_config = merge_defaults(platform_config, defaults=build_config)
+
     ## Override with flavor and then CLI arguments
     build_config = merge_defaults(flavor_config, defaults=build_config)
     build_config = merge_defaults(args, defaults=build_config, skip_none=True)
@@ -631,6 +646,29 @@ DOCUMENTATION_URL="{build_config['documentation_url']}"
                 os.makedirs(os.path.dirname(file_path), exist_ok=True)
                 with open(file_path, 'w') as f:
                     f.write(i["data"])
+
+        ## Fork-only: igOS per-flavor pin map overlay.
+        ## A flavor may set `pinmap_file = "<subdir>/pinmap.py"` (relative to
+        ## data/igos-pinmaps/) to overlay the file at
+        ## /usr/lib/python3/dist-packages/vyos/hardware/pinmap.py on the
+        ## installed image. The board-agnostic vyos.hardware Python package
+        ## ships in vyos-1x; only the pin numbers vary per hardware variant.
+        if has_nonempty_key(build_config, "pinmap_file"):
+            pinmap_rel = build_config["pinmap_file"]
+            pinmap_src = os.path.join(defaults.IGOS_PINMAPS_DIR, pinmap_rel)
+            if not os.path.isfile(pinmap_src):
+                raise ImageBuildError(
+                    f'pinmap_file "{pinmap_rel}" not found '
+                    f'(looked for {pinmap_src})'
+                )
+            pinmap_dst = os.path.join(
+                chroot_includes_dir,
+                'usr/lib/python3/dist-packages/vyos/hardware/pinmap.py',
+            )
+            os.makedirs(os.path.dirname(pinmap_dst), exist_ok=True)
+            shutil.copyfile(pinmap_src, pinmap_dst)
+            if debug:
+                print(f"D: Overlaid pinmap {pinmap_src} -> {pinmap_dst}")
 
         ## Create the default config
         ## Technically it's just another includes.chroot entry,

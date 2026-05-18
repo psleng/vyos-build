@@ -1,0 +1,12 @@
+# igOS J7200 hardware image — TI J7200 EVM board variant.
+#
+# See igos-am64x-all.toml for the layering model. This flavor pulls in
+# the J7200 processor-family fragment (igos-j7200.toml).
+
+image_format = "iso"
+
+platform = "igos-j7200"
+
+pinmap_file = "igos-j7200-evm/pinmap.py"
+
+[architectures.arm64]

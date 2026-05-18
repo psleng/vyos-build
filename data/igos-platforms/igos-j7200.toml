@@ -1,0 +1,20 @@
+# igOS J7200 processor-family fragment.
+#
+# Loaded automatically by any build flavor that declares
+#   platform = "igos-j7200"
+# Merged between the `architecture` and `flavor` layers, so flavor TOMLs
+# can still override anything below.
+#
+# Put here ONLY things shared by every J7200 board variant: kernel package,
+# bootloader bits, family-wide Debian deps, etc. Per-board pin mappings go
+# in data/igos-pinmaps/<flavor>/pinmap.py and are pulled in via the
+# `pinmap_file` key on the flavor itself.
+
+# Cellular/serial-control needs libgpiod at runtime.
+packages = [
+  "python3-libgpiod",
+]
+
+[architectures.arm64]
+  # If/when a custom J7200 kernel package exists, list it here, e.g.:
+  # packages = ["linux-image-j7200"]

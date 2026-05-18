@@ -1,0 +1,38 @@
+!_TAG_FILE_FORMAT	2	/extended format; --format=1 will not append ;" to lines/
+!_TAG_FILE_SORTED	1	/0=unsorted, 1=sorted, 2=foldcase/
+!_TAG_OUTPUT_EXCMD	mixed	/number, pattern, mixed, or combineV2/
+!_TAG_OUTPUT_FILESEP	slash	/slash or backslash/
+!_TAG_OUTPUT_MODE	u-ctags	/u-ctags or e-ctags/
+!_TAG_PATTERN_LENGTH_LIMIT	96	/0 for no limit/
+!_TAG_PROC_CWD	/home/jfeeney/vyos-build/	//
+!_TAG_PROGRAM_AUTHOR	Universal Ctags Team	//
+!_TAG_PROGRAM_NAME	Universal Ctags	/Derived from Exuberant Ctags/
+!_TAG_PROGRAM_URL	https://ctags.io/	/official site/
+!_TAG_PROGRAM_VERSION	5.9.0	//
+%	Makefile	/^%:$/;"	t
+ANSIBLE_SCRIPT	Makefile	/^ANSIBLE_SCRIPT := .\/scripts\/ansible-install$/;"	m
+ARCH	Makefile	/^ARCH := $(shell dpkg-architecture -qDEB_HOST_ARCH)$/;"	m
+ISO_PATH	Makefile	/^ISO_PATH := $(build_dir)\/live-image-$(ARCH).hybrid.iso$/;"	m
+SHELL	Makefile	/^SHELL := \/bin\/bash$/;"	m
+VENV_DIR	Makefile	/^VENV_DIR := .venv$/;"	m
+all	Makefile	/^all:$/;"	t
+ansible-check	Makefile	/^ansible-check:$/;"	t
+ansible-clean	Makefile	/^ansible-clean:$/;"	t
+ansible-install	Makefile	/^ansible-install:$/;"	t
+build_dir	Makefile	/^build_dir := build$/;"	m
+checkiso	Makefile	/^checkiso:$/;"	t
+clean	Makefile	/^clean:$/;"	t
+oci	Makefile	/^oci: checkiso$/;"	t
+purge	Makefile	/^purge:$/;"	t
+qemu-live	Makefile	/^qemu-live: checkiso$/;"	t
+test	Makefile	/^test: checkiso$/;"	t
+test-ci-qcow2	Makefile	/^test-ci-qcow2:$/;"	t
+test-interfaces	Makefile	/^test-interfaces: checkiso$/;"	t
+test-no-interfaces	Makefile	/^test-no-interfaces: checkiso$/;"	t
+test-no-interfaces-no-vpp	Makefile	/^test-no-interfaces-no-vpp: checkiso$/;"	t
+test-vpp	Makefile	/^test-vpp: checkiso$/;"	t
+testc	Makefile	/^testc: checkiso$/;"	t
+testcvpp	Makefile	/^testcvpp: checkiso$/;"	t
+testraid	Makefile	/^testraid: checkiso$/;"	t
+testsb	Makefile	/^testsb: checkiso$/;"	t
+testtpm	Makefile	/^testtpm: checkiso$/;"	t

@@ -77,3 +77,17 @@ PINS = {
     "UARTC5_SLR":        _P(bank=1, line=30, dir="out", bias="pull-up",   default=1, group="uartc5"),
     "UARTC5_SHUT_N":     _P(bank=1, line=9,  dir="out", active_low=True, bias="pull-down", default=1, group="uartc5"),
 }
+
+# Per-port application-facing identity. Pin names above stay aligned with the
+# silicon (UARTC0/2/4/5 = SoC UART instances); this table tells the runtime
+# which kernel tty each transceiver block is wired to, plus a human label for
+# CLI output. ``tty`` is the canonical device app code should open;
+# ``label`` is purely cosmetic for ``test hardware show serial``.
+#
+# ttyS0 is the system console and is intentionally NOT exposed here.
+SERIAL_PORTS = {
+    "UARTC0": {"tty": "/dev/ttyS1", "label": "Serial 1"},
+    "UARTC2": {"tty": "/dev/ttyS2", "label": "Serial 2"},
+    "UARTC4": {"tty": "/dev/ttyS3", "label": "Serial 3"},
+    "UARTC5": {"tty": "/dev/ttyS4", "label": "Serial 4"},
+}

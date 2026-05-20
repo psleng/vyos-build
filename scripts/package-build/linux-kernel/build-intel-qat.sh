@@ -14,7 +14,7 @@ fi
 
 . ${KERNEL_VAR_FILE}
 
-url="https://packages.vyos.net/source-mirror/QAT.L.4.24.0-00005.tar.gz"
+url="https://packages.vyos.net/source-mirror/QAT.L.4.28.0-00004.tar.gz"
 
 cd ${CWD}
 
@@ -51,6 +51,15 @@ cd ${DRIVER_DIR}
 if [ -z $KERNEL_DIR ]; then
     echo "KERNEL_DIR not defined"
     exit 1
+fi
+
+# Apply local patches (for newer kernels/backports)
+if [ -d "${CWD}/patches/intel-qat" ]; then
+    for p in "${CWD}"/patches/intel-qat/*.patch; do
+        [ -e "$p" ] || continue
+        echo "I: Applying Intel-QAT patch: $(basename "$p")"
+        patch -p1 < "$p" || exit 1
+    done
 fi
 
 echo "I: Compile Kernel module for Intel ${DRIVER_NAME} driver"
@@ -101,17 +110,17 @@ fpm --input-type dir --output-type deb --name vyos-intel-${DRIVER_NAME} \
     --depends linux-image-${KERNEL_VERSION}${KERNEL_SUFFIX} \
     --license "GPL2" -C ${DEBIAN_DIR} --after-install ${DEBIAN_POSTINST}
 
-# echo "I: Cleanup ${DRIVER_NAME} source"
-# cd ${CWD}
-# if [ -e ${DRIVER_FILE} ]; then
-#     rm -f ${DRIVER_FILE}
-# fi
-# if [ -d ${DRIVER_DIR} ]; then
-#     rm -rf ${DRIVER_DIR}
-# fi
-# if [ -d ${DEBIAN_DIR} ]; then
-#     rm -rf ${DEBIAN_DIR}
-# fi
-# if [ -f ${DEBIAN_POSTINST} ]; then
-#     rm -f ${DEBIAN_POSTINST}
-# fi
+echo "I: Cleanup ${DRIVER_NAME} source"
+cd ${CWD}
+if [ -e ${DRIVER_FILE} ]; then
+    rm -f ${DRIVER_FILE}
+fi
+if [ -d ${DRIVER_DIR} ]; then
+    rm -rf ${DRIVER_DIR}
+fi
+if [ -d ${DEBIAN_DIR} ]; then
+    rm -rf ${DEBIAN_DIR}
+fi
+if [ -f ${DEBIAN_POSTINST} ]; then
+    rm -f ${DEBIAN_POSTINST}
+fi

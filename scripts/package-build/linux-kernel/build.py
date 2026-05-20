@@ -113,12 +113,15 @@ def create_tarball(package_name, source_dir=None):
         print(f"I: Failed to create tarball for {package_name}: {e}")
 
 
-def build_package(package: dict, dependencies: list) -> None:
+def build_package(package: dict, dependencies: list,
+                  linux_kernel_tarball: dict | None = None) -> None:
     """Build a package from the repository
 
     Args:
         package (dict): Package information
         dependencies (list): List of additional dependencies
+        linux_kernel_tarball (dict | None): If set, successful ``build_kernel`` fills this
+            for a final-stage tarball after all packages complete.
     """
     timestamp = datetime.datetime.now().strftime('%Y%m%d%H%M%S')
     repo_name = package['name']
@@ -135,7 +138,11 @@ def build_package(package: dict, dependencies: list) -> None:
         # Execute the build command
         if package['build_cmd'] == 'build_kernel':
             source_dir = build_kernel(package['kernel_version'])
-            create_tarball(f'{package["name"]}-{package["kernel_version"]}', source_dir)
+            if linux_kernel_tarball is not None:
+                linux_kernel_tarball.clear()
+                linux_kernel_tarball['package_name'] = package['name']
+                linux_kernel_tarball['kernel_version'] = package['kernel_version']
+                linux_kernel_tarball['source_dir'] = source_dir
         elif package['build_cmd'] == 'build_linux_firmware':
             build_linux_firmware(package['commit_id'], package['scm_url'])
             create_tarball(f'{package["name"]}-{package["commit_id"]}', f'{package["name"]}')
@@ -144,11 +151,7 @@ def build_package(package: dict, dependencies: list) -> None:
             create_tarball(f'{package["name"]}-{package["commit_id"]}', f'{package["name"]}')
         elif package['build_cmd'] == 'build_intel_qat':
             build_intel_qat()
-        elif package['build_cmd'] == 'build_intel_igb':
-            build_intel(package['name'], package['commit_id'], package['scm_url'])
-        elif package['build_cmd'] == 'build_intel_ixgbe':
-            build_intel(package['name'], package['commit_id'], package['scm_url'])
-        elif package['build_cmd'] == 'build_intel_ixgbevf':
+        elif package['build_cmd'] in ['build_intel_nic']:
             build_intel(package['name'], package['commit_id'], package['scm_url'])
         elif package['build_cmd'] == 'build_mellanox_ofed':
             build_mellanox_ofed()
@@ -160,9 +163,6 @@ def build_package(package: dict, dependencies: list) -> None:
             build_jool()
         elif package['build_cmd'] == 'build_ipt_netflow':
             build_ipt_netflow(package['commit_id'], package['scm_url'])
-        elif package['build_cmd'] == 'build_openvpn_dco':
-            build_openvpn_dco(package['commit_id'], package['scm_url'])
-            create_tarball(f'{package["name"]}-{package["commit_id"]}', f'{package["name"]}')
         elif package['build_cmd'] == 'build_nat_rtsp':
             build_nat_rtsp(package['commit_id'], package['scm_url'])
         else:
@@ -260,12 +260,6 @@ def build_ipt_netflow(commit_id, scm_url):
     clone_or_update_repo(repo_dir, scm_url, commit_id)
     run(['./build-ipt-netflow.sh'], check=True, shell=True)
 
-def build_openvpn_dco(commit_id, scm_url):
-    """Build OpenVPN DCO"""
-    repo_dir = Path('ovpn-dco')
-    clone_or_update_repo(repo_dir, scm_url, commit_id)
-    run(['./build-openvpn-dco.sh'], check=True)
-
 
 def build_nat_rtsp(commit_id, scm_url):
     """Build RTSP netfilter helper"""
@@ -306,11 +300,24 @@ if __name__ == '__main__':
     # Merge defaults into each package
     packages = [merge_dicts(defaults, pkg) for pkg in packages]
 
+    linux_kernel_tarball: dict = {}
+
     for package in packages:
         dependencies = package.get('dependencies', {}).get('packages', [])
 
         # Build the package
-        build_package(package, dependencies)
+        build_package(package, dependencies, linux_kernel_tarball)
 
         # Copy generated .deb packages to parent directory
         copy_packages(Path(package['name']))
+
+    if linux_kernel_tarball:
+        source_dir = linux_kernel_tarball['source_dir']
+        trusted_keys = f'{source_dir}/trusted_keys.pem'
+        if os.path.exists(trusted_keys):
+            os.remove(trusted_keys)
+        run(['make', '-C', source_dir, 'mrproper'], check=True)
+        create_tarball(
+            f'{linux_kernel_tarball["package_name"]}-{linux_kernel_tarball["kernel_version"]}',
+            source_dir,
+        )

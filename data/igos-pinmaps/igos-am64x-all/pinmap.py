@@ -20,14 +20,19 @@ from vyos.hardware.base import Pin as _P
 VARIANT = "am64x_all"
 
 PINS = {
-    # ---------------- CELL & SIM ----------------
-    "SIM2_DETECT":       _P(bank=0, line=49, dir="in",  bias="pull-up",   group="cell"),
-    "SIM1_DETECT":       _P(bank=0, line=52, dir="in",  bias="pull-up",   group="cell"),
-    "SIM_SELECT1N_2":    _P(bank=0, line=60, dir="out", bias="pull-down", default=0, group="cell"),
-    "CELL_SHUTDOWN_N":   _P(bank=0, line=56, dir="out", active_low=True, bias="pull-up",   default=1, group="cell"),
-    "CELL_UNCOND_RESET": _P(bank=0, line=59, dir="out", bias="pull-down", default=0, group="cell"),
-    "CELL_FLIGHT_MODE":  _P(bank=0, line=85, dir="out", bias="pull-down", default=0, group="cell"),
-    "CELL_GNSS_DISABLE": _P(bank=0, line=86, dir="out", bias="pull-down", default=0, group="cell"),
+    # ---------------- MODEM0 & SIM ----------------
+    # Naming follows vyos.hardware modem-discovery convention:
+    #   <MODEM>_UNCOND_RESET  (required)  -> defines modem name
+    #   <MODEM>_SHUTDOWN_N    (power, active-low: 1 = run)
+    #   <MODEM>_SIM_SELECT    (0 = slot 1, 1 = slot 2)
+    #   <MODEM>_SIM_DETECT_*  (input family, one per slot)
+    "MODEM0_SIM_DETECT_1":  _P(bank=0, line=49, dir="in",  bias="pull-up",   group="cell"),
+    "MODEM0_SIM_DETECT_0":  _P(bank=0, line=52, dir="in",  bias="pull-up",   group="cell"),
+    "MODEM0_SIM_SELECT":    _P(bank=0, line=60, dir="out", bias="pull-down", default=0, group="cell"),
+    "MODEM0_SHUTDOWN_N":    _P(bank=0, line=56, dir="out", active_low=True, bias="pull-up",   default=1, group="cell"),
+    "MODEM0_UNCOND_RESET":  _P(bank=0, line=59, dir="out", bias="pull-down", default=0, group="cell"),
+    "MODEM0_FLIGHT_MODE":   _P(bank=0, line=85, dir="out", bias="pull-down", default=0, group="cell"),
+    "MODEM0_GNSS_DISABLE":  _P(bank=0, line=86, dir="out", bias="pull-down", default=0, group="cell"),
 
     # ---------------- CONTROL ----------------
     "WIFI_PDN_GPIO":     _P(bank=0, line=14, dir="out", bias="pull-up",   default=1, group="control"),

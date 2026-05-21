@@ -1,5 +1,72 @@
+# /etc/systemd/network/10-Perle_wwan0.link
+#
+# Rename the QMI net interface on physical USB slot 1 to "wwan0".
+#
+# THIS FILE IS HARDWARE-AGNOSTIC AND NEEDS NO PER-BOARD EDITS.
+# It only matches on the logical tag `ID_MM_PHYSDEV_UID=modem0`, which is
+# stamped by /etc/udev/rules.d/76-igos-modem-uid.rules. All topology
+# knowledge lives in that udev rule (KERNELS==f400000.usb, devpath==1).
+# Every iGOS / AM64x carrier wires modem slot 1 to the same SoC USB
+# controller node (f400000.usb is a DTS reg address from k3-am64.dtsi —
+# identical on every AM64x board: EVM, Iolan-2a/2b, future revs), so
+# neither this file nor the udev rule changes across builds.
+#
+# Matching on the property — instead of a hardware Path= — gives us an
+# identity that survives:
+#   * cdns3 auto-probe index changes (".4.auto" → ".5.auto" etc.)
+#   * USB bus renumbering (leading "0:" in a Path= match)
+#   * USB composition changes (#USBCFG, MBIM/ECM/QMI swap shifting iface idx)
+#   * Modem card swaps (any 1bc7:xxxx in slot 1 still becomes wwan0)
+#   * SoC swap inside the AM64x family (same DTS USB node address)
+#
+# If you ever move to a non-AM64x SoC, update the udev rule's KERNELS==
+# value. This .link file still does not change.
+#
+# Ordering note: this file is consulted by the net_setup_link udev builtin,
+# which is invoked from /usr/lib/udev/rules.d/80-net-setup-link.rules. Our
+# 76-igos-modem-uid.rules runs first (76 < 80), so ID_MM_PHYSDEV_UID is
+# already set on the net device's add event by the time we match here.
+#
+# Match keys (all ANDed):
+#   Property=ID_MM_PHYSDEV_UID=modem0 — topology anchor (slot 1)
+#   Driver=qmi_wwan                   — only the QMI net iface, never the
+#                                       AT/diag tty ports, and not an ECM
+#                                       fallback if the modem ever boots in
+#                                       a non-QMI composition
+#   Type=wwan                         — belt-and-braces against the kernel
+#                                       re-tagging the device as ether/etc.
+#
+# Link settings:
+#   Name=wwan0                        — canonical name for slot 1
+#   NamePolicy=                       — empty list disables every other
+#                                       systemd naming scheme (kernel,
+#                                       database, onboard, slot, path, mac);
+#                                       only our explicit Name= can apply
+#   MACAddressPolicy=none             — preserve the qmi_wwan-assigned MAC;
+#                                       do not randomize or persist
+#   AlternativeNamesPolicy=           — empty list = no altnames (database/
+#                                       onboard/slot/path); keeps `ip link`
+#                                       output clean and avoids accidental
+#                                       references to legacy names
+#
+# Verify after install:
+#   sudo udevadm control --reload
+#   sudo udevadm trigger --action=add --subsystem-match=net /sys/class/net/wwan0
+#   udevadm info -q property /sys/class/net/wwan0 | \
+#       grep -E 'ID_MM_PHYSDEV_UID|ID_NET_LINK_FILE|ID_NET_NAME|INTERFACE'
+#   # expect:
+#   #   ID_MM_PHYSDEV_UID=modem0
+#   #   ID_NET_LINK_FILE=/etc/systemd/network/10-Perle_wwan0.link
+#   #   ID_NET_NAME=wwan0
+#   #   INTERFACE=wwan0
+
 [Match]
-Path=platform-xhci-hcd.4.auto-usb-0:1:1.2
+Property=ID_MM_PHYSDEV_UID=modem0
+Driver=qmi_wwan
+Type=wwan
 
 [Link]
 Name=wwan0
+NamePolicy=
+AlternativeNamesPolicy=
+MACAddressPolicy=none

@@ -21,14 +21,19 @@ from vyos.hardware.base import Pin as _P
 VARIANT = "j7200_evm"
 
 PINS = {
-    # ---------------- CELL & SIM ----------------
-    "SIM2_DETECT":       _P(bank=0, line=49, dir="in",  bias="pull-up",   group="cell"),
-    "SIM1_DETECT":       _P(bank=0, line=52, dir="in",  bias="pull-up",   group="cell"),
-    "SIM_SELECT1N_2":    _P(bank=0, line=60, dir="out", bias="pull-down", default=0, group="cell"),
-    "CELL_SHUTDOWN_N":   _P(bank=0, line=56, dir="out", active_low=True, bias="pull-up",   default=1, group="cell"),
-    "CELL_UNCOND_RESET": _P(bank=0, line=59, dir="out", bias="pull-down", default=0, group="cell"),
-    "CELL_FLIGHT_MODE":  _P(bank=0, line=85, dir="out", bias="pull-down", default=0, group="cell"),
-    "CELL_GNSS_DISABLE": _P(bank=0, line=86, dir="out", bias="pull-down", default=0, group="cell"),
+    # ---------------- MODEM0 & SIM ----------------
+    # Naming follows vyos.hardware modem-discovery convention:
+    #   <MODEM>_UNCOND_RESET  (required)  -> defines modem name
+    #   <MODEM>_SHUTDOWN_N    (power, active-low: 1 = run)
+    #   <MODEM>_SIM_SELECT    (0 = slot 1, 1 = slot 2)
+    #   <MODEM>_SIM_DETECT_*  (input family, one per slot)
+    "MODEM0_SIM_DETECT_1":  _P(bank=0, line=49, dir="in",  bias="pull-up",   group="cell"),
+    "MODEM0_SIM_DETECT_0":  _P(bank=0, line=52, dir="in",  bias="pull-up",   group="cell"),
+    "MODEM0_SIM_SELECT":    _P(bank=0, line=60, dir="out", bias="pull-down", default=0, group="cell"),
+    "MODEM0_SHUTDOWN_N":    _P(bank=0, line=56, dir="out", active_low=True, bias="pull-up",   default=1, group="cell"),
+    "MODEM0_UNCOND_RESET":  _P(bank=0, line=59, dir="out", bias="pull-down", default=0, group="cell"),
+    "MODEM0_FLIGHT_MODE":   _P(bank=0, line=85, dir="out", bias="pull-down", default=0, group="cell"),
+    "MODEM0_GNSS_DISABLE":  _P(bank=0, line=86, dir="out", bias="pull-down", default=0, group="cell"),
 
     # ---------------- CONTROL ----------------
     "WIFI_PDN_GPIO":     _P(bank=0, line=14, dir="out", bias="pull-up",   default=1, group="control"),
@@ -77,4 +82,24 @@ PINS = {
     "UARTC5_TERM_RX":    _P(bank=1, line=16, dir="out", bias="pull-down", default=0, group="uartc5"),
     "UARTC5_SLR":        _P(bank=1, line=30, dir="out", bias="pull-up",   default=1, group="uartc5"),
     "UARTC5_SHUT_N":     _P(bank=1, line=9,  dir="out", active_low=True, bias="pull-down", default=1, group="uartc5"),
+}
+
+# Per-port application-facing identity for the J7200 EVM. UARTC<N> on this
+# board still maps to the same SoC UART instances as on AM64x, but the J7200
+# DT addresses are DIFFERENT (k3-j7200-main.dtsi) and the ttyS<N> kernel
+# enumeration depends on the J7200 device-tree aliases — confirm on hardware
+# before relying on verify_serial_bindings():
+#
+#   readlink -f /sys/class/tty/ttyS1/device/of_node    # etc.
+#
+# Until ``dt_node`` is filled in for each port the runtime check is a no-op
+# for that port (soft-skip); the GPIO control side still works because the
+# pin map above is independent of the tty mapping.
+SERIAL_PORTS = {
+    "UARTC0": {"tty": "/dev/ttyS1", "label": "Serial 1"},
+    "UARTC2": {"tty": "/dev/ttyS2", "label": "Serial 2"},
+    "UARTC4": {"tty": "/dev/ttyS3", "label": "Serial 3"},
+    "UARTC5": {"tty": "/dev/ttyS4", "label": "Serial 4"},
+    # TODO(j7200): add "dt_node": "/bus@<n>/serial@<addr>" for each port
+    # once verified against /sys/class/tty/<N>/device/of_node on the EVM.
 }

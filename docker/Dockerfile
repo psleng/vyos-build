@@ -42,9 +42,9 @@ RUN grep "VERSION_ID" /etc/os-release || (echo 'VERSION_ID="12"' >> /etc/os-rele
 # `docker run --rm --privileged multiarch/qemu-user-static:register --reset`
 LABEL authors="VyOS Maintainers <maintainers@vyos.io>" \
       org.opencontainers.image.authors="VyOS Maintainers <maintainers@vyos.io>" \
-      org.opencontainers.image.url="https://github.com/vyos/vyos-build" \
+      org.opencontainers.image.url="https://github.com/psleng/vyos-build" \
       org.opencontainers.image.documentation="https://docs.vyos.io/en/latest/contributing/build-vyos.html" \
-      org.opencontainers.image.source="https://github.com/vyos/vyos-build" \
+      org.opencontainers.image.source="https://github.com/psleng/vyos-build" \
       org.opencontainers.image.vendor="Sentrium S.L." \
       org.opencontainers.image.licenses="GNU" \
       org.opencontainers.image.title="vyos-build" \
@@ -90,6 +90,7 @@ RUN apt-get update && apt-get install -y \
       po4a \
       openssh-client \
       jq \
+      less \
       socat \
       python-is-python3 \
       apt-transport-https
@@ -114,7 +115,9 @@ RUN apt-get update && apt-get install -y \
       gdisk \
       sbsigntool \
       dosfstools \
-      kpartx
+      kpartx \
+      npm \
+      nodejs
 
 # Packages for TPM test
 RUN apt-get update && apt-get install -y swtpm
@@ -205,7 +208,34 @@ RUN wget https://salsa.debian.org/klausenbusk-guest/debootstrap/commit/a9a603b17
     && rm /tmp/a9a603b17cadbf52cb98cde0843dc9f23a08b0da.patch \
     && rm -rf /tmp/debootstrap
 
+# Packages needed for Linux Kernel
+# cmake required by accel-ppp
+RUN apt-get update && apt-get install -y \
+      cmake \
+      gnupg2 \
+      rsync \
+      libelf-dev \
+      libncurses5-dev \
+      flex \
+      bison \
+      bc \
+      kmod \
+      cpio \
+      python-is-python3 \
+      dwarves \
+      nasm \
+      rdfind
+
+# Packages needed for Intel QAT out-of-tree drivers
 # FPM is used when generation Debian pckages for e.g. Intel QAT drivers
+RUN apt-get update && apt-get install -y \
+      pciutils \
+      yasm \
+      ruby \
+      libudev-dev \
+      ruby-dev \
+      rubygems \
+      build-essential
 RUN gem install --no-document fpm
 
 # Add vyos package repo
@@ -260,7 +290,11 @@ RUN pip --no-cache --no-cache-dir install --break-system-packages \
 
 # Go required for telegraf and prometheus exporters build
 RUN GO_VERSION_INSTALL="1.23.2" ; \
-    wget -O /tmp/go${GO_VERSION_INSTALL}.linux-amd64.tar.gz https://go.dev/dl/go${GO_VERSION_INSTALL}.linux-$(dpkg-architecture -qDEB_HOST_ARCH).tar.gz ; \
+    if [ "$ARCH" = "arm64v8" ]; then \
+        wget -O /tmp/go${GO_VERSION_INSTALL}.linux-arm64.tar.gz https://go.dev/dl/go${GO_VERSION_INSTALL}.linux-$(dpkg-architecture -qDEB_HOST_ARCH).tar.gz ; \
+    else \
+        wget -O /tmp/go${GO_VERSION_INSTALL}.linux-amd64.tar.gz https://go.dev/dl/go${GO_VERSION_INSTALL}.linux-$(dpkg-architecture -qDEB_HOST_ARCH).tar.gz ; \
+    fi && \
     tar -C /opt -xzf /tmp/go*.tar.gz && \
     rm /tmp/go*.tar.gz
 RUN echo "export PATH=/opt/go/bin:$PATH" >> /etc/bash.bashrc
@@ -312,7 +346,7 @@ RUN apt-get update && apt-get install -y \
       python3-pytest-cov \
       cloud-utils
 
-# Install utilities for building grub and u-boot images
+# Install utillities for building grub and u-boot images
 RUN if dpkg-architecture -iarm64; then \
     apt-get update && apt-get install -y \
       dosfstools \
@@ -324,6 +358,12 @@ RUN if dpkg-architecture -iarm64; then \
       u-boot-tools \
       grub-efi-arm; \
     fi
+
+# Packages needed for openvpn-otp
+RUN apt-get update && apt-get install -y \
+      debhelper \
+      libssl-dev \
+      openvpn
 
 # Packages needed for OWAMP/TWAMP (service sla)
 RUN git clone -b 4.4.6 https://github.com/perfsonar/i2util.git /tmp/i2util && \
@@ -343,20 +383,157 @@ RUN apt-get update && apt-get install -y \
       udev \
       zip
 
+# Packages needed for Accel-PPP
+# XXX: please note that this must be installed after nftable dependencies - otherwise
+# APT will remove liblua5.3-dev which breaks the Accel-PPP build
+# With bookworm, updated to libssl3 (Note: https://github.com/accel-ppp/accel-ppp/issues/68)
+RUN apt-get update && apt-get install -y \
+      liblua5.3-dev \
+      libssl3 \
+      libssl-dev
+
 # debmake: a native Debian tool for preparing sources for packaging
 RUN apt-get update && apt-get install -y \
       debmake \
       python3-debian
+
+# Packages for jool
+RUN apt-get update && apt-get install -y \
+      libnl-genl-3-dev \
+      libxtables-dev
+
+# PSL: Packages needed for OWAMP - JF
+RUN apt-get update && apt-get install -y \
+	dh-apparmor \
+	dh-exec \
+	libcap-dev
+
+# PSL: Packages needed for Strongswan - JF
+RUN apt-get update && apt-get install -y \
+	bison \
+	bzip2 \
+	debhelper-compat \
+	dh-apparmor \
+	dpkg-dev  \
+	flex \
+	gperf \
+	libiptc-dev \
+	libcap-dev \
+	libcurl3-dev \
+	libgcrypt20-dev \
+	libgmp3-dev \
+	libkrb5-dev \
+	libldap2-dev \
+	libnm-dev \
+	libpam0g-dev \
+	libsqlite3-dev \
+	libssl-dev \
+	libtool \
+	libtss2-dev \
+	libxml2-dev \
+	pkg-config \
+	po-debconf \
+	systemd \
+	tzdata \
+	libcurl4-openssl-dev \
+	libgmp3-dev \
+	libldap2-dev \
+	libpam0g-dev \
+	libsqlite3-dev \
+	libsystemd-dev \
+	systemd
+
+# PSL: Packages needed for failed make of Vyos - JF
+RUN apt-get update && apt-get install -y \
+	kpartx
+
+# PSL: Packages needed for frr - JF
+# DK	libsnmp-dev removed, it  will be installed when net-snmp is installed BEFORE frr is built - order dependency
+# And for building libyan2-dev https://docs.frrouting.org/projects/dev-guide/en/latest/building-frr-for-debian12.html#install-required-packages -JF
+RUN apt-get update && apt-get install -y \
+	chrpath \
+	gawk \
+	install-info \
+	libcap-dev \
+	libjson-c-dev \
+	librtr-dev \
+	libpam-dev \
+	libprotobuf-c-dev \
+	libpython3-dev:native \
+	python3-sphinx:native \
+	protobuf-c-compiler \
+	python3-dev:native \
+	texinfo \
+	lua5.3 \
+	autoconf \
+	automake \
+	make \
+	libreadline-dev \
+	gdb \
+	libgrpc-dev \
+	libpcre3-dev \
+	libpcre2-dev \
+	libgrpc++-dev \
+	libsqlite3-dev \
+	libzmq5 \
+	libzmq3-dev \
+	lsof \
+	logrotate
+
+# PSL: Packages needed for net-snmp - DK
+RUN apt-get update && apt-get install -y \
+	perl-xs-dev \
+	default-libmysqlclient-dev
+
+# PSL: Packages needed for debconf preseed selection of vpp - DK
+RUN apt-get update && apt-get install -y \
+	debconf-utils
+
+# Packages needed for keepalived
+RUN apt-get update && apt-get install -y \
+    libipset-dev libnfnetlink-dev libnftnl-dev libnl-nf-3-dev libpopt-dev
+
+# PSL: Packages needed for TI Boot Environment
+RUN apt-get update && apt-get install -y \
+	pigz \
+	expect \
+	pv \
+	binfmtc \
+	binfmt-support \
+	debian-archive-keyring \
+	bdebstrap \
+	wget \
+	swig \
+	python3-pyelftools \
+	python3-cryptography
+
+RUN pip install --break-system-packages \
+	toml-cli \
+	yamllint
+
+# PSL: Environment variables needed - JF
+ENV DEBEMAIL="psleng@perle.com"
+ENV EMAIL=${DEBEMAIL}
+
+# Packages needed for nftables
+RUN apt-get update && apt-get install -y \
+      asciidoc-base
+
+# Packages needed for iolan
+RUN apt-get update && apt-get install -y \
+      libc6-dev \
+      ppp-dev \
+      libnetfilter-queue-dev
 
 # Allow password-less 'sudo' for all users in group 'sudo'
 RUN sed "s/^%sudo.*/%sudo\tALL=(ALL) NOPASSWD:ALL/g" -i /etc/sudoers && \
     echo "vyos_bld\tALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers && \
     chmod a+s /usr/sbin/useradd /usr/sbin/groupadd
 
-# Ensure all users have access to Go
+# Ensure sure all users have access to Go
 RUN echo "export PATH=/opt/go/bin:\$PATH" >> /etc/skel/.bashrc
 
-# Raise upper limit for UID when working in an Active Directory integrated
+# Rise upper limit for UID when working in an Active Direcotry integrated
 # environment. This solves the warning: vyos_bld's uid 1632000007 outside of the
 # UID_MIN 1000 and UID_MAX 60000 range.
 RUN sed -i 's/UID_MAX\t\t\t60000/UID_MAX\t\t\t2000000000/g' /etc/login.defs
@@ -374,5 +551,12 @@ RUN apt-get update
 RUN printf "set mouse=\nset ttymouse=\n" > /etc/vim/vimrc.local
 
 COPY entrypoint.sh /usr/local/bin/entrypoint.sh
+
+# PSL: Install apt pubkey and sources.list.d file for psleng.github.io
+RUN echo "deb [signed-by=/etc/apt/keyrings/psleng.key] https://psleng.github.io current main" >> /etc/apt/sources.list.d/psleng.list
+COPY psleng.key /etc/apt/keyrings/
+
+# PSL: Extend secure_path for sudo
+RUN sudo sed -i 's|Defaults\s\+secure_path=\"\(.*\)\"|Defaults secure_path=\"\1:/opt/go/bin\"|' /etc/sudoers
 
 ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]

@@ -22,15 +22,18 @@ VARIANT = "am64x_evm"
 
 PINS = {
     # ---------------- MODEM0 & SIM ----------------
-    # Naming follows vyos.hardware modem-discovery convention:
+    # Naming follows vyos.hardware modem-discovery convention. The ``_N``
+    # suffix is the standard hardware shorthand for ACTIVE-LOW at the
+    # silicon — values written/read via vyos.hardware.api are the
+    # physical line level, matching what a scope would show:
     #   <MODEM>_UNCOND_RESET  (required)  -> defines modem name
-    #   <MODEM>_SHUTDOWN_N    (power, active-low: 1 = run)
+    #   <MODEM>_SHUTDOWN_N    (power; 1 = line high = run, 0 = shutdown)
     #   <MODEM>_SIM_SELECT    (0 = slot 1, 1 = slot 2)
     #   <MODEM>_SIM_DETECT_*  (input family, one per slot)
     "MODEM0_SIM_DETECT_1":  _P(bank=0, line=49, dir="in",  bias="pull-up",   group="cell"),
     "MODEM0_SIM_DETECT_0":  _P(bank=0, line=52, dir="in",  bias="pull-up",   group="cell"),
     "MODEM0_SIM_SELECT":    _P(bank=0, line=60, dir="out", bias="pull-down", default=0, group="cell"),
-    "MODEM0_SHUTDOWN_N":    _P(bank=0, line=56, dir="out", active_low=True, bias="pull-up",   default=1, group="cell"),
+    "MODEM0_SHUTDOWN_N":    _P(bank=0, line=56, dir="out", bias="pull-up",   default=1, group="cell"),
     "MODEM0_UNCOND_RESET":  _P(bank=0, line=59, dir="out", bias="pull-down", default=0, group="cell"),
     "MODEM0_FLIGHT_MODE":   _P(bank=0, line=85, dir="out", bias="pull-down", default=0, group="cell"),
     "MODEM0_GNSS_DISABLE":  _P(bank=0, line=86, dir="out", bias="pull-down", default=0, group="cell"),
@@ -54,7 +57,7 @@ PINS = {
     "UARTC0_TERM_TX":    _P(bank=1, line=44, dir="out", bias="pull-down", default=0, group="uartc0"),
     "UARTC0_TERM_RX":    _P(bank=1, line=45, dir="out", bias="pull-down", default=0, group="uartc0"),
     "UARTC0_SLR":        _P(bank=1, line=49, dir="out", bias="pull-up",   default=1, group="uartc0"),
-    "UARTC0_SHUT_N":     _P(bank=1, line=50, dir="out", active_low=True, bias="pull-down", default=1, group="uartc0"),
+    "UARTC0_SHUT_N":     _P(bank=1, line=50, dir="out", bias="pull-up",   default=0, group="uartc0"),
 
     # ---------------- UARTC2 (THVD4431) ----------------
     "UARTC2_MODE0":      _P(bank=0, line=40, dir="out", bias="pull-up",   default=1, group="uartc2"),
@@ -63,7 +66,7 @@ PINS = {
     "UARTC2_TERM_TX":    _P(bank=0, line=41, dir="out", bias="pull-down", default=0, group="uartc2"),
     "UARTC2_TERM_RX":    _P(bank=0, line=42, dir="out", bias="pull-down", default=0, group="uartc2"),
     "UARTC2_SLR":        _P(bank=0, line=35, dir="out", bias="pull-up",   default=1, group="uartc2"),
-    "UARTC2_SHUT_N":     _P(bank=0, line=36, dir="out", active_low=True, bias="pull-down", default=1, group="uartc2"),
+    "UARTC2_SHUT_N":     _P(bank=0, line=36, dir="out", bias="pull-up",   default=0, group="uartc2"),
 
     # ---------------- UARTC4 (THVD4431) ----------------
     "UARTC4_MODE0":      _P(bank=1, line=5,  dir="out", bias="pull-up",   default=1, group="uartc4"),
@@ -72,7 +75,7 @@ PINS = {
     "UARTC4_TERM_TX":    _P(bank=1, line=41, dir="out", bias="pull-down", default=0, group="uartc4"),
     "UARTC4_TERM_RX":    _P(bank=1, line=40, dir="out", bias="pull-down", default=0, group="uartc4"),
     "UARTC4_SLR":        _P(bank=1, line=13, dir="out", bias="pull-up",   default=1, group="uartc4"),
-    "UARTC4_SHUT_N":     _P(bank=1, line=33, dir="out", active_low=True, bias="pull-down", default=1, group="uartc4"),
+    "UARTC4_SHUT_N":     _P(bank=1, line=33, dir="out", bias="pull-up",   default=0, group="uartc4"),
 
     # ---------------- UARTC5 (THVD4431) ----------------
     "UARTC5_MODE0":      _P(bank=1, line=15, dir="out", bias="pull-up",   default=1, group="uartc5"),
@@ -81,7 +84,7 @@ PINS = {
     "UARTC5_TERM_TX":    _P(bank=1, line=14, dir="out", bias="pull-down", default=0, group="uartc5"),
     "UARTC5_TERM_RX":    _P(bank=1, line=16, dir="out", bias="pull-down", default=0, group="uartc5"),
     "UARTC5_SLR":        _P(bank=1, line=30, dir="out", bias="pull-up",   default=1, group="uartc5"),
-    "UARTC5_SHUT_N":     _P(bank=1, line=9,  dir="out", active_low=True, bias="pull-down", default=1, group="uartc5"),
+    "UARTC5_SHUT_N":     _P(bank=1, line=9,  dir="out", bias="pull-up",   default=0, group="uartc5"),
 }
 
 # Per-port application-facing identity. See igos-am64x-all/pinmap.py for the

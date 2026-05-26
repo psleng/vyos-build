@@ -672,6 +672,56 @@ DOCUMENTATION_URL="{build_config['documentation_url']}"
             if debug:
                 print(f"D: Overlaid pinmap {pinmap_src} -> {pinmap_dst}")
 
+            # Load network interface definitions from pinmap source without executing module init
+            import ast
+
+            interface_search = {"ETH_INTERFACES", "WWAN_INTERFACES"}
+            interface_dicts = {}
+
+            with open(pinmap_src, "r", encoding="utf-8") as f:
+                pinmap_source = f.read()
+
+            pinmap_ast_tree = ast.parse(pinmap_source, filename=pinmap_src)
+            for node in pinmap_ast_tree.body:
+                if isinstance(node, ast.Assign):
+                    for target in node.targets:
+                        if isinstance(target, ast.Name) and target.id in interface_search:
+                            interface_dicts[target.id] = ast.literal_eval(node.value)
+                elif isinstance(node, ast.AnnAssign):
+                    target = node.target
+                    if isinstance(target, ast.Name) and target.id in interface_search:
+                        if node.value is None:
+                            continue
+                        interface_dicts[target.id] = ast.literal_eval(node.value)
+
+            for _, interface_type in interface_dicts.items():
+                for interface_name, interface in interface_type.items():
+                    link_file_lines = []
+                    link_file_lines.append("[Match]")
+                    for k, v in interface["match"].items():
+                        link_file_lines.append(f"{k}={v}")
+
+                    link_file_lines.append("")
+                    link_file_lines.append("[Link]")
+                    link_file_lines.append(f"Name={interface_name}")
+                    link_file_lines.append("NamePolicy=")
+                    link_file_lines.append("AlternativeNamesPolicy=")
+                    link_file_lines.append("MACAddressPolicy=none")
+                    link_file_lines.append("")
+
+                    link_file_data = "\n".join(link_file_lines)
+
+                    filename = f"10-igos-{interface_name}.link"
+                    link_file_path = os.path.join(
+                        chroot_includes_dir,
+                        "etc/systemd/network",
+                        filename,
+                    )
+                    os.makedirs(os.path.dirname(link_file_path), exist_ok=True)
+                    with open(link_file_path, "w", encoding="utf-8") as link_file:
+                        link_file.write(link_file_data)
+
+
         ## Create the default config
         ## Technically it's just another includes.chroot entry,
         ## but it's special enough to warrant making it easier for flavor writers

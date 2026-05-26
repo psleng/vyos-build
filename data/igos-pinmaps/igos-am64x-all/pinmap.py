@@ -24,11 +24,12 @@ PINS = {
     # Naming follows vyos.hardware modem-discovery convention:
     #   <MODEM>_UNCOND_RESET  (required)  -> defines modem name
     #   <MODEM>_SHUTDOWN_N    (power, active-low: 1 = run)
-    #   <MODEM>_SIM_SELECT    (0 = slot 1, 1 = slot 2)
+    #   <MODEM>_SIM_SELECT_1N_OR_2  (0 = slot 1, 1 = slot 2; embedded
+    #                                ``1N`` = slot 1 is the line-low value)
     #   <MODEM>_SIM_DETECT_*  (input family, one per slot)
     "MODEM0_SIM_DETECT_1":  _P(bank=0, line=49, dir="in",  bias="pull-up",   group="cell"),
     "MODEM0_SIM_DETECT_0":  _P(bank=0, line=52, dir="in",  bias="pull-up",   group="cell"),
-    "MODEM0_SIM_SELECT":    _P(bank=0, line=60, dir="out", bias="pull-down", default=0, group="cell"),
+    "MODEM0_SIM_SELECT_1N_OR_2":  _P(bank=0, line=60, dir="out", bias="pull-down", default=0, group="cell"),
     "MODEM0_SHUTDOWN_N":    _P(bank=0, line=56, dir="out", active_low=True, bias="pull-up",   default=1, group="cell"),
     "MODEM0_UNCOND_RESET":  _P(bank=0, line=59, dir="out", bias="pull-down", default=0, group="cell"),
     "MODEM0_FLIGHT_MODE":   _P(bank=0, line=85, dir="out", bias="pull-down", default=0, group="cell"),

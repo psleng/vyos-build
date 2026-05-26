@@ -34,17 +34,29 @@ PINS = {
     "MODEM0_FLIGHT_MODE":   _P(bank=0, line=85, dir="out", bias="pull-down", default=0, group="cell"),
     "MODEM0_GNSS_DISABLE":  _P(bank=0, line=86, dir="out", bias="pull-down", default=0, group="cell"),
 
+    "MODEM0_PASS_THROUGH_SELECT": _P(bank=0, line=37, dir="out", bias="pull-down", default=0, group="cell"),
+
+    # ---------------- WIFI0 ----------------
+    # Per-instance naming (WIFI<N>_…) mirrors the modem convention so
+    # additional radios drop in cleanly as WIFI1_*, WIFI2_*, …. ``PD``
+    # is power-down; the ``_N`` suffix is the standard hardware
+    # shorthand for ACTIVE-LOW: physical line high = radio powered,
+    # low = held in power-down. vyos.hardware passes physical levels
+    # through (no software inversion), matching what a scope would show.
+    "WIFI0_PD_N":        _P(bank=0, line=14, dir="out", bias="pull-up",   default=1, group="wifi0"),
+
     # ---------------- CONTROL ----------------
-    "WIFI_PDN_GPIO":     _P(bank=0, line=14, dir="out", bias="pull-up",   default=1, group="control"),
     "VPP_LDO_EN":        _P(bank=0, line=33, dir="out", bias="pull-down", default=0, group="control"),
-    "PATH_THROUGH_SEL":  _P(bank=0, line=37, dir="out", bias="pull-down", default=0, group="control"),
     "VSEL_SD_SWITCH":    _P(bank=0, line=45, dir="out", bias="pull-up",   default=1, group="control"),
     "PMIC_STBY":         _P(bank=0, line=51, dir="out", bias="pull-up",   default=1, group="control"),
 
     # ---------------- BUTTON / INPUT ----------------
+    # ``_N`` = active-low at the silicon. *_VALID_N inputs read 0 when
+    # the corresponding rail is present (line pulled low by the
+    # monitor), 1 when absent.
     "PUSH_KEY":          _P(bank=1, line=36, dir="in",  bias="pull-up",   group="input"),
-    "DC_VALIDN":         _P(bank=1, line=73, dir="in",  bias="pull-down", group="input"),
-    "POE_VALIDN":        _P(bank=1, line=74, dir="in",  bias="pull-up",   group="input"),
+    "DC_VALID_N":        _P(bank=1, line=73, dir="in",  bias="pull-down", group="input"),
+    "POE_VALID_N":       _P(bank=1, line=74, dir="in",  bias="pull-up",   group="input"),
 
     # ---------------- UARTC0 (THVD4431) ----------------
     "UARTC0_MODE0":      _P(bank=1, line=46, dir="out", bias="pull-up",   default=1, group="uartc0"),

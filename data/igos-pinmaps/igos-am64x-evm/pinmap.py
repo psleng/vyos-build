@@ -41,12 +41,12 @@ PINS = {
 
     # ---------------- WIFI0 ----------------
     # Per-instance naming (WIFI<N>_…) mirrors the modem convention so
-    # additional radios drop in cleanly as WIFI1_*, WIFI2_*, …. The
-    # ``_N`` suffix on PDN is the standard hardware shorthand for
-    # ACTIVE-LOW: physical line high = radio powered, low = held in
-    # power-down. vyos.hardware passes physical levels through (no
-    # software inversion), matching what a scope would show.
-    "WIFI0_PDN_N":       _P(bank=0, line=14, dir="out", bias="pull-up",   default=1, group="wifi0"),
+    # additional radios drop in cleanly as WIFI1_*, WIFI2_*, …. ``PD``
+    # is power-down; the ``_N`` suffix is the standard hardware
+    # shorthand for ACTIVE-LOW: physical line high = radio powered,
+    # low = held in power-down. vyos.hardware passes physical levels
+    # through (no software inversion), matching what a scope would show.
+    "WIFI0_PD_N":        _P(bank=0, line=14, dir="out", bias="pull-up",   default=1, group="wifi0"),
 
     # ---------------- CONTROL ----------------
     "VPP_LDO_EN":        _P(bank=0, line=33, dir="out", bias="pull-down", default=0, group="control"),

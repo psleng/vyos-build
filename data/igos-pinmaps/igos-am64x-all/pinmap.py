@@ -34,7 +34,9 @@ PINS = {
     "MODEM0_UNCOND_RESET":  _P(bank=0, line=59, dir="out", bias="pull-down", default=0, group="cell"),
     "MODEM0_FLIGHT_MODE":   _P(bank=0, line=85, dir="out", bias="pull-down", default=0, group="cell"),
     "MODEM0_GNSS_DISABLE":  _P(bank=0, line=86, dir="out", bias="pull-down", default=0, group="cell"),
-
+    "MODEM0_STAT_RED":       _P(bank=0, line=63, dir="out", active_low=False, bias="pull-up", default=0, group="cell"),
+    "MODEM0_STAT_GREEN":     _P(bank=0, line=61, dir="out", active_low=False, bias="pull-down", default=1, group="cell"),
+    "MODEM0_STAT_BLUE":       _P(bank=0, line=48, dir="out", active_low=False, bias="pull-down", default=0, group="cell"),
     "MODEM0_PASS_THROUGH_SELECT": _P(bank=0, line=37, dir="out", bias="pull-down", default=0, group="cell"),
 
     # ---------------- WIFI0 ----------------
@@ -45,12 +47,16 @@ PINS = {
     # low = held in power-down. vyos.hardware passes physical levels
     # through (no software inversion), matching what a scope would show.
     "WIFI0_PD_N":        _P(bank=0, line=14, dir="out", bias="pull-up",   default=1, group="wifi0"),
-
+    "WIFI_STAT_RED":     _P(bank=0, line=64, dir="out", active_low=False, bias="pull-up", default=0, group="wifi0"),
+    "WIFI0_STAT_GREEN":   _P(bank=0, line=58, dir="out", active_low=False, bias="pull-down", default=1, group="wifi0"),
+    "WIFI0_STAT_BLUE":    _P(bank=0, line=47, dir="out", active_low=False, bias="pull-down", default=0, group="wifi0"),
     # ---------------- CONTROL ----------------
     "VPP_LDO_EN":        _P(bank=0, line=33, dir="out", bias="pull-down", default=0, group="control"),
     "VSEL_SD_SWITCH":    _P(bank=0, line=45, dir="out", bias="pull-up",   default=1, group="control"),
     "PMIC_STBY":         _P(bank=0, line=51, dir="out", bias="pull-up",   default=1, group="control"),
-
+    "SYS_STAT_RED":      _P(bank=0, line=62, dir="out", active_low=False, bias="pull-up", default=0, group="control"),
+    "SYS_STAT_GREEN":    _P(bank=0, line=57, dir="out", active_low=False, bias="pull-down", default=1, group="control"),
+    "SYS_STAT_BLUE":     _P(bank=0, line=46, dir="out", active_low=False, bias="pull-down", default=0, group="control"),
     # ---------------- BUTTON / INPUT ----------------
     # ``_N`` = active-low at the silicon. *_VALID_N inputs read 0 when
     # the corresponding rail is present (line pulled low by the

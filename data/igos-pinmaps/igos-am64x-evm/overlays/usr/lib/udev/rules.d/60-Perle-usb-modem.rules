@@ -1,0 +1,37 @@
+# /usr/lib/udev/rules.d/60-Perle-usb-modem.rules
+#
+# Pin ModemManager UID to the physical USB slot, not the modem card.
+# Must sort before ModemManager's own 77-mm-*.rules so MM sees the UID
+# the first time it probes the usb_device. MM propagates the UID down to
+# all child ports (net/tty/usbmisc) automatically -- only the parent
+# usb_device needs to be tagged.
+#
+# Topology for any AM64x igos board (DTS- and topology-locked):
+#   KERNELS=="f400000.usb"  -> xhci controller node from the DTS (stable)
+#   KERNEL=="?-1"           -> root-hub port 1 of THAT controller (slot 1)
+#   KERNEL=="?-2"           -> root-hub port 2 of THAT controller (slot 2)
+#
+# Why this form:
+#   - "?-1" matches the usb_device kernel name on any USB bus number, so
+#     it survives xhci bus-number reordering.
+#   - f400000.usb is the DTS reg address, so it survives cdns3
+#     ".N.auto" probe-order shifts.
+#   - No ATTR{devpath} needed: KERNEL already encodes the root-hub port.
+#
+# Verify on hw:
+#   udevadm info -a -p /sys/class/net/wwan0 | grep -E 'KERNELS|KERNEL'
+#   udevadm info -q property /sys/bus/usb/devices/1-1 | grep ID_MM
+#   mmcli -L
+#   mmcli -m 0 --output-keyvalue | grep -iE 'uid|equipment'
+
+# --- Slot 1 (root-hub port 1)  ->  modem0 ---------------------------------
+ACTION=="add|change", SUBSYSTEM=="usb", ENV{DEVTYPE}=="usb_device", \
+    KERNELS=="f400000.usb", KERNEL=="?-1", \
+    ENV{ID_MM_PHYSDEV_UID}="modem0", \
+    ENV{ID_MM_DEVICE_PROCESS}="1"
+
+# --- Slot 2 (root-hub port 2)  ->  modem1  (uncomment when populated) -----
+#ACTION=="add|change", SUBSYSTEM=="usb", ENV{DEVTYPE}=="usb_device", \
+#    KERNELS=="f400000.usb", KERNEL=="?-2", \
+#    ENV{ID_MM_PHYSDEV_UID}="modem1", \
+#    ENV{ID_MM_DEVICE_PROCESS}="1"

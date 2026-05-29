@@ -25,13 +25,13 @@
 #   mmcli -m 0 --output-keyvalue | grep -iE 'uid|equipment'
 
 # --- Slot 1 (root-hub port 1)  ->  modem0 ---------------------------------
-ACTION=="add|change", SUBSYSTEM=="usb", ENV{DEVTYPE}=="usb_device", \
+ACTION=="add|change|move", SUBSYSTEM=="usb", ENV{DEVTYPE}=="usb_device", \
     KERNELS=="f400000.usb", KERNEL=="?-1", \
     ENV{ID_MM_PHYSDEV_UID}="modem0", \
     ENV{ID_MM_DEVICE_PROCESS}="1"
 
 # --- Slot 2 (root-hub port 2)  ->  modem1  (uncomment when populated) -----
-#ACTION=="add|change", SUBSYSTEM=="usb", ENV{DEVTYPE}=="usb_device", \
+#ACTION=="add|change|move", SUBSYSTEM=="usb", ENV{DEVTYPE}=="usb_device", \
 #    KERNELS=="f400000.usb", KERNEL=="?-2", \
 #    ENV{ID_MM_PHYSDEV_UID}="modem1", \
 #    ENV{ID_MM_DEVICE_PROCESS}="1"

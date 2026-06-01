@@ -812,6 +812,36 @@ DOCUMENTATION_URL="{build_config['documentation_url']}"
                     with open(link_file_path, "w", encoding="utf-8") as link_file:
                         link_file.write(link_file_data)
 
+            wwan_interfaces: dict = dict(interface_dicts.get("WWAN_INTERFACES", {}))
+            udev_lines = []
+            for wwan, data in wwan_interfaces.items():
+                ID_MM_PHYSDEV_UID: str = str(data.get("ID_MM_PHYSDEV_UID", ""))
+                if not ID_MM_PHYSDEV_UID:
+                    continue
+
+                usb_controller = data.get("usb_controller", "")
+                usb_port = data.get("usb_port", "")
+                if not usb_controller or not usb_port:
+                    continue
+
+                udev_lines.append(
+                    f'ACTION=="add|change|move", SUBSYSTEM=="usb", ENV{{DEVTYPE}}=="usb_device", '
+                    f'KERNELS=="{usb_controller}", KERNEL=="{usb_port}", '
+                    f'ENV{{ID_MM_PHYSDEV_UID}}="{ID_MM_PHYSDEV_UID}", '
+                    f'ENV{{ID_MM_DEVICE_PROCESS}}="1"'
+                )
+                udev_lines.append("")
+            udev_60_rule_data = "\n".join(udev_lines)
+            if udev_60_rule_data:
+                udev_60_rule_path = os.path.join(
+                    chroot_includes_dir,
+                    "usr/lib/udev/rules.d",
+                    "60-igos-usb-modem.rules",
+                )
+                os.makedirs(os.path.dirname(udev_60_rule_path), exist_ok=True)
+                with open(udev_60_rule_path, "w", encoding="utf-8") as udev_60_file:
+                    udev_60_file.write(udev_60_rule_data)
+
         ## Fork-only: copy per-flavor overlay directory (if present) into chroot.
         ## Files in data/igos-pinmaps/<build_flavor>/overlays/ are laid out
         ## relative to the filesystem root, e.g. etc/udev/rules.d/foo.rules

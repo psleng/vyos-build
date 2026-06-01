@@ -134,10 +134,18 @@ SERIAL_PORTS = {
 }
 
 # Pinned ethernet interfaces
-# Link files to pin interfaces to physical ports are generated from teh following definitions
-# matching properties are defined by the 'match' key, matching properties are required
-# link options in the the generated .link files are statically infered so we dont accedentally link incorrectly
-# IGOS_ETH_PORT can be constructed by doing the following:
+# .link files are generated from these definitions to pin interfaces to physical ports.
+#
+# Key format:  IGOS_ETH_PORT=<parent-devpath>#<port-number>
+#   <parent-devpath> : sysfs device path of the ethernet controller (board-stable,
+#                      derived from device-tree platform addresses).
+#   <port-number>    : which physical port on that controller (from DT port@N
+#                      node matching, or kernel dev_port for PCI NICs).
+#
+# Example: /devices/platform/bus@f4000/8000000.ethernet#2
+#   -> port 2 of the CPSW ethernet switch at SoC address 0x08000000
+#
+# IGOS_ETH_PORT can be discovered on a running board with the following:
 #
 # Run as one command:
 """
@@ -185,12 +193,45 @@ ETH_INTERFACES = {
     },
 }
 
+# Pinned WWAN interfaces
+# .link files are generated from these definitions to pin wwan interfaces to
+# physical USB ports.
+#
+# Key format:  IGOS_WWAN_PORT=<usb-controller-devpath>#<bus>-<port[.port...]>
+#   <usb-controller-devpath> : sysfs path of the USB controller platform device
+#                              (board-stable, from device-tree addresses).
+#   <bus>-<port>             : USB topology — bus number and physical port on
+#                              the root hub (e.g. 1-1 = bus 1, port 1).  For
+#                              hub-attached devices this extends with dot
+#                              notation (e.g. 1-1.2 = port 2 on a hub at port 1).
+#
+# Example: /devices/platform/bus@f4000/f900000.cdns-usb/f400000.usb#1-1
+#   -> device on USB bus 1 port 1 of the Cadence USB3 controller at 0x0f400000
+#
+# IGOS_WWAN_PORT can be discovered on a running board with the following:
+"""
+printf '%-6s  %-17s  %s\n' IFACE DRIVER IGOS_WWAN_PORT; \
+printf '%-6s  %-17s  %s\n' ----- ------ --------------; \
+for sys in /sys/class/net/wwan*; do \
+  [ -d "$sys" ] || continue; \
+  ifname=${sys##*/}; \
+  devpath=$(readlink "$sys" | sed 's|^\.\./\.\.||'); \
+  driver=$(basename "$(readlink "$sys/device/driver" 2>/dev/null)"); \
+  usb_parent=$(printf '%s' "$devpath" | sed -n 's|\(.*\.usb\)/.*|\1|p'); \
+  usb_port=$(printf '%s' "$devpath" | sed -n 's|.*usb[0-9]*/\([0-9][0-9.-]*\)/.*|\1|p'); \
+  [ -n "$usb_parent" ] && [ -n "$usb_port" ] || continue; \
+  printf '%-6s  %-17s  %s#%s\n' "$ifname" "$driver" "$usb_parent" "$usb_port"; \
+done
+"""
 WWAN_INTERFACES = {
     "wwan0": {
         "match": {
-            "Property": "ID_MM_PHYSDEV_UID=modem0",
+            "Property": "IGOS_WWAN_PORT=/devices/platform/bus@f4000/f900000.cdns-usb/f400000.usb#1-1",
             "Driver": "qmi_wwan",
             "Type": "wwan",
-        }
+        },
+        "usb_controller": "f400000.usb",
+        "usb_port": "1-1",
+        "ID_MM_PHYSDEV_UID": "modem0",
     }
 }

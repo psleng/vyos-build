@@ -47,7 +47,7 @@ PINS = {
     # low = held in power-down. vyos.hardware passes physical levels
     # through (no software inversion), matching what a scope would show.
     "WIFI0_PD_N":        _P(bank=0, line=14, dir="out", bias="pull-up",   default=1, group="wifi0"),
-    "WIFI_STAT_RED":     _P(bank=0, line=64, dir="out", active_low=False, bias="pull-up", default=0, group="wifi0"),
+    "WIFI0_STAT_RED":     _P(bank=0, line=64, dir="out", active_low=False, bias="pull-up", default=0, group="wifi0"),
     "WIFI0_STAT_GREEN":   _P(bank=0, line=58, dir="out", active_low=False, bias="pull-down", default=1, group="wifi0"),
     "WIFI0_STAT_BLUE":    _P(bank=0, line=47, dir="out", active_low=False, bias="pull-down", default=0, group="wifi0"),
     # ---------------- CONTROL ----------------

@@ -1,8 +1,8 @@
 diff --git a/arch/arm64/boot/dts/ti/k3-am64-main.dtsi b/arch/arm64/boot/dts/ti/k3-am64-main.dtsi
-index 9cf563e5738d..d116d485c099 100644
+index d872cc671094..b03167be2eef 100644
 --- a/arch/arm64/boot/dts/ti/k3-am64-main.dtsi
 +++ b/arch/arm64/boot/dts/ti/k3-am64-main.dtsi
-@@ -378,7 +378,7 @@ main_uart0: serial@2800000 {
+@@ -406,7 +406,7 @@ main_uart0: serial@2800000 {
  		power-domains = <&k3_pds 146 TI_SCI_PD_EXCLUSIVE>;
  		clocks = <&k3_clks 146 0>;
  		clock-names = "fclk";
@@ -11,7 +11,7 @@ index 9cf563e5738d..d116d485c099 100644
  	};
  
  	main_uart1: serial@2810000 {
-@@ -389,7 +389,7 @@ main_uart1: serial@2810000 {
+@@ -417,7 +417,7 @@ main_uart1: serial@2810000 {
  		power-domains = <&k3_pds 152 TI_SCI_PD_EXCLUSIVE>;
  		clocks = <&k3_clks 152 0>;
  		clock-names = "fclk";
@@ -20,7 +20,7 @@ index 9cf563e5738d..d116d485c099 100644
  	};
  
  	main_uart2: serial@2820000 {
-@@ -411,7 +411,7 @@ main_uart3: serial@2830000 {
+@@ -439,7 +439,7 @@ main_uart3: serial@2830000 {
  		power-domains = <&k3_pds 154 TI_SCI_PD_EXCLUSIVE>;
  		clocks = <&k3_clks 154 0>;
  		clock-names = "fclk";
@@ -29,7 +29,7 @@ index 9cf563e5738d..d116d485c099 100644
  	};
  
  	main_uart4: serial@2840000 {
-@@ -591,7 +591,7 @@ main_gpio1: gpio@601000 {
+@@ -619,7 +619,7 @@ main_gpio1: gpio@601000 {
  			     <183>, <184>, <185>;
  		interrupt-controller;
  		#interrupt-cells = <2>;
@@ -39,10 +39,10 @@ index 9cf563e5738d..d116d485c099 100644
  		power-domains = <&k3_pds 78 TI_SCI_PD_EXCLUSIVE>;
  		clocks = <&k3_clks 78 0>;
 diff --git a/arch/arm64/boot/dts/ti/k3-am642-evm.dts b/arch/arm64/boot/dts/ti/k3-am642-evm.dts
-index ebb5446d8cad..44da1d33c247 100644
+index 85dcff104936..bdc18ed20a4e 100644
 --- a/arch/arm64/boot/dts/ti/k3-am642-evm.dts
 +++ b/arch/arm64/boot/dts/ti/k3-am642-evm.dts
-@@ -248,8 +248,6 @@ AM64X_IOPAD(0x0290, PIN_INPUT, 0) /* MMC1_CLKLB */
+@@ -266,8 +266,6 @@ AM64X_IOPAD(0x0290, PIN_INPUT, 0) /* MMC1_CLKLB */
  
  	main_uart1_pins_default: main-uart1-default-pins {
  		pinctrl-single,pins = <
@@ -51,7 +51,7 @@ index ebb5446d8cad..44da1d33c247 100644
  			AM64X_IOPAD(0x0240, PIN_INPUT, 0)		/* (E15) UART1_RXD */
  			AM64X_IOPAD(0x0244, PIN_OUTPUT, 0)		/* (E14) UART1_TXD */
  		>;
-@@ -300,6 +298,25 @@ AM64X_IOPAD(0x026c, PIN_INPUT_PULLUP, 0) /* (B19) I2C1_SDA */
+@@ -308,6 +306,25 @@ AM64X_IOPAD(0x026c, PIN_INPUT_PULLUP, 0) /* (B19) I2C1_SDA */
  		>;
  	};
  
@@ -77,7 +77,7 @@ index ebb5446d8cad..44da1d33c247 100644
  	mdio1_pins_default: mdio1-default-pins {
  		bootph-all;
  		pinctrl-single,pins = <
-@@ -400,14 +417,20 @@ &main_uart0 {
+@@ -438,13 +455,20 @@ &main_uart0 {
  	status = "okay";
  	pinctrl-names = "default";
  	pinctrl-0 = <&main_uart0_pins_default>;
@@ -85,7 +85,7 @@ index ebb5446d8cad..44da1d33c247 100644
 +	dsr-gpios = <&main_gpio1 12 GPIO_ACTIVE_LOW>;
 +	dtr-gpios = <&main_gpio1 21 GPIO_ACTIVE_LOW>;
 +	rng-gpios = <&main_gpio1 4 GPIO_ACTIVE_LOW>;
- 	current-speed = <115200>;
++	current-speed = <115200>;
  };
  
  /* main_uart1 is reserved for firmware usage */
@@ -98,8 +98,8 @@ index ebb5446d8cad..44da1d33c247 100644
 +	current-speed = <115200>;
  };
  
- &main_uart3 {
-@@ -475,6 +498,58 @@ display@3c {
+ &main_i2c0 {
+@@ -513,6 +537,58 @@ display@3c {
  
  &main_gpio0 {
  	bootph-all;
@@ -157,4 +157,4 @@ index ebb5446d8cad..44da1d33c247 100644
 +		"", "", "IO_EXP_INTn", ""; /* 76-79 */
  };
  
- /* mcu_gpio0 is reserved for mcu firmware usage */
+ /* mcu_gpio0 and mcu_gpio_intr are reserved for mcu firmware usage */

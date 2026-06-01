@@ -1,8 +1,8 @@
 diff --git a/arch/arm64/boot/dts/ti/k3-am642-evm.dts b/arch/arm64/boot/dts/ti/k3-am642-evm.dts
-index 91d726ef7594..0a9a2f648984 100644
+index 85dcff104936..2e3b73c70322 100644
 --- a/arch/arm64/boot/dts/ti/k3-am642-evm.dts
 +++ b/arch/arm64/boot/dts/ti/k3-am642-evm.dts
-@@ -265,6 +265,16 @@ AM64X_IOPAD(0x0234, PIN_OUTPUT, 0) /* (C16) UART0_TXD */
+@@ -283,6 +283,16 @@ AM64X_IOPAD(0x0234, PIN_OUTPUT, 0) /* (C16) UART0_TXD */
  		>;
  	};
  
@@ -19,7 +19,7 @@ index 91d726ef7594..0a9a2f648984 100644
  	main_spi0_pins_default: main-spi0-default-pins {
  		pinctrl-single,pins = <
  			AM64X_IOPAD(0x0210, PIN_INPUT, 0) /* (D13) SPI0_CLK */
-@@ -400,6 +410,14 @@ &main_uart1 {
+@@ -447,6 +457,14 @@ &main_uart1 {
  	pinctrl-0 = <&main_uart1_pins_default>;
  };
  

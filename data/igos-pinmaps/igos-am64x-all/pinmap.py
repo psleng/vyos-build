@@ -134,9 +134,11 @@ SERIAL_PORTS = {
 }
 
 # Pinned ethernet interfaces
-# .link files are generated from these definitions to pin interfaces to physical ports.
+# At build time, the "path" value from each entry is written to
+# /usr/lib/igos/interfaces.conf as a key=name mapping that the udev helper
+# igos-eth-port-id reads at boot to assign stable interface names.
 #
-# Key format:  IGOS_ETH_PORT=<parent-devpath>#<port-number>
+# Path format:  <parent-devpath>#<port-number>
 #   <parent-devpath> : sysfs device path of the ethernet controller (board-stable,
 #                      derived from device-tree platform addresses).
 #   <port-number>    : which physical port on that controller (from DT port@N
@@ -145,7 +147,7 @@ SERIAL_PORTS = {
 # Example: /devices/platform/bus@f4000/8000000.ethernet#2
 #   -> port 2 of the CPSW ethernet switch at SoC address 0x08000000
 #
-# IGOS_ETH_PORT can be discovered on a running board with the following:
+# Path can be discovered on a running board with the following:
 #
 # Run as one command:
 """
@@ -180,24 +182,19 @@ cat /sys/class/net/eth0/dev_port
 # For the pupose of engineering on the target board the logical ethernet ports have been swapped
 ETH_INTERFACES = {
     "eth0": {
-        "match": {
-            "Property": "IGOS_ETH_PORT=/devices/platform/bus@f4000/8000000.ethernet#2",
-            "Type": "ether",
-        }
+        "path": "/devices/platform/bus@f4000/8000000.ethernet#2",
     },
     "eth1": {
-        "match": {
-            "Property": "IGOS_ETH_PORT=/devices/platform/bus@f4000/8000000.ethernet#1",
-            "Type": "ether",
-        }
+        "path": "/devices/platform/bus@f4000/8000000.ethernet#1",
     },
 }
 
 # Pinned WWAN interfaces
-# .link files are generated from these definitions to pin wwan interfaces to
-# physical USB ports.
+# At build time, the "path" value from each entry is written to
+# /usr/lib/igos/interfaces.conf. The udev helper igos-wwan-port-id reads
+# this at boot to assign stable wwan interface names.
 #
-# Key format:  IGOS_WWAN_PORT=<usb-controller-devpath>#<bus>-<port[.port...]>
+# Path format:  <usb-controller-devpath>#<bus>-<port[.port...]>
 #   <usb-controller-devpath> : sysfs path of the USB controller platform device
 #                              (board-stable, from device-tree addresses).
 #   <bus>-<port>             : USB topology — bus number and physical port on
@@ -208,7 +205,7 @@ ETH_INTERFACES = {
 # Example: /devices/platform/bus@f4000/f900000.cdns-usb/f400000.usb#1-1
 #   -> device on USB bus 1 port 1 of the Cadence USB3 controller at 0x0f400000
 #
-# IGOS_WWAN_PORT can be discovered on a running board with the following:
+# Path can be discovered on a running board with the following:
 """
 printf '%-6s  %-17s  %s\n' IFACE DRIVER IGOS_WWAN_PORT; \
 printf '%-6s  %-17s  %s\n' ----- ------ --------------; \
@@ -225,11 +222,7 @@ done
 """
 WWAN_INTERFACES = {
     "wwan0": {
-        "match": {
-            "Property": "IGOS_WWAN_PORT=/devices/platform/bus@f4000/f900000.cdns-usb/f400000.usb#1-1",
-            "Driver": "qmi_wwan",
-            "Type": "wwan",
-        },
+        "path": "/devices/platform/bus@f4000/f900000.cdns-usb/f400000.usb#1-1",
         "usb_controller": "f400000.usb",
         "usb_port": "1-1",
         "ID_MM_PHYSDEV_UID": "modem0",

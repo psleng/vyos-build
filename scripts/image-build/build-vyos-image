@@ -785,32 +785,20 @@ DOCUMENTATION_URL="{build_config['documentation_url']}"
                             continue
                         interface_dicts[target.id] = ast.literal_eval(node.value)
 
+            # Generate /usr/lib/igos/interfaces.conf from "path" entries
+            conf_lines = []
             for _, interface_type in interface_dicts.items():
                 for interface_name, interface in interface_type.items():
-                    link_file_lines = []
-                    link_file_lines.append("[Match]")
-                    for k, v in interface["match"].items():
-                        link_file_lines.append(f"{k}={v}")
-
-                    link_file_lines.append("")
-                    link_file_lines.append("[Link]")
-                    link_file_lines.append(f"Name={interface_name}")
-                    link_file_lines.append("NamePolicy=")
-                    link_file_lines.append("AlternativeNamesPolicy=")
-                    link_file_lines.append("MACAddressPolicy=none")
-                    link_file_lines.append("")
-
-                    link_file_data = "\n".join(link_file_lines)
-
-                    filename = f"10-igos-{interface_name}.link"
-                    link_file_path = os.path.join(
-                        chroot_includes_dir,
-                        "etc/systemd/network",
-                        filename,
-                    )
-                    os.makedirs(os.path.dirname(link_file_path), exist_ok=True)
-                    with open(link_file_path, "w", encoding="utf-8") as link_file:
-                        link_file.write(link_file_data)
+                    if "path" in interface:
+                        conf_lines.append(f"{interface['path']}={interface_name}")
+            if conf_lines:
+                conf_path = os.path.join(
+                    chroot_includes_dir,
+                    "usr/lib/igos/interfaces.conf",
+                )
+                os.makedirs(os.path.dirname(conf_path), exist_ok=True)
+                with open(conf_path, "w", encoding="utf-8") as conf_file:
+                    conf_file.write("\n".join(conf_lines) + "\n")
 
             wwan_interfaces: dict = dict(interface_dicts.get("WWAN_INTERFACES", {}))
             udev_lines = []

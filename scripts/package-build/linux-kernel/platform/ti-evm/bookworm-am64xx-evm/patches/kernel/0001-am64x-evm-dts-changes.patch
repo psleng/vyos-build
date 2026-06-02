@@ -1,0 +1,285 @@
+diff --git a/arch/arm64/boot/dts/ti/k3-am64-main.dtsi b/arch/arm64/boot/dts/ti/k3-am64-main.dtsi
+index d872cc671094..d1a1da433ec4 100644
+--- a/arch/arm64/boot/dts/ti/k3-am64-main.dtsi
++++ b/arch/arm64/boot/dts/ti/k3-am64-main.dtsi
+@@ -399,7 +399,7 @@ main_esm: esm@420000 {
+ 	};
+ 
+ 	main_uart0: serial@2800000 {
+-		compatible = "ti,am64-uart", "ti,am654-uart";
++		compatible = "ti,am64-uart", "ti,perleam654-uart";
+ 		reg = <0x00 0x02800000 0x00 0x100>;
+ 		interrupts = <GIC_SPI 178 IRQ_TYPE_LEVEL_HIGH>;
+ 		clock-frequency = <48000000>;
+@@ -410,7 +410,7 @@ main_uart0: serial@2800000 {
+ 	};
+ 
+ 	main_uart1: serial@2810000 {
+-		compatible = "ti,am64-uart", "ti,am654-uart";
++		compatible = "ti,am64-uart", "ti,perleam654-uart";
+ 		reg = <0x00 0x02810000 0x00 0x100>;
+ 		interrupts = <GIC_SPI 179 IRQ_TYPE_LEVEL_HIGH>;
+ 		clock-frequency = <48000000>;
+@@ -421,7 +421,7 @@ main_uart1: serial@2810000 {
+ 	};
+ 
+ 	main_uart2: serial@2820000 {
+-		compatible = "ti,am64-uart", "ti,am654-uart";
++		compatible = "ti,am64-uart", "ti,perleam654-uart";
+ 		reg = <0x00 0x02820000 0x00 0x100>;
+ 		interrupts = <GIC_SPI 180 IRQ_TYPE_LEVEL_HIGH>;
+ 		clock-frequency = <48000000>;
+@@ -432,7 +432,7 @@ main_uart2: serial@2820000 {
+ 	};
+ 
+ 	main_uart3: serial@2830000 {
+-		compatible = "ti,am64-uart", "ti,am654-uart";
++		compatible = "ti,am64-uart", "ti,perleam654-uart";
+ 		reg = <0x00 0x02830000 0x00 0x100>;
+ 		interrupts = <GIC_SPI 181 IRQ_TYPE_LEVEL_HIGH>;
+ 		clock-frequency = <48000000>;
+@@ -443,7 +443,7 @@ main_uart3: serial@2830000 {
+ 	};
+ 
+ 	main_uart4: serial@2840000 {
+-		compatible = "ti,am64-uart", "ti,am654-uart";
++		compatible = "ti,am64-uart", "ti,perleam654-uart";
+ 		reg = <0x00 0x02840000 0x00 0x100>;
+ 		interrupts = <GIC_SPI 182 IRQ_TYPE_LEVEL_HIGH>;
+ 		clock-frequency = <48000000>;
+@@ -454,7 +454,7 @@ main_uart4: serial@2840000 {
+ 	};
+ 
+ 	main_uart5: serial@2850000 {
+-		compatible = "ti,am64-uart", "ti,am654-uart";
++		compatible = "ti,am64-uart", "ti,perleam654-uart";
+ 		reg = <0x00 0x02850000 0x00 0x100>;
+ 		interrupts = <GIC_SPI 183 IRQ_TYPE_LEVEL_HIGH>;
+ 		clock-frequency = <48000000>;
+@@ -465,7 +465,7 @@ main_uart5: serial@2850000 {
+ 	};
+ 
+ 	main_uart6: serial@2860000 {
+-		compatible = "ti,am64-uart", "ti,am654-uart";
++		compatible = "ti,am64-uart", "ti,perleam654-uart";
+ 		reg = <0x00 0x02860000 0x00 0x100>;
+ 		interrupts = <GIC_SPI 184 IRQ_TYPE_LEVEL_HIGH>;
+ 		clock-frequency = <48000000>;
+@@ -1064,6 +1064,19 @@ pcie0_rc: pcie@f102000 {
+ 			 <0x02000000 0x00 0x00101000 0x06 0x00101000 0x00 0xffeff000>; /* 32-bit Non-Prefetchable MEM (4 GB - 1 MB - 4 KB) */
+ 		dma-ranges = <0x02000000 0x0 0x0 0x0 0x0 0x00000010 0x0>;
+ 		status = "disabled";
++		#interrupt-cells = <1>;
++		interrupt-map-mask = <0 0 0 7>;
++		interrupt-map = <0 0 0 1 &pcie0_intc 0>, /* INT A */
++				<0 0 0 2 &pcie0_intc 0>, /* INT B */
++				<0 0 0 3 &pcie0_intc 0>, /* INT C */
++				<0 0 0 4 &pcie0_intc 0>; /* INT D */
++
++		pcie0_intc: interrupt-controller {
++			interrupt-controller;
++			#interrupt-cells = <1>;
++			interrupt-parent = <&gic500>;
++			interrupts = <GIC_SPI 202 IRQ_TYPE_EDGE_RISING>;
++		};
+ 	};
+ 
+ 	epwm0: pwm@23000000 {
+diff --git a/arch/arm64/boot/dts/ti/k3-am642-evm.dts b/arch/arm64/boot/dts/ti/k3-am642-evm.dts
+index 85dcff104936..5a9a433f07bc 100644
+--- a/arch/arm64/boot/dts/ti/k3-am642-evm.dts
++++ b/arch/arm64/boot/dts/ti/k3-am642-evm.dts
+@@ -22,9 +22,9 @@ chosen {
+ 	};
+ 
+ 	aliases {
+-		serial0 = &mcu_uart0;
++		serial0 = &main_uart0;
+ 		serial1 = &main_uart1;
+-		serial2 = &main_uart0;
++		serial2 = &mcu_uart0;
+ 		serial3 = &main_uart3;
+ 		i2c0 = &main_i2c0;
+ 		i2c1 = &main_i2c1;
+@@ -32,7 +32,7 @@ aliases {
+ 		mmc1 = &sdhci1;
+ 		ethernet0 = &cpsw_port1;
+ 		ethernet1 = &cpsw_port2;
+-		ethernet2 = &icssg1_emac0;
++		rtc0 = &rtc_rv3028;
+ 	};
+ 
+ 	memory@80000000 {
+@@ -247,6 +247,20 @@ icssg1_emac1: port@1 {
+ 			};
+ 		};
+ 	};
++
++	firmware {
++		optee {
++			compatible = "linaro,optee-tz";
++			method = "smc";
++		};
++	};
++
++	tpm@0 {
++		name = "tpm";
++		status = "okay";
++		compatible = "microsoft,ftpm";
++		uuid = /bits/ 8 <0xbc 0x50 0xd9 0x71 0xd4 0xc9 0x42 0xc4 0x82 0xcb 0x34 0x3f 0xb7 0xf3 0x78 0x96>;
++	};
+ };
+ 
+ &main_pmx0 {
+@@ -266,8 +280,6 @@ AM64X_IOPAD(0x0290, PIN_INPUT, 0) /* MMC1_CLKLB */
+ 
+ 	main_uart1_pins_default: main-uart1-default-pins {
+ 		pinctrl-single,pins = <
+-			AM64X_IOPAD(0x0248, PIN_INPUT, 0)		/* (D16) UART1_CTSn */
+-			AM64X_IOPAD(0x024c, PIN_OUTPUT, 0)		/* (E16) UART1_RTSn */
+ 			AM64X_IOPAD(0x0240, PIN_INPUT, 0)		/* (E15) UART1_RXD */
+ 			AM64X_IOPAD(0x0244, PIN_OUTPUT, 0)		/* (E14) UART1_TXD */
+ 		>;
+@@ -283,6 +295,16 @@ AM64X_IOPAD(0x0234, PIN_OUTPUT, 0) /* (C16) UART0_TXD */
+ 		>;
+ 	};
+ 
++	main_uart3_pins_default: main-uart3-default-pins {
++		bootph-all;
++		pinctrl-single,pins = <
++			AM64X_IOPAD(0x0060, PIN_INPUT, 2) /* (T17) UART3_CTSn */
++			AM64X_IOPAD(0x0174, PIN_OUTPUT, 10) /* (R3) UART3_RTSn */
++			AM64X_IOPAD(0x0248, PIN_INPUT, 4) /* (D16) UART3_RXD */
++			AM64X_IOPAD(0x024c, PIN_OUTPUT, 4) /* (E16) UART3_TXD */
++		>;
++	};
++
+ 	main_spi0_pins_default: main-spi0-default-pins {
+ 		pinctrl-single,pins = <
+ 			AM64X_IOPAD(0x0210, PIN_INPUT, 0) /* (D13) SPI0_CLK */
+@@ -308,6 +330,25 @@ AM64X_IOPAD(0x026c, PIN_INPUT_PULLUP, 0) /* (B19) I2C1_SDA */
+ 		>;
+ 	};
+ 
++	/* Digital IOs */
++	main_gpio0_digital_pins: main-gpio0-digital-pins {
++		pinctrl-single,pins = <
++			AM64X_IOPAD(0x0030, PIN_INPUT, 7) /* (L18) GPIO0_12 */
++			AM64X_IOPAD(0x0034, PIN_INPUT, 7) /* (K17) GPIO0_13 */
++			AM64X_IOPAD(0x0104, PIN_INPUT_PULLUP, 7) /* (W7) GPIO0_64 */
++		>;
++	};
++
++	/* Digital IOs */
++	main_gpio1_digital_pins: main-gpio1-digital-pins {
++		pinctrl-single,pins = <
++			AM64X_IOPAD(0x01B4, PIN_OUTPUT, 7) /* (W2) GPIO1_21 => UART0_DTRn */
++			AM64X_IOPAD(0x01B0, PIN_INPUT, 7) /* (Y2) GPIO1_20 => UART0_DCDn */
++			AM64X_IOPAD(0x0170, PIN_INPUT, 7) /* (AA2) GPIO1_4 => UART0_RIn */
++			AM64X_IOPAD(0x0190, PIN_INPUT, 7) /* (AA3) GPIO1_12 => UART0_DSRn */
++		>;
++	};
++
+ 	mdio1_pins_default: mdio1-default-pins {
+ 		bootph-all;
+ 		pinctrl-single,pins = <
+@@ -438,13 +479,28 @@ &main_uart0 {
+ 	status = "okay";
+ 	pinctrl-names = "default";
+ 	pinctrl-0 = <&main_uart0_pins_default>;
++	dcd-gpios = <&main_gpio1 20 GPIO_ACTIVE_LOW>;
++	dsr-gpios = <&main_gpio1 12 GPIO_ACTIVE_LOW>;
++	dtr-gpios = <&main_gpio1 21 GPIO_ACTIVE_LOW>;
++	rng-gpios = <&main_gpio1 4 GPIO_ACTIVE_LOW>;
++	current-speed = <115200>;
+ };
+ 
+ /* main_uart1 is reserved for firmware usage */
+ &main_uart1 {
+-	status = "reserved";
++	bootph-all;
++	status = "okay";
+ 	pinctrl-names = "default";
+ 	pinctrl-0 = <&main_uart1_pins_default>;
++	current-speed = <115200>;
++};
++
++&main_uart3 {
++	bootph-all;
++	status = "okay";
++	pinctrl-names = "default";
++	pinctrl-0 = <&main_uart3_pins_default>;
++	current-speed = <115200>;
+ };
+ 
+ &main_i2c0 {
+@@ -509,10 +565,69 @@ display@3c {
+ 		solomon,prechargep1 = <2>;
+ 		solomon,prechargep2 = <13>;
+ 	};
++
++	rtc_rv3028: rtc@52 {
++		compatible = "microcrystal,rv3028";
++		reg = <0x52>;
++		trickle-resistor-ohms = <3000>;
++		aux-voltage-chargeable = <1>;
++	};
+ };
+ 
+ &main_gpio0 {
+ 	bootph-all;
++	pinctrl-names = "default";
++	pinctrl-0 = <&main_gpio0_digital_pins>;
++	gpio-line-names =
++		"", "", "", "", /* 0-3 */
++		"", "", "", "", /* 4-7 */
++		"", "", "", "", /* 8-11 */
++		"VTT_EN", "OSPI_RSTn", "", "", /* 12-15 */
++		"", "", "", "", /* 16-19 */
++		"", "", "", "", /* 20-23 */
++		"", "", "", "", /* 24-27 */
++		"", "", "", "", /* 28-31 */
++		"", "", "", "", /* 32-35 */
++		"", "", "", "", /* 36-39 */
++		"", "", "", "", /* 40-43 */
++		"", "", "", "", /* 44-47 */
++		"", "", "", "", /* 48-51 */
++		"", "", "", "", /* 52-55 */
++		"", "", "", "", /* 56-59 */
++		"", "", "", "", /* 60-63 */
++		"SIM_DET", "", "", "", /* 64-67 */
++		"", "", "", "", /* 68-71 */
++		"", "", "", "", /* 72-75 */
++		"", "", "", "", /* 76-79 */
++		"", "", "", "", /* 80-83 */
++		"", "", "";     /* 84-86 */
++};
++
++&main_gpio1 {
++	bootph-all;
++	pinctrl-names = "default";
++	pinctrl-0 = <&main_gpio1_digital_pins>;
++	gpio-line-names =
++		"", "", "", "", /* 0-3 */
++		"UART0_RIn", "", "", "", /* 4-7 */
++		"", "", "", "", /* 8-11 */
++		"UART0_DSRn", "", "", "", /* 12-15 */
++		"", "", "", "", /* 16-19 */
++		"UART0_DCDn", "UART0_DTRn", "", "", /* 20-23 */
++		"", "", "", "", /* 24-27 */
++		"", "", "", "", /* 28-31 */
++		"", "", "", "", /* 32-35 */
++		"", "", "", "", /* 36-39 */
++		"", "", "", "GPIO1_43_INTn", /* 40-43 */
++		"", "", "", "", /* 44-47 */
++		"", "", "", "", /* 48-51 */
++		"", "", "", "", /* 52-55 */
++		"", "", "", "", /* 56-59 */
++		"", "", "", "", /* 60-63 */
++		"", "", "", "", /* 64-67 */
++		"", "", "RGMII_INT", "", /* 68-71 */
++		"", "", "", "", /* 72-75 */
++		"", "", "IO_EXP_INTn", ""; /* 76-79 */
+ };
+ 
+ /* mcu_gpio0 and mcu_gpio_intr are reserved for mcu firmware usage */

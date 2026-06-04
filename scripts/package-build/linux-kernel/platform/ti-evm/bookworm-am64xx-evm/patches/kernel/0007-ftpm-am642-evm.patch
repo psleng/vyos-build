@@ -1,10 +1,6 @@
-diff --git a/arch/arm64/boot/dts/ti/k3-am642-evm.dts b/arch/arm64/boot/dts/ti/k3-am642-evm.dts
-index 85dcff104936..0d55f9b29d52 100644
---- a/arch/arm64/boot/dts/ti/k3-am642-evm.dts
-+++ b/arch/arm64/boot/dts/ti/k3-am642-evm.dts
-@@ -247,6 +247,20 @@ icssg1_emac1: port@1 {
- 			};
- 		};
+--- a/arch/arm64/boot/dts/ti/k3-am642-evm.dts	2025-07-15 15:17:15.934193675 -0400
++++ b/arch/arm64/boot/dts/ti/k3-am642-evm.dts	2025-07-15 15:05:54.048654390 -0400
+@@ -231,2 +231,16 @@
  	};
 +
 +        firmware {
@@ -21,5 +17,3 @@ index 85dcff104936..0d55f9b29d52 100644
 +             uuid = /bits/ 8 <0xbc 0x50 0xd9 0x71 0xd4 0xc9 0x42 0xc4 0x82 0xcb 0x34 0x3f 0xb7 0xf3 0x78 0x96>;
 +        };
  };
- 
- &main_pmx0 {

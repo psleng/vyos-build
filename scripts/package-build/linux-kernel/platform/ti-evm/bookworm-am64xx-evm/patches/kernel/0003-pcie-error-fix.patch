@@ -1,9 +1,9 @@
 diff --git a/arch/arm64/boot/dts/ti/k3-am64-main.dtsi b/arch/arm64/boot/dts/ti/k3-am64-main.dtsi
-index d872cc671094..dd497e107376 100644
+index 064eb062bb54..9cf563e5738d 100644
 --- a/arch/arm64/boot/dts/ti/k3-am64-main.dtsi
 +++ b/arch/arm64/boot/dts/ti/k3-am64-main.dtsi
-@@ -1064,6 +1064,19 @@ pcie0_rc: pcie@f102000 {
- 			 <0x02000000 0x00 0x00101000 0x06 0x00101000 0x00 0xffeff000>; /* 32-bit Non-Prefetchable MEM (4 GB - 1 MB - 4 KB) */
+@@ -1025,6 +1025,19 @@ pcie0_rc: pcie@f102000 {
+ 			 <0x02000000 0x00 0x68011000  0x00 0x68011000  0x00 0x7fef000>;
  		dma-ranges = <0x02000000 0x0 0x0 0x0 0x0 0x00000010 0x0>;
  		status = "disabled";
 +		#interrupt-cells = <1>;
@@ -21,4 +21,4 @@ index d872cc671094..dd497e107376 100644
 +		};
  	};
  
- 	epwm0: pwm@23000000 {
+ 	pcie0_ep: pcie-ep@f102000 {

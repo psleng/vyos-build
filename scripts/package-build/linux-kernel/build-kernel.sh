@@ -118,6 +118,37 @@ EOF
 
 echo "I: Build Debian Kernel package"
 touch .scmversion
+
+(
+  # Hack to get deps in place until arm64 upstream gets fixed.
+  #
+  # libperf expects $SRC at $DST but it is not.
+  # For simplicity, we just monitor the build and make a link to it
+  # when it appears.
+  #
+  # This should be a no-op once upstream is fixed at which point
+  # all this code can be removed.
+  #
+  HACK='arm64 kernelbuild hack:'
+  echo "I: $HACK BEGIN!"
+  SRC=arch/arm64/include/generated/uapi/asm
+  DST=tools/perf/libperf/arch/arm64/include/generated/uapi/asm
+  echo "I: $HACK waiting for $SRC at $(date)..."
+  while ! test -d $SRC; do sleep 1; done
+  echo "I: $HACK $SRC appeared at $(date)"
+  # Symlink it to the destination that libperf wants
+  mkdir -p $(dirname $DST)
+  if [ -d $DST ]; then
+    echo "I: HACK $DST already exists; moving it aside"
+    ls -l $DST/
+    mv -f $DST $DST.old # JIC
+  fi
+  echo "I: $HACK symlink to $DST"
+  ln -rfs $SRC $DST
+  ls -l $DST/
+  echo "I: HACK END at $(date)!"
+) &
+
 make bindeb-pkg BUILD_TOOLS=1 LOCALVERSION=${KERNEL_SUFFIX} KDEB_PKGVERSION=${KERNEL_VERSION}-1 -j $(getconf _NPROCESSORS_ONLN)
 
 # Back to the old Kernel build-scripts directory

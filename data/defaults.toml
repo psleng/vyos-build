@@ -18,7 +18,8 @@ vyos_signedby = "[signed-by=/etc/apt/trusted.gpg.d/psleng.key.chroot.gpg]"
 vyos_branch = "current"
 release_train = "current"
 
-kernel_version = "6.6.135"
+# kernel_version = "6.18.31" # PSL: use old kernel for now
+kernel_version = "6.6.135" # PSL: use old kernel for now
 kernel_flavor = "vyos"
 bootloaders = "syslinux,grub-efi"
 

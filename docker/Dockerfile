@@ -20,8 +20,9 @@
 ARG ARCH=
 FROM ${ARCH}debian:bookworm-slim
 
-# Force HTTPS for Debian mirrors to avoid Fastly POP misrouting
-RUN sed -i 's|http://deb.debian.org|https://deb.debian.org|g' /etc/apt/sources.list
+# Rewrite ALL Debian sources to HTTPS
+RUN find /etc/apt -type f -name "*.list" -exec sed -i 's|http://deb.debian.org|https://deb.debian.org|g' {} +
+
 
 RUN grep "VERSION_ID" /etc/os-release || (echo 'VERSION_ID="12"' >> /etc/os-release)
 

@@ -20,6 +20,9 @@
 ARG ARCH=
 FROM ${ARCH}debian:bookworm-slim
 
+# Force HTTPS for Debian mirrors to avoid Fastly POP misrouting
+RUN sed -i 's|http://deb.debian.org|https://deb.debian.org|g' /etc/apt/sources.list
+
 RUN grep "VERSION_ID" /etc/os-release || (echo 'VERSION_ID="12"' >> /etc/os-release)
 
 # It is also possible to emulate an arm system inside docker,

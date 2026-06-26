@@ -85,16 +85,24 @@ def build_package(package: dict, patch_dir: Path) -> None:
     repo_dir = Path(repo_name)
     print(f"I: build_package {repo_name} in {repo_dir}")
 
-    try:
-        # Clone the repository if it does not exist
-        if not repo_dir.exists():
-            run(['git', 'clone', package['scm_url'], str(repo_dir)], check=True)
+    # PSL-iolan_apps: Determine build mode from package configuration.
+    # 'git_full' (default): Clone repo from SCM and checkout specific commit.
+    # 'local_app': Build from the current working directory without git operations,
+    #              useful for building packages from local source trees.
+    build_mode = package.get('build_mode', 'git_full')
 
-        # Check out the specific commit
-        run(['git', 'checkout', package['commit_id']], cwd=repo_dir, check=True)
-    except CalledProcessError as e:
-        print(f"Failed to clone or checkout for package '{repo_name}': {e}")
-        sys.exit(1)
+    # PSL-iolan_apps: Skip git clone/checkout for 'local_app' mode since we build from local sources
+    if build_mode != 'local_app':
+        try:
+            # Clone the repository if it does not exist
+            if not repo_dir.exists():
+                run(['git', 'clone', package['scm_url'], str(repo_dir)], check=True)
+
+            # Check out the specific commit
+            run(['git', 'checkout', package['commit_id']], cwd=repo_dir, check=True)
+        except CalledProcessError as e:
+            print(f"Failed to clone or checkout for package '{repo_name}': {e}")
+            sys.exit(1)
 
     try:
         # The `pre_build_hook` is an optional configuration defined in `package.toml`.
@@ -137,11 +145,16 @@ def build_package(package: dict, patch_dir: Path) -> None:
             if (repo_dir / 'patches'):
                 apply_patches(repo_dir, patch_dir / repo_name)
 
-        # Sanitize the commit ID and build a tarball for the package
-        commit_id_sanitized = package['commit_id'].replace('/', '_')
-        tarball_name = f"{repo_name}_{commit_id_sanitized}.tar.gz"
-        run(['tar', '--exclude=.git', '--exclude=.github', '-czf', tarball_name, '-C', str(repo_dir.parent), repo_name], check=True)
-        print(f"I: Tarball created: {tarball_name}")
+        if build_mode == 'local_app':
+            # PSL-iolan_apps: For local_app mode, use current working directory as the source tree
+            # instead of a cloned repository directory
+            repo_dir = Path(os.getcwd())
+        else:
+            # Sanitize the commit ID and build a tarball for the package
+            commit_id_sanitized = package['commit_id'].replace('/', '_')
+            tarball_name = f"{repo_name}_{commit_id_sanitized}.tar.gz"
+            run(['tar', '--exclude=.git', '--exclude=.github', '-czf', tarball_name, '-C', str(repo_dir.parent), repo_name], check=True)
+            print(f"I: Tarball created: {tarball_name}")
 
         # Prepare the package if required
         if package.get('prepare_package', False):
@@ -156,6 +169,11 @@ def build_package(package: dict, patch_dir: Path) -> None:
                 else:
                     run('sudo mk-build-deps --install --tool "apt-get --yes --no-install-recommends" 2>&1', cwd=repo_dir, check=True, shell=True)
                     run('sudo dpkg -i *build-deps*.deb 2>&1', cwd=repo_dir, check=True, shell=True)
+                    if build_mode == 'local_app':
+                        # PSL-iolan_apps: For local_app mode, explicitly install all dependencies listed in the
+                        # build-deps package. This ensures locally built libs are used instead of
+                        # versions from the upstream repositories if exists so local changes are prioritized.
+                        run("sudo apt-get install -y $(dpkg-deb -f *build-deps*.deb Depends | tr ',' ' ') 2>&1", cwd=repo_dir, check=True, shell=True)
             except CalledProcessError as e:
                 print(f"Failed to build package {repo_name}: {e}")
                 #exit(e.returncode)  # Really fail

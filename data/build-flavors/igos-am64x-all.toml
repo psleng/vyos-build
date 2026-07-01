@@ -1,0 +1,41 @@
+# igOS AM64x hardware image — "all" base board variant.
+#
+# Layered build configuration:
+#   defaults → build_type → architecture → platform → flavor
+#
+# `platform` pulls in data/igos-platforms/igos-am64x.toml (kernel +
+# family-wide packages). `pinmap_file` overlays the per-variant pin map
+# from data/igos-pinmaps/ at image-build time onto the path
+#   /usr/lib/python3/dist-packages/vyos/hardware/pinmap.py
+# which is consumed at runtime by the board-agnostic vyos.hardware code
+# shipped in vyos-1x.
+#
+# -----------------------------------------------------------------------------
+# Adding a new board variant
+# -----------------------------------------------------------------------------
+#   1. cp data/igos-pinmaps/igos-am64x-all/pinmap.py \
+#        data/igos-pinmaps/igos-am64x-<variant>/pinmap.py
+#      and adjust VARIANT and pin numbers.
+#   2. cp data/build-flavors/igos-am64x-all.toml \
+#        data/build-flavors/igos-am64x-<variant>.toml
+#      and change `pinmap_file` to point at the new directory.
+#   3. sudo ./build-vyos-image --architecture arm64 igos-am64x-<variant>
+#
+# Adding a new processor family (e.g. IMX8MP)
+# -----------------------------------------------------------------------------
+#   1. Create data/igos-platforms/igos-imx8mp.toml with the family kernel
+#      and shared packages.
+#   2. Create data/igos-pinmaps/igos-imx8mp-<variant>/pinmap.py.
+#   3. Create data/build-flavors/igos-imx8mp-<variant>.toml that sets
+#      platform = "igos-imx8mp" and pinmap_file = "igos-imx8mp-<variant>/pinmap.py".
+
+image_format = "iso"
+
+# Processor family — merges data/igos-platforms/igos-am64x.toml.
+platform = "igos-am64x"
+
+# Per-flavor pin map (relative to data/igos-pinmaps/).
+pinmap_file = "igos-am64x-all/pinmap.py"
+
+[architectures.arm64]
+# Inherit the arm64 default console settings from architectures/arm64.toml.

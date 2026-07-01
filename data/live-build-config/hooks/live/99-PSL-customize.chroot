@@ -1,9 +1,22 @@
 #!/bin/sh
 echo 'I: Performing PSL customizations'
 
-# Start modem manager service early
-ln -fs /lib/systemd/system/ModemManager.service /etc/systemd/system/dbus-org.freedesktop.ModemManager1.service
-ln -fs /lib/systemd/system/ModemManager.service /etc/systemd/system/multi-user.target.wants/ModemManager.service
+# ModemManager is NOT autostarted at boot.
+#
+# Rationale: starting MM in parallel with systemd-udev-trigger races the
+# coldplug cascade.  If MM's initial libgudev snapshot happens before
+# 76-igos-modem-uid.rules (or 60-Perle-usb-modem.rules) has stamped
+# ID_MM_PHYSDEV_UID into the udev DB for the slot-1 USB device, MM
+# assigns its own auto-UID and the topology-pinned UID is lost until
+# the next modem hot-replug.
+#
+# Ownership of the MM lifecycle now lives entirely in
+# igos-wwan-manager.service, which:
+#   - orders itself After=systemd-udev-settle.service (DB fully populated)
+#   - declares Wants=ModemManager.service (pulls MM up on first start)
+#   - supervises MM via ModemManagerMonitor (restart/backoff)
+# This is the only consumer of MM on the image, so no other service
+# needs the dbus-activated alias either.
 
 #Start chrony service
 ln -fs /lib/systemd/system/chrony.service /etc/systemd/system/chronyd.service

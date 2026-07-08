@@ -60,9 +60,15 @@ BUILD_FLAVORS_DIR = 'data/build-flavors'
 # and/or `pinmap_file = "<name>/pinmap.py"` to overlay a board pinmap from
 # data/igos-pinmaps/ into the image at /usr/lib/python3/dist-packages/vyos/
 # hardware/pinmap.py via includes.chroot.
+#
+# A flavor may also declare `models_dir = "<platform>"` to ship the per-model
+# definition tree data/models/<platform>/ into the image at
+# /usr/share/igos/models/<platform>/, where vyos.system.model resolves this
+# unit's model at boot (one family image serves many board variants).
 IGOS_PLATFORMS_DIR = 'data/igos-platforms'
 IGOS_PINMAPS_DIR = 'data/igos-pinmaps'
-
+IGOS_MODELS_DIR = 'data/models'
+IGOS_MODELS_INSTALL_DIR = 'usr/share/igos/models'
 # Relative to the build directory
 
 PBUILDER_CONFIG = 'pbuilderrc'

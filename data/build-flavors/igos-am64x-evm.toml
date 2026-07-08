@@ -9,4 +9,12 @@ platform = "igos-am64x"
 
 pinmap_file = "igos-am64x-evm/pinmap.py"
 
+# NOTE: models_dir is inherited from the igos-am64x platform fragment (model
+# definitions are keyed by architecture, not build flavor).  This is a
+# dedicated EVM build (its own U-Boot); it simply declares the platform and
+# gets the AM64x model tree.  The EVM has no identity EEPROM, so at boot it
+# matches no model by id and uses the `fallback = true` am64x/evm definition
+# for its default-config + cli-remove.  Its own (empty) pin map keeps
+# vyos.hardware.board inert regardless.
+
 [architectures.arm64]

@@ -1,5 +1,5 @@
 diff --git a/drivers/leds/trigger/ledtrig-tty.c b/drivers/leds/trigger/ledtrig-tty.c
-index 8cf1485e8165..cf966b50c889 100644
+index 8cf1485e8165..4e7215ed357d 100644
 --- a/drivers/leds/trigger/ledtrig-tty.c
 +++ b/drivers/leds/trigger/ledtrig-tty.c
 @@ -6,6 +6,7 @@
@@ -10,29 +10,27 @@ index 8cf1485e8165..cf966b50c889 100644
  #include <uapi/linux/serial.h>
  
  #define LEDTRIG_TTY_INTERVAL	50
-@@ -311,6 +312,8 @@ ATTRIBUTE_GROUPS(ledtrig_tty);
+@@ -311,6 +312,7 @@ ATTRIBUTE_GROUPS(ledtrig_tty);
  static int ledtrig_tty_activate(struct led_classdev *led_cdev)
  {
  	struct ledtrig_tty_data *trigger_data;
 +	struct device_node *np = led_cdev->dev->of_node;
-+	const char *name = led_cdev->name;
  
  	trigger_data = kzalloc(sizeof(*trigger_data), GFP_KERNEL);
  	if (!trigger_data)
-@@ -320,6 +323,27 @@ static int ledtrig_tty_activate(struct led_classdev *led_cdev)
+@@ -320,6 +322,26 @@ static int ledtrig_tty_activate(struct led_classdev *led_cdev)
  	trigger_data->mode_rx = true;
  	trigger_data->mode_tx = true;
  
-+	if (name) {
-+		if (strstr(name, "tx")) {
-+			trigger_data->mode_rx = false;
-+		} else if (strstr(name, "rx")) {
-+			trigger_data->mode_tx = false;
-+		}
-+	}
-+
 +	if (np) {
 +		struct device_node *uart_np = of_parse_phandle(np, "trigger-sources", 0);
++
++		if (strstr(np->name, "tx")) {
++			trigger_data->mode_rx = false;
++		} else if (strstr(np->name, "rx")) {
++			trigger_data->mode_tx = false;
++		}
++
 +		if (uart_np) {
 +			int id = of_alias_get_id(uart_np, "serial");
 +			if (id >= 0) {

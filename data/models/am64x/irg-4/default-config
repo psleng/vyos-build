@@ -49,7 +49,7 @@ system {
             speed 115200
         }
     }
-    host-name Irg-4
+    host-name igos
     login {
         operator-group default {
             command-policy {

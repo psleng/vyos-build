@@ -49,7 +49,7 @@ system {
             speed 115200
         }
     }
-    host-name Am64x-evm
+    host-name igos
     login {
         operator-group default {
             command-policy {

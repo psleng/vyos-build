@@ -49,7 +49,7 @@ system {
             speed 115200
         }
     }
-    host-name Iolan-3
+    host-name igos
     login {
         operator-group default {
             command-policy {

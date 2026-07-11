@@ -10,14 +10,14 @@ index 89be4f7c714a..ae328ab89d9a 100644
 +			AM64X_IOPAD(0x0278, PIN_INPUT, 7) /* (C19) EXTINTn, GPIO1_70 */
  		>;
  	};
- 
+
 @@ -486,6 +486,7 @@ eeprom@50 {
  		/* AT24CM01 */
  		compatible = "atmel,24c1024";
  		reg = <0x50>;
 +		vcc-supply = <&reg_3v3>;
  	};
- 
+
  	rtc_rv3028: rtc@52 {
 @@ -500,8 +501,10 @@ tps65219: pmic@30 {
  		reg = <0x30>;
@@ -26,16 +26,16 @@ index 89be4f7c714a..ae328ab89d9a 100644
 -		interrupt-parent = <&gic500>;
 -		interrupts = <GIC_SPI 224 IRQ_TYPE_LEVEL_HIGH>;
 +		interrupt-parent = <&main_gpio1>;
-+		interrupts = <70 IRQ_TYPE_EDGE_FALLING>;
++		interrupts = <70 IRQ_TYPE_LEVEL_LOW>;
 +		/* interrupt-parent = <&gic500>; */
-+		/* interrupts = <GIC_SPI 224 IRQ_TYPE_EDGE_FALLING>; */
- 
++		/* interrupts = <GIC_SPI 224 IRQ_TYPE_LEVEL_HIGH>; */
+
  		buck1-supply = <&reg_vsodimm>;
  		buck2-supply = <&reg_vsodimm>;
 @@ -513,7 +516,6 @@ tps65219: pmic@30 {
  		system-power-controller;
  		ti,power-button;
- 
+
 -
  		regulators {
  			reg_vdd_core: buck1 {
@@ -63,4 +63,3 @@ index 89be4f7c714a..ae328ab89d9a 100644
 +	snps,enable-cdm-check;
  	pcie_aspm = "powersave";
  };
- 

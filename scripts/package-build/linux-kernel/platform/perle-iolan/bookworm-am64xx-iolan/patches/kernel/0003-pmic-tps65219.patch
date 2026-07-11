@@ -26,9 +26,9 @@ index 89be4f7c714a..ae328ab89d9a 100644
 -		interrupt-parent = <&gic500>;
 -		interrupts = <GIC_SPI 224 IRQ_TYPE_LEVEL_HIGH>;
 +		interrupt-parent = <&main_gpio1>;
-+		interrupts = <70 IRQ_TYPE_LEVEL_LOW>;
-+		/* interrupt-parent = <&gic500>; */
-+		/* interrupts = <GIC_SPI 224 IRQ_TYPE_LEVEL_HIGH>; */
++		interrupts = <70 IRQ_TYPE_EDGE_FALLING>;
++		/* AM64 C19: no native EXTINT, only mux is GPIO1_70 (edge-only irqchip). */
++		/* LEVEL_* => -EINVAL, tps65219 probe fails; PMIC is sole source on this net. */
 
  		buck1-supply = <&reg_vsodimm>;
  		buck2-supply = <&reg_vsodimm>;

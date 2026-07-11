@@ -32,9 +32,9 @@ index 89be4f7c714a..ae328ab89d9a 100644
 
  		buck1-supply = <&reg_vsodimm>;
  		buck2-supply = <&reg_vsodimm>;
-@@ -513,7 +516,6 @@ tps65219: pmic@30 {
+@@ -513,7 +516,5 @@ tps65219: pmic@30 {
  		system-power-controller;
- 		ti,power-button;
+-		ti,power-button;
 
 -
  		regulators {

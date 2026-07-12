@@ -16,6 +16,15 @@ packages = [
   "python3-libgpiod",
 ]
 
+# Per-model definition tree (relative to data/models/).  The model tree is an
+# ARCHITECTURE concern, so it lives here rather than per-flavor: every AM64x
+# image (dedicated EVM build, family "all" build, future variants) inherits
+# it simply by declaring `platform = "igos-am64x"`.  Ships data/models/am64x/
+# into /usr/share/igos/models/am64x/; at boot vyos.system.model resolves this
+# unit's identity (prod_id/model) to a model dir, falling back to the
+# `fallback = true` definition when a unit has no identity (e.g. the EVM).
+models_dir = "am64x"
+
 [architectures.arm64]
   # If/when a custom AM64x kernel package exists, list it here, e.g.:
   # packages = ["linux-image-am64x"]

@@ -18,12 +18,42 @@ echo 'I: Performing PSL customizations'
 # This is the only consumer of MM on the image, so no other service
 # needs the dbus-activated alias either.
 
-#Start chrony service
+# Alias chronyd.service -> chrony.service (RHEL-style name compatibility).
+# The daemon binary is chronyd, but Debian names the unit chrony.service.
+# VyOS manages chrony dynamically via conf-mode (never `systemctl enable`s it),
+# so Debian's built-in Alias=chronyd.service is never materialised. This symlink
+# recreates that alias so `systemctl ... chronyd` works. Does NOT start/enable.
 ln -fs /lib/systemd/system/chrony.service /etc/systemd/system/chronyd.service
 
 # journald fixups
+#
+# DEV: the journal is PERSISTENT so the previous boot survives a crash/watchdog
+# reset and is readable with `journalctl -b -1`. The old config stored the
+# journal in RAM (Storage=volatile) capped at 256K, so it was wiped on every
+# reset AND rolled over in seconds under the chatty wwan-fsm logging -- that is
+# why the pre-crash lead-up was never visible. SyncIntervalSec is short so log
+# lines reach the eMMC within a few seconds, minimising how much of the lead-up
+# is lost in page cache on a hard freeze.
+#
+# FOR PRODUCTION: comment out the DEV block below and uncomment the PROD block.
+# ---- DEV (persistent to eMMC; survives reset, readable via journalctl -b -1) ----
 sudo sed -i \
-	-e 's/#Storage=persistent/Storage=volatile/' \
-	-e 's/#RuntimeMaxUse=/RuntimeMaxUse=256K/' \
+	-e 's/^#\?Storage=.*/Storage=persistent/' \
+	-e 's/^#\?RuntimeMaxUse=.*/RuntimeMaxUse=32M/' \
+	-e 's/^#\?SystemMaxUse=.*/SystemMaxUse=200M/' \
+	-e 's/^#\?SyncIntervalSec=.*/SyncIntervalSec=5s/' \
 	-e 's/MaxLevelSyslog=debug/MaxLevelSyslog=info/' \
 		/etc/systemd/journald.conf
+
+# ---- PROD (RAM-only; spares the eMMC — journal does NOT survive a reboot) ----
+# NOTE: with Storage=volatile the journal lives in /run (tmpfs) and is wiped on
+# every reset, so `journalctl -b -1` will NOT work. Keep the RAM ring large
+# enough that the wwan-fsm log burst does not roll over instantly (the old 256K
+# was far too small). Re-enable this block and disable the DEV block above for
+# production images.
+#sudo sed -i \
+#	-e 's/^#\?Storage=.*/Storage=volatile/' \
+#	-e 's/^#\?RuntimeMaxUse=.*/RuntimeMaxUse=32M/' \
+#	-e 's/^#\?SystemMaxUse=.*/SystemMaxUse=/' \
+#	-e 's/MaxLevelSyslog=debug/MaxLevelSyslog=info/' \
+#		/etc/systemd/journald.conf

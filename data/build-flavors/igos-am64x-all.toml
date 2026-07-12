@@ -37,5 +37,10 @@ platform = "igos-am64x"
 # Per-flavor pin map (relative to data/igos-pinmaps/).
 pinmap_file = "igos-am64x-all/pinmap.py"
 
+# NOTE: the per-model definition tree (models_dir) is inherited from the
+# igos-am64x platform fragment — model definitions are keyed by processor
+# architecture, not by build flavor, so a single source serves every AM64x
+# image.  This "all" flavor is the family image that serves every board variant.
+
 [architectures.arm64]
 # Inherit the arm64 default console settings from architectures/arm64.toml.

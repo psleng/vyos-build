@@ -15,6 +15,14 @@ packages = [
   "python3-libgpiod",
 ]
 
+# Per-model definition tree (relative to data/models/).  Architecture concern
+# (see igos-am64x.toml): every J7200 flavor inherits it via
+# `platform = "igos-j7200"`.  Ships data/models/j7200/ into
+# /usr/share/igos/models/j7200/; at boot vyos.system.model resolves identity
+# to a model dir, falling back to the `fallback = true` definition (the J7200
+# EVM has no identity EEPROM).
+models_dir = "j7200"
+
 [architectures.arm64]
   # If/when a custom J7200 kernel package exists, list it here, e.g.:
   # packages = ["linux-image-j7200"]

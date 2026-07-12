@@ -856,6 +856,37 @@ DOCUMENTATION_URL="{build_config['documentation_url']}"
                     f"D: Copied overlay directory {overlay_dir} -> {chroot_includes_dir}"
                 )
 
+        ## Fork-only: ship the per-model definition tree for this platform.
+        ## `models_dir = "<platform>"` (normally set in the igos-<platform>
+        ## fragment, since model definitions are keyed by processor
+        ## architecture rather than build flavor) installs
+        ## data/models/<platform>/ into the image at
+        ## /usr/share/igos/models/<platform>/.  At boot, vyos.system.model
+        ## resolves this unit's identity (prod_id/model from the kernel
+        ## cmdline, product.env fallback) to the matching model directory;
+        ## vyos.hardware.board then reads that model.conf to trim the family
+        ## master pin map, and vyos-router applies the model's default-config /
+        ## cli-remove.  One family image thus serves every board variant.
+        if has_nonempty_key(build_config, "models_dir"):
+            models_rel = build_config["models_dir"]
+            models_src = os.path.join(
+                vyos_build_root, defaults.IGOS_MODELS_DIR, models_rel
+            )
+            if not os.path.isdir(models_src):
+                raise ImageBuildError(
+                    f'models_dir "{models_rel}" not found '
+                    f"(looked for {models_src})"
+                )
+            models_dst = os.path.join(
+                chroot_includes_dir,
+                defaults.IGOS_MODELS_INSTALL_DIR,
+                models_rel,
+            )
+            os.makedirs(os.path.dirname(models_dst), exist_ok=True)
+            shutil.copytree(models_src, models_dst, dirs_exist_ok=True)
+            if debug:
+                print(f"D: Installed model tree {models_src} -> {models_dst}")
+
         ## Create the default config
         ## Technically it's just another includes.chroot entry,
         ## but it's special enough to warrant making it easier for flavor writers

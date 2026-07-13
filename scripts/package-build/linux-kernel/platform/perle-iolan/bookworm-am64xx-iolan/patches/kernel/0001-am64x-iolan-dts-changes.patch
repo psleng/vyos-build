@@ -119,7 +119,7 @@ new file mode 100644
 index 000000000000..89be4f7c714a
 --- /dev/null
 +++ b/arch/arm64/boot/dts/ti/k3-am642-iolan.dts
-@@ -0,0 +1,749 @@
+@@ -0,0 +1,759 @@
 +// SPDX-License-Identifier: GPL-2.0-only OR MIT
 +/*
 + * Copyright (C) 2020-2024 Texas Instruments Incorporated - https://www.ti.com/
@@ -410,7 +410,7 @@ index 000000000000..89be4f7c714a
 +			AM64X_IOPAD(0x0038, PIN_INPUT_PULLUP,   7) /* (L17) OSPI0_CSn3       => GPIO0_14 (WIFI_PDN_GPIO)             */
 +			AM64X_IOPAD(0x0088, PIN_INPUT_PULLDOWN, 7) /* (R18) GPMC0_OEn_REn    => GPIO0_33 (VPP_LDO_EN)                */
 +			AM64X_IOPAD(0x0098, PIN_INPUT_PULLDOWN, 7) /* (W19) GPMC0_WAIT0      => GPIO0_37 (PATH_THROUGH_SEL)          */
-+			AM64X_IOPAD(0x00B8, PIN_INPUT_PULLUP,   7) /* (Y7)  PRG1_PRU0_GPO0   => GPIO0_45 (VSEL_SD_SWITCH)            */
++			AM64X_IOPAD(0x00B8, PIN_OUTPUT,         7) /* (Y7)  PRG1_PRU0_GPO0   => GPIO0_45 (VSEL_SD_SWITCH)            */
 +			AM64X_IOPAD(0x00D4, PIN_INPUT_PULLUP,   7) /* (U13) PRG1_PRU0_GPO7   => GPIO0_52 (SIM1_DETECT)               */
 +			AM64X_IOPAD(0x00C8, PIN_INPUT_PULLUP,   7) /* (Y8)  PRG1_PRU0_GPO4   => GPIO0_49 (SIM2_DETECT)               */
 +			AM64X_IOPAD(0x00F4, PIN_INPUT_PULLDOWN, 7) /* (Y9)  PRG1_PRU0_GPO15  => GPIO0_60 (SIM_SELECT1N_2)            */
@@ -711,6 +711,16 @@ index 000000000000..89be4f7c714a
 +	bootph-all;
 +	pinctrl-names = "default";
 +	pinctrl-0 = <&main_gpio0_digital_pins>;
++
++	/* VSEL_SD_SWITCH (Y7/GPIO0_45) -> TPS620553 pin22 VSEL input.
++	 * Must be actively driven high (SD I/O voltage select); DTS
++	 * previously left it as a pulled-up input with no consumer. */
++	vsel-sd-switch-hog {
++		gpio-hog;
++		gpios = <45 GPIO_ACTIVE_HIGH>;
++		output-high;
++		line-name = "VSEL_SD_SWITCH";
++	};
 +};
 +
 +&main_gpio1 {

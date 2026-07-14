@@ -72,11 +72,7 @@ PINS = {
     "UARTC0_TERM_TX":    _P(bank=1, line=44, dir="out", bias="pull-down", default=0, group="uartc0"),
     "UARTC0_TERM_RX":    _P(bank=1, line=45, dir="out", bias="pull-down", default=0, group="uartc0"),
     "UARTC0_SLR":        _P(bank=1, line=49, dir="out", bias="pull-up",   default=1, group="uartc0"),
-    # SHUT_N: physical HIGH = transceiver ENABLED (THVD4431; verified by the old
-    # perle_gpioctl). serial_protocol() drives the truth-table SHUT level
-    # PHYSICALLY, so this pin is active_low=False (NOT True) and defaults LOW
-    # (= shutdown) so the port ships off at boot.
-    "UARTC0_SHUT_N":     _P(bank=1, line=50, dir="out", active_low=False, bias="pull-down", default=0, group="uartc0"),
+    "UARTC0_SHUT_N":     _P(bank=1, line=50, dir="out", active_low=True, bias="pull-down", default=1, group="uartc0"),
 
     # ---------------- UARTC2 (THVD4431) ----------------
     "UARTC2_MODE0":      _P(bank=0, line=40, dir="out", bias="pull-up",   default=1, group="uartc2"),
@@ -85,7 +81,7 @@ PINS = {
     "UARTC2_TERM_TX":    _P(bank=0, line=41, dir="out", bias="pull-down", default=0, group="uartc2"),
     "UARTC2_TERM_RX":    _P(bank=0, line=42, dir="out", bias="pull-down", default=0, group="uartc2"),
     "UARTC2_SLR":        _P(bank=0, line=35, dir="out", bias="pull-up",   default=1, group="uartc2"),
-    "UARTC2_SHUT_N":     _P(bank=0, line=36, dir="out", active_low=False, bias="pull-down", default=0, group="uartc2"),
+    "UARTC2_SHUT_N":     _P(bank=0, line=36, dir="out", active_low=True, bias="pull-down", default=1, group="uartc2"),
 
     # ---------------- UARTC4 (THVD4431) ----------------
     "UARTC4_MODE0":      _P(bank=1, line=5,  dir="out", bias="pull-up",   default=1, group="uartc4"),
@@ -94,7 +90,7 @@ PINS = {
     "UARTC4_TERM_TX":    _P(bank=1, line=41, dir="out", bias="pull-down", default=0, group="uartc4"),
     "UARTC4_TERM_RX":    _P(bank=1, line=40, dir="out", bias="pull-down", default=0, group="uartc4"),
     "UARTC4_SLR":        _P(bank=1, line=13, dir="out", bias="pull-up",   default=1, group="uartc4"),
-    "UARTC4_SHUT_N":     _P(bank=1, line=33, dir="out", active_low=False, bias="pull-down", default=0, group="uartc4"),
+    "UARTC4_SHUT_N":     _P(bank=1, line=33, dir="out", active_low=True, bias="pull-down", default=1, group="uartc4"),
 
     # ---------------- UARTC5 (THVD4431) ----------------
     "UARTC5_MODE0":      _P(bank=1, line=15, dir="out", bias="pull-up",   default=1, group="uartc5"),
@@ -103,7 +99,7 @@ PINS = {
     "UARTC5_TERM_TX":    _P(bank=1, line=14, dir="out", bias="pull-down", default=0, group="uartc5"),
     "UARTC5_TERM_RX":    _P(bank=1, line=16, dir="out", bias="pull-down", default=0, group="uartc5"),
     "UARTC5_SLR":        _P(bank=1, line=30, dir="out", bias="pull-up",   default=1, group="uartc5"),
-    "UARTC5_SHUT_N":     _P(bank=1, line=9,  dir="out", active_low=False, bias="pull-down", default=0, group="uartc5"),
+    "UARTC5_SHUT_N":     _P(bank=1, line=9,  dir="out", active_low=True, bias="pull-down", default=1, group="uartc5"),
 }
 
 # Per-port application-facing identity. Pin names above stay aligned with the

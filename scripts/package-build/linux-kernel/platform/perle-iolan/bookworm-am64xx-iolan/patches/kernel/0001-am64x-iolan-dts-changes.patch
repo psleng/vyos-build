@@ -859,9 +859,9 @@ index 000000000000..89be4f7c714a
 +	status = "disabled";
 +};
 +
-+/* We are using AM6412 which has single R5F core. Let's use Single-CPU mode */
++/* AM6412: single R5F, unused by Linux (boot R5 SPL is firmware; fTPM is OP-TEE) */
 +&main_r5fss0 {
-+	ti,cluster-mode = <2>;	/* 0 = Split Mode, 2 = Single-CPU Mode */
++	status = "disabled";	/* disable cluster; AM64 rproc needs BOTH cores or -ENODEV */
 +};
 +
 +&main_r5fss0_core1 {

@@ -853,7 +853,7 @@ index 000000000000..89be4f7c714a
 +	cpu-supply = <&reg_vdd_core>;
 +};
 +
-+/* removed #include "k3-am64-ti-ipc-firmware.dtsi": reclaim ~72M unused R5F/M4F remoteproc reserved-memory (memory@a1000000..a5000000); all R5F clusters + M4F are disabled on this board */
++#include "k3-am64-ti-ipc-firmware.dtsi"
 +
 +&mailbox0_cluster4 {
 +	status = "disabled";

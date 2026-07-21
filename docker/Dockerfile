@@ -1,4 +1,5 @@
 # Copyright (C) 2018-2025 VyOS maintainers and contributors
+# Copyright (C) 2026 Perle Systems Limited (iGOS modifications)
 #
 # This program is free software; you can redistribute it and/or modify
 # in order to easy exprort images built to "external" world
@@ -20,9 +21,6 @@
 ARG ARCH=
 FROM ${ARCH}debian:bookworm-slim
 
-# Rewrite ALL Debian sources to HTTPS
-RUN find /etc/apt -type f -name "*.list" -exec sed -i 's|http://deb.debian.org|https://deb.debian.org|g' {} +
-
 
 RUN grep "VERSION_ID" /etc/os-release || (echo 'VERSION_ID="12"' >> /etc/os-release)
 
@@ -31,29 +29,27 @@ RUN grep "VERSION_ID" /etc/os-release || (echo 'VERSION_ID="12"' >> /etc/os-rele
 
 # To install using a non-native cpu instructionset use the `--build-arg ARCH=<ARCH>/`
 # Supported architectures:
-#     arm32v6/
-#     arm32v7/
 #     arm64v8/
 # Example bo byukd natively:
 #     docker build -t vyos-build:current .
-# Example to build on armhf:
-#     docker build -t vyos-build:current-armhf --build-arg ARCH=arm32v7/ .
 # Example to build on arm64:
 #     docker build -t vyos-build:current-arm64 --build-arg ARCH=arm64v8/ .
 
 # On some versions of docker the emulation framework is not installed by default and
 # you need to install qemu, qemu-user-static and register qemu inside docker manually using:
 # `docker run --rm --privileged multiarch/qemu-user-static:register --reset`
-LABEL authors="VyOS Maintainers <maintainers@vyos.io>" \
-      org.opencontainers.image.authors="VyOS Maintainers <maintainers@vyos.io>" \
+LABEL authors="Perle Systems Limited <psleng@perle.com>" \
+      org.opencontainers.image.authors="Perle Systems Limited <psleng@perle.com>" \
       org.opencontainers.image.url="https://github.com/psleng/vyos-build" \
-      org.opencontainers.image.documentation="https://docs.vyos.io/en/latest/contributing/build-vyos.html" \
+      org.opencontainers.image.documentation="https://github.com/psleng/vyos-build#readme" \
       org.opencontainers.image.source="https://github.com/psleng/vyos-build" \
-      org.opencontainers.image.vendor="Sentrium S.L." \
-      org.opencontainers.image.licenses="GNU" \
-      org.opencontainers.image.title="vyos-build" \
-      org.opencontainers.image.description="Container to build VyOS ISO" \
-      org.opencontainers.image.base.name="docker.io/debian/debian:bookworm"
+      org.opencontainers.image.vendor="Perle Systems Limited" \
+      org.opencontainers.image.licenses="GPL-2.0-or-later" \
+      org.opencontainers.image.title="igos-build" \
+      org.opencontainers.image.description="Container to build iGOS images (derived from VyOS build tooling)" \
+      org.opencontainers.image.base.name="docker.io/debian/debian:bookworm" \
+      org.opencontainers.image.upstream="VyOS" \
+      org.opencontainers.image.upstream.source="https://github.com/vyos/vyos-build"
 ENV DEBIAN_FRONTEND=noninteractive
 
 RUN /bin/echo -e 'APT::Install-Recommends "0";\nAPT::Install-Suggests "0";' > /etc/apt/apt.conf.d/01norecommends
@@ -242,9 +238,10 @@ RUN apt-get update && apt-get install -y \
       build-essential
 RUN gem install --no-document fpm
 
-# Add vyos package repo
-COPY vyos-dev.list /etc/apt/sources.list.d/vyos-dev.list
-COPY vyos-dev.key /usr/share/keyrings/vyos-dev-archive-keyring.asc
+# Add psleng package repo
+# PSL: Install apt pubkey and sources.list.d file for psleng.github.io
+RUN echo "deb [signed-by=/etc/apt/keyrings/psleng.key] https://psleng.github.io current main" >> /etc/apt/sources.list.d/psleng.list
+COPY psleng.key /etc/apt/keyrings/
 
 # Packages needed for vyos-1x
 RUN pip --no-cache --no-cache-dir install --break-system-packages \
@@ -350,7 +347,7 @@ RUN apt-get update && apt-get install -y \
       python3-pytest-cov \
       cloud-utils
 
-# Install utillities for building grub and u-boot images
+# Install utilities for building grub and u-boot images
 RUN if dpkg-architecture -iarm64; then \
     apt-get update && apt-get install -y \
       dosfstools \
@@ -534,10 +531,10 @@ RUN sed "s/^%sudo.*/%sudo\tALL=(ALL) NOPASSWD:ALL/g" -i /etc/sudoers && \
     echo "vyos_bld\tALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers && \
     chmod a+s /usr/sbin/useradd /usr/sbin/groupadd
 
-# Ensure sure all users have access to Go
+# Ensure all users have access to Go
 RUN echo "export PATH=/opt/go/bin:\$PATH" >> /etc/skel/.bashrc
 
-# Rise upper limit for UID when working in an Active Direcotry integrated
+# Raise upper limit for UID when working in an Active Directory integrated
 # environment. This solves the warning: vyos_bld's uid 1632000007 outside of the
 # UID_MIN 1000 and UID_MAX 60000 range.
 RUN sed -i 's/UID_MAX\t\t\t60000/UID_MAX\t\t\t2000000000/g' /etc/login.defs
@@ -555,10 +552,6 @@ RUN apt-get update
 RUN printf "set mouse=\nset ttymouse=\n" > /etc/vim/vimrc.local
 
 COPY entrypoint.sh /usr/local/bin/entrypoint.sh
-
-# PSL: Install apt pubkey and sources.list.d file for psleng.github.io
-RUN echo "deb [signed-by=/etc/apt/keyrings/psleng.key] https://psleng.github.io current main" >> /etc/apt/sources.list.d/psleng.list
-COPY psleng.key /etc/apt/keyrings/
 
 # PSL: Extend secure_path for sudo
 RUN sudo sed -i 's|Defaults\s\+secure_path=\"\(.*\)\"|Defaults secure_path=\"\1:/opt/go/bin\"|' /etc/sudoers

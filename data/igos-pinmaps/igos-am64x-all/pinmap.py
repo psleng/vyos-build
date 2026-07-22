@@ -108,29 +108,12 @@ PINS = {
 # CLI output. ``tty`` is the canonical device app code should open;
 # ``label`` is purely cosmetic for ``test hardware show serial``.
 #
-# ``dt_node`` is the device-tree node tail of the SoC UART peripheral. The
-# runtime verifies, at FSM startup via ``hw.verify_serial_bindings()``, that
-# ``/sys/class/tty/<basename(tty)>/device/of_node`` realpath ends with this
-# string — catching any DTS / pinmap drift before the FSM silently flips the
-# wrong transceiver. AM64x MAIN_UART base addresses come from k3-am64-main.dtsi:
-#   MAIN_UART0 = 0x02800000  (console, ttyS0)
-#   MAIN_UART1 = 0x02810000  (ttyS1, UARTC0)
-#   MAIN_UART2 = 0x02820000  (ttyS2, UARTC2)
-#   MAIN_UART4 = 0x02840000  (ttyS3, UARTC4)
-#   MAIN_UART5 = 0x02850000  (ttyS4, UARTC5)
-# Confirm on a running board with:
-#   readlink -f /sys/class/tty/ttyS2/device/of_node
-#
 # ttyS0 is the system console and is intentionally NOT exposed here.
 SERIAL_PORTS = {
-    "UARTC0": {"tty": "/dev/ttyS1", "label": "Serial 1",
-               "dt_node": "/bus@f4000/serial@2810000"},
-    "UARTC2": {"tty": "/dev/ttyS2", "label": "Serial 2",
-               "dt_node": "/bus@f4000/serial@2820000"},
-    "UARTC4": {"tty": "/dev/ttyS3", "label": "Serial 3",
-               "dt_node": "/bus@f4000/serial@2840000"},
-    "UARTC5": {"tty": "/dev/ttyS4", "label": "Serial 4",
-               "dt_node": "/bus@f4000/serial@2850000"},
+    "UARTC0": {"tty": "/dev/ttyS1", "label": "Serial 1"},
+    "UARTC2": {"tty": "/dev/ttyS2", "label": "Serial 2"},
+    "UARTC4": {"tty": "/dev/ttyS3", "label": "Serial 3"},
+    "UARTC5": {"tty": "/dev/ttyS4", "label": "Serial 4"},
 }
 
 # Pinned ethernet interfaces

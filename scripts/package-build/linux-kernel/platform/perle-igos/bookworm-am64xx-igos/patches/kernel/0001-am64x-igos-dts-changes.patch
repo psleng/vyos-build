@@ -3788,8 +3788,8 @@ index 000000000000..0a247c68151d
 +	clock-frequency = <400000>;
 +
 +	eeprom@50 {
-+		/* AT24CM01 */
-+		compatible = "atmel,24c1024";
++		/* AT24C04D */
++		compatible = "atmel,24c04";
 +		reg = <0x50>;
 +		vcc-supply = <&reg_3v3>;
 +	};

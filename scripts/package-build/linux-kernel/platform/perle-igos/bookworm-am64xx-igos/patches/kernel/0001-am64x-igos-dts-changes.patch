@@ -3322,7 +3322,7 @@ new file mode 100644
 index 000000000000..0a247c68151d
 --- /dev/null
 +++ b/arch/arm64/boot/dts/perle/k3-am642-igos.dtsi
-@@ -0,0 +1,734 @@
+@@ -0,0 +1,751 @@
 +// SPDX-License-Identifier: GPL-2.0-only OR MIT
 +/*
 + * Copyright (C) 2020-2024 Texas Instruments Incorporated - https://www.ti.com/

@@ -3792,6 +3792,23 @@ index 000000000000..0a247c68151d
 +		compatible = "atmel,24c04";
 +		reg = <0x50>;
 +		vcc-supply = <&reg_3v3>;
++		nvmem-layout {
++			compatible = "fixed-layout";
++			#address-cells = <1>;
++			#size-cells = <1>;
++			
++			serial: serial@10 {
++				reg = <0x10 0x10>
++			};
++
++			product: product@20 {
++				reg = <0x20 0x10>
++			};	
++
++			model: model@30 {
++				reg = <0x30 0x10>
++			};	
++		};
 +	};
 +
 +	rtc_rv3028: rtc@52 {

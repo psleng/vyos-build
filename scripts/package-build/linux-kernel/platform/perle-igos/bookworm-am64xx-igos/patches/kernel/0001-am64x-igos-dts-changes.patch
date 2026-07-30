@@ -4588,10 +4588,10 @@ index 000000000..e0fc97927
 +obj-$(CONFIG_PERLE_DEVICE_INFO)	+= device-info.o
 diff --git a/drivers/platform/perle/device-info.c b/drivers/platform/perle/device-info.c
 new file mode 100644
-index 000000000..7555082ec
+index 000000000..2b2d45d46
 --- /dev/null
 +++ b/drivers/platform/perle/device-info.c
-@@ -0,0 +1,164 @@
+@@ -0,0 +1,165 @@
 +/*
 + * Perle device information driver
 + *
@@ -4603,6 +4603,7 @@ index 000000000..7555082ec
 +#include <linux/mm.h>
 +#include <linux/module.h>
 +#include <linux/nvmem-consumer.h>
++#include <linux/of.h>
 +#include <linux/platform_device.h>
 +#include <linux/property.h>
 +#include <linux/slab.h>

@@ -48,20 +48,18 @@ models_dir = "am64x-evm"
 # value (a full rename; source and dest are independent). Omit it and source =
 # `dtb`.
 
-# --- Bootloader payloads (u-boot / grub) -------------------------------------
-# Debian package(s) carried in the squashfs so the bootloader can be flashed or
-# upgraded from user space after an image-based upgrade. Two keys because u-boot
-# and grub sit on DIFFERENT secure-boot trust chains:
-#   * u-boot -> SoC/HS-SE-signed SPL, flashed to raw eMMC offsets; its deb
-#     installs tiboot3.bin/tispl.bin/u-boot.img under /usr/lib/u-boot/<platform>/
-#   * grub   -> UEFI shim/MOK on the EFI System Partition
-# Value is a list of package names, or "none" (default) to pull nothing -- this
-# lets the seam be wired now, before the signed/vendor debs exist.
-# Normal grub boot is ALREADY handled by the stock `grub-efi-arm64` package plus
-# `grub-install --uefi-secure-boot`; set `grub_payload` only for a custom/SIGNED
-# grub, e.g.  grub_payload = ["shim-signed", "grub-efi-arm64-signed"].
+# --- Bootloader payload (u-boot) ---------------------------------------------
+# Debian package(s) carried in the squashfs so u-boot can be flashed or upgraded
+# from user space after an image-based upgrade. u-boot is a SoC/HS-SE-signed SPL
+# flashed to raw eMMC offsets; its deb installs tiboot3.bin/tispl.bin/u-boot.img
+# under /usr/lib/u-boot/<platform>/. Value is a list of package names, or "none"
+# (default) to pull nothing -- this lets the seam be wired now, before the
+# signed/vendor deb exists.
+#
+# grub needs no payload key: it is already in the image via the arm64
+# architecture layer (grub-efi-arm64) plus live-build's grub-efi stage, which
+# also stages the signed shim + grub for UEFI Secure Boot onto the ESP.
 uboot_payload = "none"
-grub_payload  = "none"
 
 [architectures.arm64]
   # If/when a custom AM64x-EVM (ti-evm) kernel package exists, list it here, e.g.:

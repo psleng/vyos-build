@@ -708,16 +708,16 @@ DOCUMENTATION_URL="{build_config['documentation_url']}"
                     key_data = base64.b64decode(k["key"])
                     f.write(key_data)
 
-        ## Fork-only: igOS platform bootloader payloads.
-        ## A platform fragment (or flavor) may declare `uboot_payload` and/or
-        ## `grub_payload` as a list of Debian package names to carry in the image
-        ## (installed into the squashfs so the bootloader can be flashed/upgraded
-        ## from user space), or the string "none" (the default) to pull nothing --
-        ## which lets the seam be wired per-platform before the signed/vendor debs
-        ## exist. u-boot and grub are split because they sit on different
-        ## secure-boot trust chains (SoC-signed SPL vs UEFI shim/MOK). These simply
-        ## fold into the package list installed below.
-        for _payload_key in ("uboot_payload", "grub_payload"):
+        ## Fork-only: igOS platform bootloader payload.
+        ## A platform fragment (or flavor) may declare `uboot_payload` as a list
+        ## of Debian package names to carry in the image (installed into the
+        ## squashfs so u-boot can be flashed/upgraded from user space), or the
+        ## string "none" (the default) to pull nothing -- which lets the seam be
+        ## wired per-platform before the signed/vendor deb exists. (grub needs no
+        ## payload key: it is already in the image via the arm64 architecture
+        ## layer plus live-build's grub-efi stage.) This simply folds into the
+        ## package list installed below.
+        for _payload_key in ("uboot_payload",):
             _payload = build_config.get(_payload_key)
             if _payload and _payload != "none":
                 _pkgs = [_payload] if isinstance(_payload, str) else list(_payload)

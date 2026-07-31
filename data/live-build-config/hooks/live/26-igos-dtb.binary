@@ -1,0 +1,99 @@
+#!/bin/sh
+# igOS: stage per-model device-tree blobs (dtb) into the ISO's /boot/dtb.
+#
+# WHY (this is a .binary hook, not .chroot)
+#   U-Boot boots the ISO by reading the dtb from the ISO's own READABLE boot
+#   section -- /boot/dtb/<name> -- BEFORE Linux mounts the root filesystem.
+#   U-Boot cannot read squashfs, so the dtb must live on the ISO filesystem, not
+#   inside live/filesystem.squashfs. Binary hooks run during `lb binary` with
+#   CWD at the ISO image tree root (the dir holding live/, boot/, isolinux/),
+#   so `boot/dtb/...` here is the ISO's boot section (cf. 00-manifest.binary
+#   writing live/..., 01-live-serial.binary editing boot/grub/...).
+#
+# HOW
+#   For every model.conf in the model tree staged inside the chroot, read `dtb =`
+#   (DESTINATION, relative to /boot/dtb/) and optional `dtb_src =` (SOURCE path in
+#   the kernel output; defaults to `dtb`). Copy the source blob from the chroot's
+#   kernel output to the ISO's boot/dtb/<dtb>, VERBATIM, so it matches what U-Boot
+#   loads. `dtb_src` allows a full rename (source and dest are independent paths).
+#
+#   Only the dtbs the models declare are carried -- not every dtb the kernel
+#   builds. A model naming a dtb the kernel did not build fails the build (skew
+#   caught early). On images with no igOS model tree (e.g. generic x86) this is a
+#   no-op.
+
+set -e
+
+DTB_DEST="boot/dtb"          # relative to the ISO tree root == this hook's CWD
+
+# Locate the chroot (sibling of the binary/ISO tree) that carries the model tree.
+CHROOT=""
+for c in ../chroot chroot ../../chroot; do
+    if [ -d "${c}/usr/share/igos/models" ]; then
+        CHROOT="${c}"
+        break
+    fi
+done
+if [ -z "${CHROOT}" ]; then
+    echo "I: dtb-stage(iso): no igOS model tree found in the chroot, nothing to do"
+    exit 0
+fi
+
+MODELS_ROOT="${CHROOT}/usr/share/igos/models"
+KERNEL_GLOB="${CHROOT}/usr/lib/linux-image-*/"
+
+# Read a `key = value` from a model.conf: strip trailing comment, key, and
+# surrounding whitespace. Empty when the key is absent.
+get_key() {
+    grep -hE "^[[:space:]]*$2[[:space:]]*=" "$1" 2>/dev/null | head -n1 \
+        | sed -E 's/#.*$//; s/^[^=]*=[[:space:]]*//; s/[[:space:]]+$//'
+}
+
+staged=0
+for conf in "${MODELS_ROOT}"/*/*/model.conf; do
+    [ -f "${conf}" ] || continue
+
+    # `dtb` = DESTINATION (relative to the ISO /boot/dtb/, i.e. what U-Boot loads).
+    dest=$(get_key "${conf}" dtb)
+    [ -n "${dest}" ] || continue
+    # `dtb_src` = optional SOURCE override in the kernel output (full rename).
+    src=$(get_key "${conf}" dtb_src)
+    [ -n "${src}" ] || src="${dest}"
+
+    if ! ls -d ${KERNEL_GLOB} >/dev/null 2>&1; then
+        echo "E: dtb-stage(iso): ${conf} declares a dtb but no ${KERNEL_GLOB} found"
+        exit 1
+    fi
+
+    # Resolve the source in the kernel output: exact subpath first, else basename.
+    found=""
+    for kdir in ${KERNEL_GLOB}; do
+        if [ -e "${kdir}${src}" ]; then
+            found="${kdir}${src}"
+            break
+        fi
+    done
+    if [ -z "${found}" ]; then
+        found=$(find ${KERNEL_GLOB} -type f -name "$(basename "${src}")" 2>/dev/null | head -n1)
+    fi
+    if [ -z "${found}" ] || [ ! -e "${found}" ]; then
+        echo "E: dtb-stage(iso): source '${src}' (from ${conf}) not found in kernel output"
+        exit 1
+    fi
+
+    dst="${DTB_DEST}/${dest}"
+    mkdir -p "$(dirname "${dst}")"
+    cp "${found}" "${dst}"
+    if [ "${src}" = "${dest}" ]; then
+        echo "I: dtb-stage(iso):   ${found} -> /${dst}"
+    else
+        echo "I: dtb-stage(iso):   ${found} -> /${dst}   (renamed from ${src})"
+    fi
+    staged=$((staged + 1))
+done
+
+if [ "${staged}" -eq 0 ]; then
+    echo "I: dtb-stage(iso): no dtb= entries in model tree, nothing to do"
+else
+    echo "I: dtb-stage(iso): staged ${staged} dtb(s) into the ISO /boot/dtb"
+fi

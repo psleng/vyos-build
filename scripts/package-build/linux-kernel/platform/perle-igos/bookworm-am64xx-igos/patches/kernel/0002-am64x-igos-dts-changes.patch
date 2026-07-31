@@ -3319,10 +3319,10 @@ index 000000000..e3c81ce54
 \ No newline at end of file
 diff --git a/arch/arm64/boot/dts/perle/k3-am642-igos.dtsi b/arch/arm64/boot/dts/perle/k3-am642-igos.dtsi
 new file mode 100644
-index 000000000..07d337a40
+index 000000000..23739f169
 --- /dev/null
 +++ b/arch/arm64/boot/dts/perle/k3-am642-igos.dtsi
-@@ -0,0 +1,757 @@
+@@ -0,0 +1,805 @@
 +// SPDX-License-Identifier: GPL-2.0-only OR MIT
 +/*
 + * Copyright (C) 2020-2024 Texas Instruments Incorporated - https://www.ti.com/
@@ -3813,7 +3813,51 @@ index 000000000..07d337a40
 +
 +			model: model@30 {
 +				reg = <0x30 0x10>;
-+			};	
++			};
++
++			wifi_mac_addr0: mac-address@be {
++				reg = <0xbe 0x6>;
++			};
++
++			wifi_mac_addr1: mac-address@c4 {
++				reg = <0xc4 0x6>;
++			};
++
++			mac_addr0: mac-address@ca {
++				reg = <0xca 0x6>;
++			};
++
++			mac_addr1: mac-address@d0 {
++				reg = <0xd0 0x6>;
++			};
++
++			mac_addr2: mac-address@d6 {
++				reg = <0xd6 0x6>;
++			};
++
++			mac_addr3: mac-address@dc {
++				reg = <0xdc 0x6>;
++			};
++
++			mac_addr4: mac-address@e2 {
++				reg = <0xe2 0x6>;
++			};
++
++			mac_addr5: mac-address@e8 {
++				reg = <0xe8 0x6>;
++			};
++
++			mac_addr6: mac-address@ee {
++				reg = <0xee 0x6>;
++			};
++
++			mac_addr7: mac-address@f4 {
++				reg = <0xf4 0x6>;
++			};
++
++			mac_addr8: mac-address@fa {
++				reg = <0xfa 0x6>;
++			};
 +		};
 +	};
 +
@@ -3967,6 +4011,8 @@ index 000000000..07d337a40
 +	status = "disabled";
 +	phy-mode = "rgmii-rxid";
 +	phy-handle = <&cpsw3g_phy0>;
++	nvmem-cells = <&mac_addr1>;
++	nvmem-cell-names = "mac-address";
 +};
 +
 +&cpsw_port2 {
@@ -3974,6 +4020,8 @@ index 000000000..07d337a40
 +	status = "okay";
 +	phy-mode = "rgmii-rxid";
 +	phy-handle = <&cpsw3g_phy1>;
++	nvmem-cells = <&mac_addr0>;
++	nvmem-cell-names = "mac-address";
 +};
 +
 +&cpsw3g_mdio {

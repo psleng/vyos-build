@@ -1,20 +1,21 @@
-# igOS AM64x hardware image — TI AM64x EVM (TMDS64EVM) board variant.
+# igOS AM64x EVM hardware image — TI AM64x EVM (TMDS64EVM) dev board.
 #
-# See igos-am64x-all.toml for the layering model. This flavor shares the
-# AM64x processor-family fragment and only swaps the pin map.
+# See igos-am64x-all.toml for the layering model. The EVM is its OWN platform
+# (igos-am64x-evm): it is built from the ti-evm kernel and ships only the EVM
+# dtb, so it does not share the perle igos-am64x tree — it shares only the SoC.
 
 image_format = "iso"
 
-platform = "igos-am64x"
+# EVM platform fragment — merges data/igos-platforms/igos-am64x-evm.toml
+# (ti-evm kernel, models_dir = "am64x-evm").
+platform = "igos-am64x-evm"
 
 pinmap_file = "igos-am64x-evm/pinmap.py"
 
-# NOTE: models_dir is inherited from the igos-am64x platform fragment (model
-# definitions are keyed by architecture, not build flavor).  This is a
-# dedicated EVM build (its own U-Boot); it simply declares the platform and
-# gets the AM64x model tree.  The EVM has no identity EEPROM, so at boot it
-# matches no model by id and uses the `fallback = true` am64x/evm definition
-# for its default-config + cli-remove.  Its own (empty) pin map keeps
-# vyos.hardware.board inert regardless.
+# NOTE: models_dir is inherited from the igos-am64x-evm platform fragment, which
+# ships data/models/am64x-evm/ (the single EVM definition).  The EVM has no
+# identity EEPROM, so at boot it matches no model by id and uses the
+# `fallback = true` am64x-evm/evm definition for its default-config +
+# cli-remove.  Its own (empty) pin map keeps vyos.hardware.board inert regardless.
 
 [architectures.arm64]

@@ -38,9 +38,10 @@ platform = "igos-am64x"
 pinmap_file = "igos-am64x-all/pinmap.py"
 
 # NOTE: the per-model definition tree (models_dir) is inherited from the
-# igos-am64x platform fragment — model definitions are keyed by processor
-# architecture, not by build flavor, so a single source serves every AM64x
-# image.  This "all" flavor is the family image that serves every board variant.
+# igos-am64x platform fragment — Perle model definitions are keyed by processor
+# architecture, not by build flavor, so a single source serves every Perle
+# AM64x board variant.  This "all" flavor is the family image that serves every
+# Perle board variant; the AM64x EVM is a separate platform (igos-am64x-evm).
 
 [architectures.arm64]
 # Inherit the arm64 default console settings from architectures/arm64.toml.

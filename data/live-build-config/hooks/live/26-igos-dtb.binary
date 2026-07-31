@@ -18,13 +18,19 @@
 #   loads. `dtb_src` allows a full rename (source and dest are independent paths).
 #
 #   Only the dtbs the models declare are carried -- not every dtb the kernel
-#   builds. A model naming a dtb the kernel did not build fails the build (skew
-#   caught early). On images with no igOS model tree (e.g. generic x86) this is a
-#   no-op.
+#   builds. Each image ships a SINGLE platform's model tree (igos-am64x = the
+#   Perle IOLAN/IRG boards, igos-am64x-evm = the AM64x EVM, igos-j7200 = the
+#   J7200 EVM), and a platform's kernel builds every dtb its models name -- so a
+#   missing source is a real build/kernel skew and is a HARD FAILURE by default
+#   (caught early). Set IGOS_DTB_STRICT=0 to downgrade a missing source to a
+#   skip+warning instead (e.g. while bringing up a new board before its dtb has
+#   landed in the kernel). On images with no igOS model tree (e.g. generic x86)
+#   this is a no-op.
 
 set -e
 
 DTB_DEST="boot/dtb"          # relative to the ISO tree root == this hook's CWD
+STRICT="${IGOS_DTB_STRICT:-1}"   # default 1: missing source = hard failure; set 0 to skip+warn
 
 # Locate the chroot (sibling of the binary/ISO tree) that carries the model tree.
 CHROOT=""
@@ -50,6 +56,7 @@ get_key() {
 }
 
 staged=0
+skipped=0
 for conf in "${MODELS_ROOT}"/*/*/model.conf; do
     [ -f "${conf}" ] || continue
 
@@ -59,11 +66,6 @@ for conf in "${MODELS_ROOT}"/*/*/model.conf; do
     # `dtb_src` = optional SOURCE override in the kernel output (full rename).
     src=$(get_key "${conf}" dtb_src)
     [ -n "${src}" ] || src="${dest}"
-
-    if ! ls -d ${KERNEL_GLOB} >/dev/null 2>&1; then
-        echo "E: dtb-stage(iso): ${conf} declares a dtb but no ${KERNEL_GLOB} found"
-        exit 1
-    fi
 
     # Resolve the source in the kernel output: exact subpath first, else basename.
     found=""
@@ -77,8 +79,13 @@ for conf in "${MODELS_ROOT}"/*/*/model.conf; do
         found=$(find ${KERNEL_GLOB} -type f -name "$(basename "${src}")" 2>/dev/null | head -n1)
     fi
     if [ -z "${found}" ] || [ ! -e "${found}" ]; then
-        echo "E: dtb-stage(iso): source '${src}' (from ${conf}) not found in kernel output"
-        exit 1
+        if [ "${STRICT}" = "1" ] || [ "${STRICT}" = "true" ]; then
+            echo "E: dtb-stage(iso): source '${src}' (from ${conf}) not found in kernel output"
+            exit 1
+        fi
+        echo "W: dtb-stage(iso): '${src}' (from ${conf}) not built by this kernel -- skipping"
+        skipped=$((skipped + 1))
+        continue
     fi
 
     dst="${DTB_DEST}/${dest}"
@@ -93,7 +100,7 @@ for conf in "${MODELS_ROOT}"/*/*/model.conf; do
 done
 
 if [ "${staged}" -eq 0 ]; then
-    echo "I: dtb-stage(iso): no dtb= entries in model tree, nothing to do"
+    echo "W: dtb-stage(iso): no dtbs staged (${skipped} skipped) -- image may lack device trees"
 else
-    echo "I: dtb-stage(iso): staged ${staged} dtb(s) into the ISO /boot/dtb"
+    echo "I: dtb-stage(iso): staged ${staged} dtb(s) into the ISO /boot/dtb (${skipped} skipped)"
 fi

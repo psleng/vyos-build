@@ -1,21 +1,34 @@
 # igOS AM64x EVM hardware image — TI AM64x EVM (TMDS64EVM) dev board.
 #
-# See igos-am64x-all.toml for the layering model. The EVM is its OWN platform
-# (igos-am64x-evm): it is built from the ti-evm kernel and ships only the EVM
-# dtb, so it does not share the perle igos-am64x tree — it shares only the SoC.
+# See igos-am64x-all.toml for the layering model. The EVM is its own image: it is
+# built from the ti-evm kernel and ships only the EVM dtb (models_dir = am64x-evm),
+# so it does not share the perle am64x model tree — it shares only the SoC.
 
 image_format = "iso"
 
-# EVM platform fragment — merges data/igos-platforms/igos-am64x-evm.toml
-# (ti-evm kernel, models_dir = "am64x-evm").
-platform = "igos-am64x-evm"
-
 pinmap_file = "igos-am64x-evm/pinmap.py"
 
-# NOTE: models_dir is inherited from the igos-am64x-evm platform fragment, which
-# ships data/models/am64x-evm/ (the single EVM definition).  The EVM has no
-# identity EEPROM, so at boot it matches no model by id and uses the
-# `fallback = true` am64x-evm/evm definition for its default-config +
-# cli-remove.  Its own (empty) pin map keeps vyos.hardware.board inert regardless.
+# Runtime deps (parity with the family images; libgpiod for serial-control/GPIO).
+packages = [
+  "python3-libgpiod",
+]
+
+# Per-model definition tree (relative to data/models/). Ships data/models/am64x-evm/
+# into /usr/share/igos/models/am64x-evm/ (a single EVM definition). The EVM has no
+# identity EEPROM, so at boot vyos.system.model matches no id and uses the
+# `fallback = true` am64x-evm/evm definition for its default-config + cli-remove.
+# Its own (empty) pin map keeps vyos.hardware.board inert regardless. Each
+# model.conf declares its own `dtb =`, staged by the 26-igos-dtb.binary hook.
+models_dir = "am64x-evm"
+
+# Bootloader payload (see igos-am64x-all.toml). "none" pulls nothing.
+uboot_payload = "none"
+
+# Squashfs compression — favor BOOT SPEED over image size on this slow ARM SoC.
+# lz4 decompresses far faster than the arm64 default (xz), at the cost of a
+# larger image. Set at the flavor level so it overrides architectures/arm64.toml
+# (layer order defaults < architecture < flavor) without touching the upstream
+# arm64 default.
+squashfs_compression_type = "lz4 -b 1M -no-fragments"
 
 [architectures.arm64]

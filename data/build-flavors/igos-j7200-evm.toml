@@ -1,12 +1,32 @@
 # igOS J7200 hardware image — TI J7200 EVM board variant.
 #
-# See igos-am64x-all.toml for the layering model. This flavor pulls in
-# the J7200 processor-family fragment (igos-j7200.toml).
+# See igos-am64x-all.toml for the layering model. All igOS-specific keys for this
+# image live in this flavor file.
 
 image_format = "iso"
 
-platform = "igos-j7200"
-
 pinmap_file = "igos-j7200-evm/pinmap.py"
+
+# Runtime deps (cellular/serial-control need libgpiod at runtime).
+packages = [
+  "python3-libgpiod",
+]
+
+# Per-model definition tree (relative to data/models/). Ships data/models/j7200/
+# into /usr/share/igos/models/j7200/; at boot vyos.system.model resolves identity
+# to a model dir, falling back to the `fallback = true` definition (the J7200 EVM
+# has no identity EEPROM). Each model.conf declares its own `dtb =`, staged by the
+# 26-igos-dtb.binary hook.
+models_dir = "j7200"
+
+# Bootloader payload (see igos-am64x-all.toml). "none" pulls nothing.
+uboot_payload = "none"
+
+# Squashfs compression — favor BOOT SPEED over image size on this slow ARM SoC.
+# lz4 decompresses far faster than the arm64 default (xz), at the cost of a
+# larger image. Set at the flavor level so it overrides architectures/arm64.toml
+# (layer order defaults < architecture < flavor) without touching the upstream
+# arm64 default.
+squashfs_compression_type = "lz4 -b 1M -no-fragments"
 
 [architectures.arm64]

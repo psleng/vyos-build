@@ -1,0 +1,82 @@
+#!/bin/sh
+#
+# Pre-generate the snakeoil TLS certificate at BUILD time.
+#
+# Why this exists
+# ---------------
+# The Debian live-config component /usr/lib/live/config/1090-ssl-cert runs at
+# BOOT (live-config.service, the "late userspace" gate) and calls
+# `make-ssl-cert generate-default-snakeoil`, which in turn calls `hostname -f`.
+#
+# On this image `hostname -f` blocks for a long time in the early-boot window:
+#   * /etc/hosts is still empty (VyOS populates it later via vyos-hostsd),
+#   * nss-myhostname is deliberately disabled (VyOS T2678 - myhostname caused
+#     huge per-SSH-login RAM/CPU use with large IPv6 routing tables), so
+#   * `hostname -f` falls through to DNS, whose resolver is not up yet, and
+#     stalls until it times out. That is the multi-minute
+#     "A start job is running for live-config (late userspace)" hang.
+#
+# Historically the out-of-tree `run-live-config` script pre-ran the live-config
+# components at build time (behind a temporary /etc/hosts) so the boot-time gate
+# was a no-op. That step was dropped during the build consolidation, which
+# reintroduced the boot-time stall. This hook restores ONLY the ssl-cert part.
+#
+# Scope / safety
+# --------------
+#   * A shared snakeoil cert across units is acceptable: it is an untrusted,
+#     self-signed placeholder, never a trust anchor. Real TLS services use the
+#     VyOS PKI, not snakeoil.
+#   * SSH host keys are deliberately NOT generated here. They must be unique per
+#     unit (compare 100-remove-dropbear-keys.chroot). The boot-time
+#     1160-openssh-server component and the VyOS `service ssh` conf-mode continue
+#     to own per-device SSH host-key generation; this hook does not touch them.
+#
+echo "I: Pre-generating snakeoil TLS certificate at build time (avoids boot-time make-ssl-cert/hostname stall)"
+
+if ! command -v make-ssl-cert >/dev/null 2>&1; then
+	echo "W: make-ssl-cert not present (ssl-cert package not installed); skipping"
+	exit 0
+fi
+
+# make-ssl-cert calls `hostname -f`; give it a resolvable name for the duration
+# of the build only, then restore the shipped /etc/hosts exactly (empty on this
+# image - VyOS manages it at runtime via vyos-hostsd).
+_hosts_backup="$(mktemp)"
+if [ -e /etc/hosts ]; then
+	cat /etc/hosts > "$_hosts_backup"
+	_had_hosts=1
+else
+	_had_hosts=0
+fi
+
+restore_hosts() {
+	if [ "$_had_hosts" = "1" ]; then
+		cat "$_hosts_backup" > /etc/hosts
+	else
+		rm -f /etc/hosts
+	fi
+	rm -f "$_hosts_backup"
+}
+trap restore_hosts EXIT INT TERM
+
+_hn="$(hostname 2>/dev/null || echo localhost)"
+{
+	echo "127.0.0.1 localhost"
+	echo "127.0.1.1 ${_hn}"
+} > /etc/hosts
+
+if [ ! -e /etc/ssl/certs/ssl-cert-snakeoil.pem ] || [ ! -e /etc/ssl/private/ssl-cert-snakeoil.key ]; then
+	if make-ssl-cert generate-default-snakeoil --force-overwrite; then
+		echo "I: snakeoil certificate generated"
+	else
+		echo "W: make-ssl-cert failed; boot-time live-config will fall back to generating it"
+	fi
+fi
+
+# Mark the live-config ssl-cert component complete so 1090-ssl-cert is skipped at
+# boot - this is what removes the hostname stall from the boot path.
+mkdir -p /var/lib/live/config
+: > /var/lib/live/config/ssl-cert
+echo "I: marked live-config component 'ssl-cert' complete"
+
+# /etc/hosts is restored by the EXIT trap.

@@ -1,0 +1,52 @@
+qmi_wwan: do not count raw-IP zero-pad frames as rx_errors
+
+Qualcomm-based Telit modems (observed on the FN920, USB 1bc7:10a0) emit a
+short all-zero pad frame -- typically 4 bytes of 0x00 -- after every
+downlink datagram when the data interface runs in raw-IP mode (no host
+QMAP). These frames are neither IPv4 nor IPv6, so qmi_wwan_rx_fixup()
+takes the raw-IP "case 0x00" / default branch and returns 0, which makes
+the usbnet core increment net_device.stats.rx_errors for each one. On
+these modems that is ~1 pad per IP packet, so the interface's rx_errors
+counter climbs to ~90-95% of rx_packets even though no traffic is lost
+(pings 0% loss, Ip6InDiscards=0, no HW/length/crc sub-errors).
+
+Empirically confirmed with usbmon: each rx_error corresponds exactly to a
+"C Bi ... 4 = 00000000" bulk-in completion, and the count tracks 1:1 with
+received IP packets. There is no host-side QMAP/rmnet consumer available
+on this modem to absorb the framing, so the fix belongs in the driver.
+
+Detect the short all-zero pad in raw-IP mode and consume it silently:
+trim the skb to zero length and return success so the usbnet core drops
+it without counting an rx_error. Real IPv4/IPv6 packets (>= 20 bytes,
+first nibble 4/6) and genuinely malformed longer frames are unaffected;
+MUX and pass-through modes return earlier and are untouched.
+
+This is a downstream/carried patch: upstream treats raw-IP as IP-only and
+has no equivalent fix.
+
+diff --git a/drivers/net/usb/qmi_wwan.c b/drivers/net/usb/qmi_wwan.c
+--- a/drivers/net/usb/qmi_wwan.c
++++ b/drivers/net/usb/qmi_wwan.c
+@@ -578,6 +578,22 @@ static int qmi_wwan_rx_fixup(struct usbnet *dev, struct sk_buff *skb)
+ 		return 1;
+ 	}
+
++	/*
++	 * Some Qualcomm-based Telit modems (e.g. FN920) emit a short all-zero
++	 * pad frame (typically 4 bytes of 0x00) after each downlink datagram
++	 * while in raw-IP mode.  These are neither IPv4 nor IPv6 and are not
++	 * errors, but the switch below would take the raw-IP "case 0x00" /
++	 * default branch, return 0, and make usbnet count each one as an
++	 * rx_error -- inflating the interface error counter ~1:1 with received
++	 * packets.  Silently consume the pad: trim to zero length and return
++	 * success so usbnet drops it without incrementing rx_errors.
++	 */
++	if (rawip && skb->len <= 4 &&
++	    !memchr_inv(skb->data, 0, skb->len)) {
++		skb_trim(skb, 0);
++		return 1;
++	}
++
+ 	switch (skb->data[0] & 0xf0) {
+ 	case 0x40:
+ 		proto = htons(ETH_P_IP);

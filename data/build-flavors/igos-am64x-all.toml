@@ -1,11 +1,12 @@
 # igOS AM64x hardware image — "all" base board variant.
 #
 # Layered build configuration:
-#   defaults → build_type → architecture → platform → flavor
+#   defaults → build_type → architecture → flavor
 #
-# `platform` pulls in data/igos-platforms/igos-am64x.toml (kernel +
-# family-wide packages). `pinmap_file` overlays the per-variant pin map
-# from data/igos-pinmaps/ at image-build time onto the path
+# Everything igOS-specific for this image lives in THIS flavor file: the family
+# packages, the per-model definition tree (`models_dir`), the u-boot payload
+# seam, and the squashfs compression. `pinmap_file` overlays the per-variant
+# pin map from data/igos-pinmaps/ at image-build time onto the path
 #   /usr/lib/python3/dist-packages/vyos/hardware/pinmap.py
 # which is consumed at runtime by the board-agnostic vyos.hardware code
 # shipped in vyos-1x.
@@ -23,24 +24,46 @@
 #
 # Adding a new processor family (e.g. IMX8MP)
 # -----------------------------------------------------------------------------
-#   1. Create data/igos-platforms/igos-imx8mp.toml with the family kernel
-#      and shared packages.
-#   2. Create data/igos-pinmaps/igos-imx8mp-<variant>/pinmap.py.
-#   3. Create data/build-flavors/igos-imx8mp-<variant>.toml that sets
-#      platform = "igos-imx8mp" and pinmap_file = "igos-imx8mp-<variant>/pinmap.py".
+#   1. Copy this flavor to data/build-flavors/igos-imx8mp-<variant>.toml and set
+#      `models_dir`, `packages`, and `pinmap_file` for the new family.
+#   2. Create the per-model tree data/models/imx8mp/ and the pin map
+#      data/igos-pinmaps/igos-imx8mp-<variant>/pinmap.py.
 
 image_format = "iso"
-
-# Processor family — merges data/igos-platforms/igos-am64x.toml.
-platform = "igos-am64x"
 
 # Per-flavor pin map (relative to data/igos-pinmaps/).
 pinmap_file = "igos-am64x-all/pinmap.py"
 
-# NOTE: the per-model definition tree (models_dir) is inherited from the
-# igos-am64x platform fragment — model definitions are keyed by processor
-# architecture, not by build flavor, so a single source serves every AM64x
-# image.  This "all" flavor is the family image that serves every board variant.
+# Runtime deps for this hardware image. Lists are concatenated across build
+# layers, so this ADDS to the base package set (cellular/serial-control need
+# libgpiod at runtime).
+packages = [
+  "python3-libgpiod",
+]
+
+# Per-model definition tree (relative to data/models/). Ships data/models/am64x/
+# into /usr/share/igos/models/am64x/; at boot vyos.system.model resolves this
+# unit's identity (prod_id/model) to a model dir. Each model.conf declares its
+# own `dtb =`, which the 26-igos-dtb.binary hook stages into the ISO boot
+# section at /boot/dtb/<value>. This "all" flavor is the family image serving
+# every Perle AM64x board (IOLAN/IRG); the AM64x EVM is a separate flavor
+# (igos-am64x-evm) built from the ti-evm kernel.
+models_dir = "am64x"
+
+# Bootloader payload: Debian package(s) that install u-boot boot blobs under
+# /usr/lib/u-boot/<platform>/ for a userspace flasher; "none" pulls nothing
+# (seam wired before the signed/vendor deb exists). grub needs no payload — it
+# is already in the image via the arm64 layer + live-build's grub-efi stage.
+uboot_payload = "none"
+
+# Squashfs compression — favor BOOT SPEED over image size on this slow ARM SoC.
+# lz4 decompresses far faster than the arm64 default (xz), at the cost of a
+# larger image. Set at the flavor level so it overrides architectures/arm64.toml
+# (layer order defaults < architecture < flavor) without touching the upstream
+# arm64 default. NOTE: the final igos-live ISO only reflects this once the nexus
+# buildiGOS_iso.sh re-squash (which forces xz) is retired; the vyos-build hybrid
+# ISO already honors it.
+squashfs_compression_type = "lz4 -b 1M -no-fragments"
 
 [architectures.arm64]
 # Inherit the arm64 default console settings from architectures/arm64.toml.

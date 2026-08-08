@@ -5,7 +5,7 @@ index 13173795c43d..95e775606b61 100644
 @@ -146,6 +146,12 @@ config ARCH_K3
  	  This enables support for Texas Instruments' K3 multicore SoC
  	  architecture.
- 
+
 +config TARGET_AM6412_IOLAN
 +	bool "AM6412 IOLAN Board"
 +	depends on ARCH_K3
@@ -4038,10 +4038,9 @@ index 000000000000..0a247c68151d
 +	status = "disabled";
 +};
 +
-+/* We are using AM6412 which has single R5F core. Let's use Single-CPU mode */
-+&main_r5fss0 {
-+	ti,cluster-mode = <2>;	/* 0 = Split Mode, 2 = Single-CPU Mode */
-+};
+&main_r5fss0 {
+	status = "disabled";	/* disable cluster; AM64 rproc needs BOTH cores or -ENODEV */
+};
 +
 +&main_r5fss0_core1 {
 +	status = "disabled";

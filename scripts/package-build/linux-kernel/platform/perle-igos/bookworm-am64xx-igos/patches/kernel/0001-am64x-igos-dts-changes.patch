@@ -5,7 +5,7 @@ index 13173795c43d..95e775606b61 100644
 @@ -146,6 +146,12 @@ config ARCH_K3
  	  This enables support for Texas Instruments' K3 multicore SoC
  	  architecture.
-
+ 
 +config TARGET_AM6412_IOLAN
 +	bool "AM6412 IOLAN Board"
 +	depends on ARCH_K3
@@ -3322,7 +3322,7 @@ new file mode 100644
 index 000000000000..0a247c68151d
 --- /dev/null
 +++ b/arch/arm64/boot/dts/perle/k3-am642-igos.dtsi
-@@ -0,0 +1,735 @@
+@@ -0,0 +1,734 @@
 +// SPDX-License-Identifier: GPL-2.0-only OR MIT
 +/*
 + * Copyright (C) 2020-2024 Texas Instruments Incorporated - https://www.ti.com/
@@ -4038,9 +4038,9 @@ index 000000000000..0a247c68151d
 +	status = "disabled";
 +};
 +
-&main_r5fss0 {
-	status = "disabled";	/* disable cluster; AM64 rproc needs BOTH cores or -ENODEV */
-};
++&main_r5fss0 {
++	status = "disabled";	/* disable cluster; AM64 rproc needs BOTH cores or -ENODEV */
++};
 +
 +&main_r5fss0_core1 {
 +	status = "disabled";

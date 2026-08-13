@@ -5,7 +5,7 @@ index 13173795c43d..95e775606b61 100644
 @@ -146,6 +146,12 @@ config ARCH_K3
  	  This enables support for Texas Instruments' K3 multicore SoC
  	  architecture.
- 
+
 +config TARGET_AM6412_IOLAN
 +	bool "AM6412 IOLAN Board"
 +	depends on ARCH_K3
@@ -1507,7 +1507,7 @@ index 00000000..273e7219
 +	/* PMIC_EXTINT# */
 +	pinctrl_pmic_extint: main-system-extint-default-pins {
 +		pinctrl-single,pins = <
-+			AM64X_IOPAD(0x0278, PIN_INPUT, 7) /* (C19) EXTINTn, GPIO1_70 */
++			AM64X_IOPAD(0x0278, PIN_INPUT, 0) /* (C19) EXTINTn */
 +		>;
 +	};
 +
@@ -1612,7 +1612,7 @@ index 00000000..273e7219
 +		/* interrupt-parent = <&main_gpio1>; */
 +		/* interrupts = <70 IRQ_TYPE_EDGE_FALLING>; */
 +		interrupt-parent = <&gic500>;
-+		interrupts = <GIC_SPI 224 IRQ_TYPE_EDGE_FALLING>;
++		interrupts = <GIC_SPI 224 IRQ_TYPE_LEVEL_HIGH>;
 +
 +		buck1-supply = <&reg_vsodimm>;
 +		buck2-supply = <&reg_vsodimm>;

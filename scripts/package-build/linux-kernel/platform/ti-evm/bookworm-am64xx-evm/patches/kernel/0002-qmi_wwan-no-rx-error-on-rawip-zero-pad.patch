@@ -1,0 +1,93 @@
+qmi_wwan: do not count raw-IP modem pad frames as rx_errors
+
+Qualcomm-based Telit modems (observed on the FN920, USB 1bc7:10a0, and the
+LN920 / FN990 / LE910 family) emit a short all-zero pad frame -- 4 bytes of
+0x00 -- after every downlink datagram when the data interface runs in raw-IP
+mode (no host QMAP consumer). These frames are neither IPv4 nor IPv6, so
+qmi_wwan_rx_fixup() takes the raw-IP "case 0x00" branch and returns 0. The
+usbnet core then increments net_device.stats.rx_errors for each dropped frame,
+so the interface's rx_errors counter climbs to ~90-95% of rx_packets even
+though no traffic is lost (pings 0% loss, Ip6InDiscards=0, no HW sub-errors).
+Confirmed with usbmon: each rx_error corresponds exactly to a 4-byte 0x00
+bulk-in completion, 1:1 with received IP packets.
+
+An earlier attempt trimmed the pad skb to zero length and returned success, but
+usbnet rx_process() re-checks "skb->len < ETH_HLEN" AFTER a successful rx_fixup
+and counts the now-empty skb as rx_errors + rx_length_errors -- so the counter
+kept climbing. No rx_fixup return value can avoid both the rx_fixup==0 site and
+the short-frame site.
+
+Instead set FLAG_RX_ASSEMBLE on the qmi_wwan driver_info. Its only effect in the
+usbnet core (drivers/net/usb/usbnet.c rx_process()) is to stop auto-incrementing
+rx_errors when rx_fixup() returns 0, delegating rx-error accounting to the
+driver. The benign all-zero pad (raw-IP "case 0x00") is then dropped silently,
+while genuinely unexpected frames (the raw-IP "default" case and the short-frame
+check) are still counted explicitly so real link problems stay visible. Ethernet
+mode and the IPv4/IPv6 delivery paths are unchanged.
+
+Downstream/carried patch: upstream treats raw-IP as IP-only and there is no host
+QMAP consumer available on these modems to absorb the framing.
+
+--- a/drivers/net/usb/qmi_wwan.c
++++ b/drivers/net/usb/qmi_wwan.c
+@@ -567,8 +567,10 @@
+ 	__be16 proto;
+ 
+ 	/* This check is no longer done by usbnet */
+-	if (skb->len < dev->net->hard_header_len)
++	if (skb->len < dev->net->hard_header_len) {
++		dev->net->stats.rx_errors++;
+ 		return 0;
++	}
+ 
+ 	if (info->flags & QMI_WWAN_FLAG_MUX)
+ 		return qmimux_rx_fixup(dev, skb);
+@@ -587,6 +589,13 @@
+ 		break;
+ 	case 0x00:
+ 		if (rawip)
++			/*
++			 * Qualcomm-based modems (e.g. Telit FN920) emit a
++			 * short all-zero DL pad frame in raw-IP mode.  It is
++			 * not an error; with FLAG_RX_ASSEMBLE set usbnet no
++			 * longer counts a dropped frame, so consume it
++			 * silently instead of inflating rx_errors.
++			 */
+ 			return 0;
+ 		if (is_multicast_ether_addr(skb->data))
+ 			return 1;
+@@ -594,8 +603,15 @@
+ 		skb_reset_mac_header(skb);
+ 		goto fix_dest;
+ 	default:
+-		if (rawip)
++		if (rawip) {
++			/*
++			 * Non-IP, non-pad frame in raw-IP mode is genuinely
++			 * unexpected.  usbnet no longer counts it for us
++			 * (FLAG_RX_ASSEMBLE), so account for it here.
++			 */
++			dev->net->stats.rx_errors++;
+ 			return 0;
++		}
+ 		/* pass along other packets without modifications */
+ 		return 1;
+ 	}
+@@ -928,7 +944,7 @@
+ 
+ static const struct driver_info	qmi_wwan_info = {
+ 	.description	= "WWAN/QMI device",
+-	.flags		= FLAG_WWAN | FLAG_NOMAXMTU | FLAG_SEND_ZLP,
++	.flags		= FLAG_WWAN | FLAG_NOMAXMTU | FLAG_SEND_ZLP | FLAG_RX_ASSEMBLE,
+ 	.bind		= qmi_wwan_bind,
+ 	.unbind		= qmi_wwan_unbind,
+ 	.manage_power	= qmi_wwan_manage_power,
+@@ -937,7 +953,7 @@
+ 
+ static const struct driver_info	qmi_wwan_info_quirk_dtr = {
+ 	.description	= "WWAN/QMI device",
+-	.flags		= FLAG_WWAN | FLAG_NOMAXMTU | FLAG_SEND_ZLP,
++	.flags		= FLAG_WWAN | FLAG_NOMAXMTU | FLAG_SEND_ZLP | FLAG_RX_ASSEMBLE,
+ 	.bind		= qmi_wwan_bind,
+ 	.unbind		= qmi_wwan_unbind,
+ 	.manage_power	= qmi_wwan_manage_power,

@@ -1,0 +1,53 @@
+#!/bin/sh
+# igOS: stage the u-boot bootloader payload into the ISO's /boot/u-boot.
+#
+# WHY (this is a .binary hook, not .chroot)
+#   Put the u-boot components (tiboot3.bin, tispl.bin, u-boot.img, ...) in the
+#   ISO's own READABLE boot section (/boot/u-boot/<platform>/) so they are
+#   visible/enumerable there -- the same place the dtbs are staged. U-boot itself
+#   executes from raw eMMC offsets, NOT from a filesystem, so this hook only
+#   PLACES the blobs in /boot; it does NOT flash them. The flash step (copying
+#   each component to its specific memory region) is a separate, later concern.
+#   Binary hooks run during `lb binary` with CWD at the ISO image tree root (the
+#   dir holding live/, boot/, isolinux/), so `boot/u-boot/...` here is the ISO's
+#   boot section (cf. 26-igos-dtb.binary staging boot/dtb/...).
+#
+# SOURCE
+#   The platform's `uboot_payload` Debian package (named in the igos-<platform>
+#   TOML, folded into the image's package list at build time) installs its boot
+#   blobs under /usr/lib/u-boot/<platform>/ in the rootfs. This hook copies that
+#   whole tree VERBATIM into the ISO's /boot/u-boot/, preserving the <platform>/
+#   subdir the package used -- it is agnostic to the platform name. If no u-boot
+#   payload is present (uboot_payload = "none", e.g. generic x86, or before the
+#   deb exists) this is a no-op.
+
+set -e
+
+UBOOT_DEST="boot/u-boot"     # relative to the ISO tree root == this hook's CWD
+
+# Locate the chroot (sibling of the binary/ISO tree) that carries the payload.
+CHROOT=""
+for c in ../chroot chroot ../../chroot; do
+    if [ -d "${c}/usr/lib/u-boot" ]; then
+        CHROOT="${c}"
+        break
+    fi
+done
+if [ -z "${CHROOT}" ]; then
+    echo "I: uboot-stage(iso): no u-boot payload in the rootfs, nothing to do"
+    exit 0
+fi
+
+SRC="${CHROOT}/usr/lib/u-boot"
+
+# Copy the whole /usr/lib/u-boot/ tree verbatim into the ISO /boot/u-boot/,
+# preserving the <platform>/ subdir(s) the package installed.
+mkdir -p "${UBOOT_DEST}"
+cp -a "${SRC}/." "${UBOOT_DEST}/"
+
+staged=$(find "${UBOOT_DEST}" -type f 2>/dev/null | wc -l | tr -d ' ')
+if [ "${staged}" -eq 0 ]; then
+    echo "W: uboot-stage(iso): /usr/lib/u-boot present but empty -- nothing staged"
+else
+    echo "I: uboot-stage(iso): staged ${staged} u-boot file(s) into the ISO /${UBOOT_DEST}"
+fi

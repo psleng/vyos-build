@@ -1,0 +1,122 @@
+#!/bin/sh
+#
+# Pre-bake the slow Debian live-config "late userspace" components at BUILD time
+# so the boot-time gate ("A start job is running for live-config (late
+# userspace)") is fast again - the way it was before the build consolidation.
+#
+# Root cause (measured on unit 999.202608060137, AM64x)
+# -----------------------------------------------------
+# live-config.service took 1min6s at boot. From the journal, essentially all of
+# it is ONE component:
+#
+#   * 0050-locales -> `locale-gen`. /etc/locale.gen has a single active locale
+#     (en_US.UTF-8), but compiling one locale with localedef takes ~40s on this
+#     ARM board (~62s under boot load). The compiled locale is NOT present in
+#     the squashfs at boot: 04-locale.chroot only writes /etc/default/locale and
+#     never runs locale-gen, and 90-localepurge uses DONTBOTHERNEWLOCALE, so
+#     nothing bakes it. Result: it is regenerated on EVERY boot -> the stall.
+#
+# The other components are cheap: ssl-cert is already pre-baked below (its
+# make-ssl-cert/`hostname -f` DNS stall is confirmed skipped at boot), and
+# hostname/tzdata/util-linux/login/openssh-server together are only a few
+# seconds (openssh finds host keys already present, so it does not keygen).
+#
+# The out-of-tree `run-live-config` used to pre-run ALL components at build,
+# which is why the old images booted fast. This hook restores that for the
+# components that matter and marks the cheap ones complete too, so the whole
+# stage is a near no-op - WITHOUT the old script's security regression (it baked
+# identical ssh_host_* keys into every image). SSH host keys stay per-device:
+# ssh.service is disabled by default and VyOS `service ssh`
+# (src/conf_mode/service_ssh.py) generates unique keys when SSH is configured.
+#
+# This hook runs at 94-, i.e. AFTER 90-localepurge, so anything it compiles
+# survives into the squashfs.
+#
+set -e
+
+echo "I: Pre-baking live-config late-userspace components at build time"
+
+MARKER_DIR=/var/lib/live/config
+mkdir -p "$MARKER_DIR"
+
+# ---------------------------------------------------------------------------
+# 1) locales - THE expensive one. Enable en_US.UTF-8, compile it now (survives
+#    localepurge because we run after it), and mark the component complete so
+#    0050-locales does not run locale-gen at boot.
+# ---------------------------------------------------------------------------
+if [ -e /etc/locale.gen ]; then
+	if grep -qE '^# *en_US\.UTF-8 UTF-8' /etc/locale.gen; then
+		sed -i -e 's|^# *en_US\.UTF-8 UTF-8|en_US.UTF-8 UTF-8|' /etc/locale.gen
+	elif ! grep -qE '^en_US\.UTF-8 UTF-8' /etc/locale.gen; then
+		echo 'en_US.UTF-8 UTF-8' >> /etc/locale.gen
+	fi
+fi
+if command -v locale-gen >/dev/null 2>&1; then
+	echo "I: compiling locales at build (avoids ~60s boot-time locale-gen)"
+	locale-gen >/dev/null 2>&1 || echo "W: locale-gen returned non-zero; continuing"
+fi
+: > "$MARKER_DIR/locales"
+echo "I: marked live-config component 'locales' complete"
+
+# ---------------------------------------------------------------------------
+# 2) ssl-cert - generate the snakeoil cert now (a shared, self-signed, untrusted
+#    placeholder is fine; real TLS uses the VyOS PKI) so 1090-ssl-cert and its
+#    `make-ssl-cert generate-default-snakeoil` -> `hostname -f` DNS stall do not
+#    run at boot. /etc/hosts is empty on this image (VyOS fills it at runtime via
+#    vyos-hostsd) and nss-myhostname is disabled (VyOS T2678), so `hostname -f`
+#    would otherwise fall through to DNS with no resolver up.
+# ---------------------------------------------------------------------------
+if command -v make-ssl-cert >/dev/null 2>&1; then
+	_hosts_backup="$(mktemp)"
+	if [ -e /etc/hosts ]; then
+		cat /etc/hosts > "$_hosts_backup"
+		_had_hosts=1
+	else
+		_had_hosts=0
+	fi
+
+	restore_hosts() {
+		if [ "$_had_hosts" = "1" ]; then
+			cat "$_hosts_backup" > /etc/hosts
+		else
+			rm -f /etc/hosts
+		fi
+		rm -f "$_hosts_backup"
+	}
+	trap restore_hosts EXIT INT TERM
+
+	_hn="$(hostname 2>/dev/null || echo localhost)"
+	{
+		echo "127.0.0.1 localhost"
+		echo "127.0.1.1 ${_hn}"
+	} > /etc/hosts
+
+	if [ ! -e /etc/ssl/certs/ssl-cert-snakeoil.pem ] || [ ! -e /etc/ssl/private/ssl-cert-snakeoil.key ]; then
+		if make-ssl-cert generate-default-snakeoil --force-overwrite; then
+			echo "I: snakeoil certificate generated"
+		else
+			echo "W: make-ssl-cert failed; boot-time live-config will fall back to generating it"
+		fi
+	fi
+
+	restore_hosts
+	trap - EXIT INT TERM
+else
+	echo "W: make-ssl-cert not present; skipping ssl-cert prebake"
+fi
+: > "$MARKER_DIR/ssl-cert"
+echo "I: marked live-config component 'ssl-cert' complete"
+
+# ---------------------------------------------------------------------------
+# 3) The remaining components the old fast build pre-baked. Individually cheap,
+#    but marking them complete keeps the boot stage a near no-op and matches the
+#    proven-fast old build. Their boot-time actions are redundant on VyOS
+#    (tzdata/login are managed by VyOS config) or trivial (util-linux).
+#    openssh-server is deliberately NOT marked: host keys must stay per-device.
+# ---------------------------------------------------------------------------
+for _c in tzdata util-linux login; do
+	: > "$MARKER_DIR/$_c"
+	echo "I: marked live-config component '$_c' complete"
+done
+
+echo "I: live-config prebake done; boot-time late-userspace gate should drop from ~1min to a few seconds"

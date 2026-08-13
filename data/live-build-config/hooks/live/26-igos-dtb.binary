@@ -1,0 +1,106 @@
+#!/bin/sh
+# igOS: stage per-model device-tree blobs (dtb) into the ISO's /boot/dtb.
+#
+# WHY (this is a .binary hook, not .chroot)
+#   U-Boot boots the ISO by reading the dtb from the ISO's own READABLE boot
+#   section -- /boot/dtb/<name> -- BEFORE Linux mounts the root filesystem.
+#   U-Boot cannot read squashfs, so the dtb must live on the ISO filesystem, not
+#   inside live/filesystem.squashfs. Binary hooks run during `lb binary` with
+#   CWD at the ISO image tree root (the dir holding live/, boot/, isolinux/),
+#   so `boot/dtb/...` here is the ISO's boot section (cf. 00-manifest.binary
+#   writing live/..., 01-live-serial.binary editing boot/grub/...).
+#
+# HOW
+#   For every model.conf in the model tree staged inside the chroot, read `dtb =`
+#   (DESTINATION, relative to /boot/dtb/) and optional `dtb_src =` (SOURCE path in
+#   the kernel output; defaults to `dtb`). Copy the source blob from the chroot's
+#   kernel output to the ISO's boot/dtb/<dtb>, VERBATIM, so it matches what U-Boot
+#   loads. `dtb_src` allows a full rename (source and dest are independent paths).
+#
+#   Only the dtbs the models declare are carried -- not every dtb the kernel
+#   builds. Each image ships a SINGLE platform's model tree (igos-am64x = the
+#   Perle IOLAN/IRG boards, igos-am64x-evm = the AM64x EVM, igos-j7200 = the
+#   J7200 EVM), and a platform's kernel builds every dtb its models name -- so a
+#   missing source is a real build/kernel skew and is a HARD FAILURE by default
+#   (caught early). Set IGOS_DTB_STRICT=0 to downgrade a missing source to a
+#   skip+warning instead (e.g. while bringing up a new board before its dtb has
+#   landed in the kernel). On images with no igOS model tree (e.g. generic x86)
+#   this is a no-op.
+
+set -e
+
+DTB_DEST="boot/dtb"          # relative to the ISO tree root == this hook's CWD
+STRICT="${IGOS_DTB_STRICT:-1}"   # default 1: missing source = hard failure; set 0 to skip+warn
+
+# Locate the chroot (sibling of the binary/ISO tree) that carries the model tree.
+CHROOT=""
+for c in ../chroot chroot ../../chroot; do
+    if [ -d "${c}/usr/share/igos/models" ]; then
+        CHROOT="${c}"
+        break
+    fi
+done
+if [ -z "${CHROOT}" ]; then
+    echo "I: dtb-stage(iso): no igOS model tree found in the chroot, nothing to do"
+    exit 0
+fi
+
+MODELS_ROOT="${CHROOT}/usr/share/igos/models"
+KERNEL_GLOB="${CHROOT}/usr/lib/linux-image-*/"
+
+# Read a `key = value` from a model.conf: strip trailing comment, key, and
+# surrounding whitespace. Empty when the key is absent.
+get_key() {
+    grep -hE "^[[:space:]]*$2[[:space:]]*=" "$1" 2>/dev/null | head -n1 \
+        | sed -E 's/#.*$//; s/^[^=]*=[[:space:]]*//; s/[[:space:]]+$//'
+}
+
+staged=0
+skipped=0
+for conf in "${MODELS_ROOT}"/*/*/model.conf; do
+    [ -f "${conf}" ] || continue
+
+    # `dtb` = DESTINATION (relative to the ISO /boot/dtb/, i.e. what U-Boot loads).
+    dest=$(get_key "${conf}" dtb)
+    [ -n "${dest}" ] || continue
+    # `dtb_src` = optional SOURCE override in the kernel output (full rename).
+    src=$(get_key "${conf}" dtb_src)
+    [ -n "${src}" ] || src="${dest}"
+
+    # Resolve the source in the kernel output: exact subpath first, else basename.
+    found=""
+    for kdir in ${KERNEL_GLOB}; do
+        if [ -e "${kdir}${src}" ]; then
+            found="${kdir}${src}"
+            break
+        fi
+    done
+    if [ -z "${found}" ]; then
+        found=$(find ${KERNEL_GLOB} -type f -name "$(basename "${src}")" 2>/dev/null | head -n1)
+    fi
+    if [ -z "${found}" ] || [ ! -e "${found}" ]; then
+        if [ "${STRICT}" = "1" ] || [ "${STRICT}" = "true" ]; then
+            echo "E: dtb-stage(iso): source '${src}' (from ${conf}) not found in kernel output"
+            exit 1
+        fi
+        echo "W: dtb-stage(iso): '${src}' (from ${conf}) not built by this kernel -- skipping"
+        skipped=$((skipped + 1))
+        continue
+    fi
+
+    dst="${DTB_DEST}/${dest}"
+    mkdir -p "$(dirname "${dst}")"
+    cp "${found}" "${dst}"
+    if [ "${src}" = "${dest}" ]; then
+        echo "I: dtb-stage(iso):   ${found} -> /${dst}"
+    else
+        echo "I: dtb-stage(iso):   ${found} -> /${dst}   (renamed from ${src})"
+    fi
+    staged=$((staged + 1))
+done
+
+if [ "${staged}" -eq 0 ]; then
+    echo "W: dtb-stage(iso): no dtbs staged (${skipped} skipped) -- image may lack device trees"
+else
+    echo "I: dtb-stage(iso): staged ${staged} dtb(s) into the ISO /boot/dtb (${skipped} skipped)"
+fi

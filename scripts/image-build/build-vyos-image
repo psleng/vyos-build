@@ -708,6 +708,23 @@ DOCUMENTATION_URL="{build_config['documentation_url']}"
                     key_data = base64.b64decode(k["key"])
                     f.write(key_data)
 
+        ## Fork-only: igOS platform bootloader payload.
+        ## A platform fragment (or flavor) may declare `uboot_payload` as a list
+        ## of Debian package names to carry in the image (installed into the
+        ## squashfs so u-boot can be flashed/upgraded from user space), or the
+        ## string "none" (the default) to pull nothing -- which lets the seam be
+        ## wired per-platform before the signed/vendor deb exists. (grub needs no
+        ## payload key: it is already in the image via the arm64 architecture
+        ## layer plus live-build's grub-efi stage.) This simply folds into the
+        ## package list installed below.
+        for _payload_key in ("uboot_payload",):
+            _payload = build_config.get(_payload_key)
+            if _payload and _payload != "none":
+                _pkgs = [_payload] if isinstance(_payload, str) else list(_payload)
+                build_config.setdefault("packages", [])
+                build_config["packages"] += _pkgs
+                print(f'I: {_payload_key} adds package(s): {" ".join(_pkgs)}')
+
         # Add custom packages
         if has_nonempty_key(build_config, "packages"):
             package_list_file = defaults.PACKAGE_LIST_FILE
@@ -984,70 +1001,6 @@ Pin-Priority: 600
         if debug:
             print("D: It's not like I'm building this specially for you or anything!")
         cmd("lb build 2>&1")
-
-        # PSL BEGIN
-        #
-        # Add a temp_iso_contents directory which is simply the original
-        # ISO fs plus our kernel .dtb files in a matching directory for
-        # future use in ISO boots:
-        #
-        #   vyos-build/build/temp_iso_contents/boot/linux-image*
-
-        # Add DTB if present
-        import subprocess
-
-        temp_iso_dir = "tmp_iso"
-        os.makedirs(temp_iso_dir, exist_ok=True)
-        source_iso = f"live-image-{build_config['architecture']}.hybrid.iso"
-
-        # Mount the ISO image
-        try:
-            subprocess.run(
-                ["sudo", "mount", "-o", "loop", source_iso, temp_iso_dir], check=True
-            )
-        except subprocess.CalledProcessError as e:
-            print(f"Error mounting ISO: {e}")
-            exit(1)
-
-        # Copy all files from the mounted ISO to a temporary directory
-        temp_iso_contents = "temp_iso_contents"
-        os.makedirs(temp_iso_contents, exist_ok=True)
-        print(f"I: Copying files from mounted ISO to {temp_iso_contents}")
-
-        try:
-            shutil.copytree(temp_iso_dir, temp_iso_contents, dirs_exist_ok=True)
-        except Exception as e:
-            print(f"Error copying files: {e}")
-            exit(1)
-
-        # Unmount the ISO
-        try:
-            subprocess.run(["sudo", "umount", temp_iso_dir], check=True)
-            os.rmdir(temp_iso_dir)
-        except subprocess.CalledProcessError as e:
-            print(f"Error unmounting ISO: {e}")
-
-        # Copy additional files to the temporary directory
-        source_dir_pattern = os.path.join("chroot", "usr", "lib", "linux-image*")
-        target_dir_base = os.path.join(temp_iso_contents, "boot")
-
-        for source_dir in glob.glob(source_dir_pattern):
-            target_dir = os.path.join(target_dir_base, os.path.basename(source_dir))
-            os.makedirs(target_dir, exist_ok=True)
-
-            # Copy files from source_dir to target_dir
-            for item in os.listdir(source_dir):
-                source_item = os.path.join(source_dir, item)
-                target_item = os.path.join(target_dir, item)
-
-                try:
-                    if os.path.isdir(source_item):
-                        shutil.copytree(source_item, target_item, dirs_exist_ok=True)
-                    else:
-                        shutil.copy2(source_item, target_item)
-                except Exception as e:
-                    print(f"Error copying {source_item}: {e}")
-        # PSL END
 
         # Copy the image
         shutil.copy(

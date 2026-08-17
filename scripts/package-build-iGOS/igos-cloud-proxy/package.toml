@@ -2,4 +2,4 @@
 name = "igos-cloud-proxy"
 commit_id = "dev/cf-async"
 scm_url = "git@github.com:Perle-Systems-Limited/igos-cloud-proxy.git"
-build_cmd = "make deb"
+build_cmd = "make debug"

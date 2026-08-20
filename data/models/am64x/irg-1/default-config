@@ -47,7 +47,6 @@ service {
         forwarding {
             allow-from 0.0.0.0/0
             listen-address 192.168.1.1
-            listen-address 192.168.111.1
         }
     }
     https {

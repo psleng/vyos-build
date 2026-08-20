@@ -37,7 +37,7 @@ index b0844404eda1835d7f3112a1250dde74ac251c50..805d44a7d974810a6d41ab3bf62ffd33
  subdir-y += xilinx
 diff --git a/arch/arm64/boot/dts/perle/Makefile b/arch/arm64/boot/dts/perle/Makefile
 new file mode 100644
-index 0000000000000000000000000000000000000000..161fd26e95ae2f872f4aa4ed01644307277b6eb7
+index 000000000000..161fd26e95ae
 --- /dev/null
 +++ b/arch/arm64/boot/dts/perle/Makefile
 @@ -0,0 +1,27 @@
@@ -70,7 +70,7 @@ index 0000000000000000000000000000000000000000..161fd26e95ae2f872f4aa4ed01644307
 +DTC_FLAGS := -@
 diff --git a/arch/arm64/boot/dts/perle/k3-am642-IOLAN-1000.dts b/arch/arm64/boot/dts/perle/k3-am642-IOLAN-1000.dts
 new file mode 100644
-index 0000000000000000000000000000000000000000..2034885d0f2cce6c12b0981ddc4cfd707e605dd1
+index 000000000000..2034885d0f2c
 --- /dev/null
 +++ b/arch/arm64/boot/dts/perle/k3-am642-IOLAN-1000.dts
 @@ -0,0 +1,68 @@
@@ -145,7 +145,7 @@ index 0000000000000000000000000000000000000000..2034885d0f2cce6c12b0981ddc4cfd70
 \ No newline at end of file
 diff --git a/arch/arm64/boot/dts/perle/k3-am642-IOLAN-2A00.dts b/arch/arm64/boot/dts/perle/k3-am642-IOLAN-2A00.dts
 new file mode 100644
-index 0000000000000000000000000000000000000000..63892a4da543f6f407d420b719367ece2a54bb2d
+index 000000000000..63892a4da543
 --- /dev/null
 +++ b/arch/arm64/boot/dts/perle/k3-am642-IOLAN-2A00.dts
 @@ -0,0 +1,72 @@
@@ -224,7 +224,7 @@ index 0000000000000000000000000000000000000000..63892a4da543f6f407d420b719367ece
 \ No newline at end of file
 diff --git a/arch/arm64/boot/dts/perle/k3-am642-IOLAN-2B00.dts b/arch/arm64/boot/dts/perle/k3-am642-IOLAN-2B00.dts
 new file mode 100644
-index 0000000000000000000000000000000000000000..89e69c8112612d093879c2773b67ea11459ba471
+index 000000000000..89e69c811261
 --- /dev/null
 +++ b/arch/arm64/boot/dts/perle/k3-am642-IOLAN-2B00.dts
 @@ -0,0 +1,80 @@
@@ -311,7 +311,7 @@ index 0000000000000000000000000000000000000000..89e69c8112612d093879c2773b67ea11
 \ No newline at end of file
 diff --git a/arch/arm64/boot/dts/perle/k3-am642-IOLAN-2C00.dts b/arch/arm64/boot/dts/perle/k3-am642-IOLAN-2C00.dts
 new file mode 100644
-index 0000000000000000000000000000000000000000..63bd23e038cf1ec82d1c11cf5919001c00ee7d48
+index 000000000000..63bd23e038cf
 --- /dev/null
 +++ b/arch/arm64/boot/dts/perle/k3-am642-IOLAN-2C00.dts
 @@ -0,0 +1,80 @@
@@ -398,7 +398,7 @@ index 0000000000000000000000000000000000000000..63bd23e038cf1ec82d1c11cf5919001c
 \ No newline at end of file
 diff --git a/arch/arm64/boot/dts/perle/k3-am642-IOLAN-2D00.dts b/arch/arm64/boot/dts/perle/k3-am642-IOLAN-2D00.dts
 new file mode 100644
-index 0000000000000000000000000000000000000000..ea6c9bb354cd72daac0bc57e7bcd4f08976a5bde
+index 000000000000..ea6c9bb354cd
 --- /dev/null
 +++ b/arch/arm64/boot/dts/perle/k3-am642-IOLAN-2D00.dts
 @@ -0,0 +1,72 @@
@@ -477,7 +477,7 @@ index 0000000000000000000000000000000000000000..ea6c9bb354cd72daac0bc57e7bcd4f08
 \ No newline at end of file
 diff --git a/arch/arm64/boot/dts/perle/k3-am642-IOLAN-2E00.dts b/arch/arm64/boot/dts/perle/k3-am642-IOLAN-2E00.dts
 new file mode 100644
-index 0000000000000000000000000000000000000000..cd3973162f1668ac7f8177c709413f24c0a8fa95
+index 000000000000..cd3973162f16
 --- /dev/null
 +++ b/arch/arm64/boot/dts/perle/k3-am642-IOLAN-2E00.dts
 @@ -0,0 +1,80 @@
@@ -564,7 +564,7 @@ index 0000000000000000000000000000000000000000..cd3973162f1668ac7f8177c709413f24
 \ No newline at end of file
 diff --git a/arch/arm64/boot/dts/perle/k3-am642-IOLAN-2F00.dts b/arch/arm64/boot/dts/perle/k3-am642-IOLAN-2F00.dts
 new file mode 100644
-index 0000000000000000000000000000000000000000..c8c97300548254055089cb5abf4b7955c8b056a7
+index 000000000000..c8c973005482
 --- /dev/null
 +++ b/arch/arm64/boot/dts/perle/k3-am642-IOLAN-2F00.dts
 @@ -0,0 +1,84 @@
@@ -655,7 +655,7 @@ index 0000000000000000000000000000000000000000..c8c97300548254055089cb5abf4b7955
 \ No newline at end of file
 diff --git a/arch/arm64/boot/dts/perle/k3-am642-IOLAN-3000.dts b/arch/arm64/boot/dts/perle/k3-am642-IOLAN-3000.dts
 new file mode 100644
-index 0000000000000000000000000000000000000000..84f2517c45337a2b05e83d346630cd7001b71931
+index 000000000000..84f2517c4533
 --- /dev/null
 +++ b/arch/arm64/boot/dts/perle/k3-am642-IOLAN-3000.dts
 @@ -0,0 +1,72 @@
@@ -734,7 +734,7 @@ index 0000000000000000000000000000000000000000..84f2517c45337a2b05e83d346630cd70
 \ No newline at end of file
 diff --git a/arch/arm64/boot/dts/perle/k3-am642-IOLAN-4000.dts b/arch/arm64/boot/dts/perle/k3-am642-IOLAN-4000.dts
 new file mode 100644
-index 0000000000000000000000000000000000000000..1323091a5048c948b569b656677cfb373494af96
+index 000000000000..1323091a5048
 --- /dev/null
 +++ b/arch/arm64/boot/dts/perle/k3-am642-IOLAN-4000.dts
 @@ -0,0 +1,80 @@
@@ -821,7 +821,7 @@ index 0000000000000000000000000000000000000000..1323091a5048c948b569b656677cfb37
 \ No newline at end of file
 diff --git a/arch/arm64/boot/dts/perle/k3-am642-IRG-1000.dts b/arch/arm64/boot/dts/perle/k3-am642-IRG-1000.dts
 new file mode 100644
-index 0000000000000000000000000000000000000000..76355076b9aa9ad4017557752d1038e94611b36b
+index 000000000000..76355076b9aa
 --- /dev/null
 +++ b/arch/arm64/boot/dts/perle/k3-am642-IRG-1000.dts
 @@ -0,0 +1,68 @@
@@ -896,7 +896,7 @@ index 0000000000000000000000000000000000000000..76355076b9aa9ad4017557752d1038e9
 \ No newline at end of file
 diff --git a/arch/arm64/boot/dts/perle/k3-am642-IRG-1A00.dts b/arch/arm64/boot/dts/perle/k3-am642-IRG-1A00.dts
 new file mode 100644
-index 0000000000000000000000000000000000000000..1915bfa2ae248baf13c425b843353d67e9ef791b
+index 000000000000..1915bfa2ae24
 --- /dev/null
 +++ b/arch/arm64/boot/dts/perle/k3-am642-IRG-1A00.dts
 @@ -0,0 +1,68 @@
@@ -971,7 +971,7 @@ index 0000000000000000000000000000000000000000..1915bfa2ae248baf13c425b843353d67
 \ No newline at end of file
 diff --git a/arch/arm64/boot/dts/perle/k3-am642-IRG-4000.dts b/arch/arm64/boot/dts/perle/k3-am642-IRG-4000.dts
 new file mode 100644
-index 0000000000000000000000000000000000000000..3812682e6ab53a137986c8215e7245378ab9fe7a
+index 000000000000..3812682e6ab5
 --- /dev/null
 +++ b/arch/arm64/boot/dts/perle/k3-am642-IRG-4000.dts
 @@ -0,0 +1,68 @@
@@ -1046,7 +1046,7 @@ index 0000000000000000000000000000000000000000..3812682e6ab53a137986c8215e724537
 \ No newline at end of file
 diff --git a/arch/arm64/boot/dts/perle/k3-am642-igos-1000.dts b/arch/arm64/boot/dts/perle/k3-am642-igos-1000.dts
 new file mode 100644
-index 0000000000000000000000000000000000000000..e3c81ce54f32913a857957ef894b74a307332b91
+index 000000000000..e3c81ce54f32
 --- /dev/null
 +++ b/arch/arm64/boot/dts/perle/k3-am642-igos-1000.dts
 @@ -0,0 +1,68 @@
@@ -1121,7 +1121,7 @@ index 0000000000000000000000000000000000000000..e3c81ce54f32913a857957ef894b74a3
 \ No newline at end of file
 diff --git a/arch/arm64/boot/dts/perle/k3-am642-igos.dtsi b/arch/arm64/boot/dts/perle/k3-am642-igos.dtsi
 new file mode 100644
-index 0000000000000000000000000000000000000000..1bff7f0fc3e30363f3a85cefc411cc7a84a5a138
+index 000000000000..ceeb58cad0c1
 --- /dev/null
 +++ b/arch/arm64/boot/dts/perle/k3-am642-igos.dtsi
 @@ -0,0 +1,805 @@
@@ -1401,7 +1401,7 @@ index 0000000000000000000000000000000000000000..1bff7f0fc3e30363f3a85cefc411cc7a
 +			AM64X_IOPAD(0x0038, PIN_INPUT_PULLUP,   7) /* (L17) OSPI0_CSn3       => GPIO0_14 (WIFI_PDN_GPIO)             */
 +			AM64X_IOPAD(0x0088, PIN_INPUT_PULLDOWN, 7) /* (R18) GPMC0_OEn_REn    => GPIO0_33 (VPP_LDO_EN)                */
 +			AM64X_IOPAD(0x0098, PIN_INPUT_PULLDOWN, 7) /* (W19) GPMC0_WAIT0      => GPIO0_37 (PATH_THROUGH_SEL)          */
-+			AM64X_IOPAD(0x00B8, PIN_INPUT_PULLUP,   7) /* (Y7)  PRG1_PRU0_GPO0   => GPIO0_45 (VSEL_SD_SWITCH)            */
++			AM64X_IOPAD(0x00B8, PIN_OUTPUT,         7) /* (Y7)  PRG1_PRU0_GPO0   => GPIO0_45 (VSEL_SD_SWITCH)            */
 +			AM64X_IOPAD(0x00D4, PIN_INPUT_PULLUP,   7) /* (U13) PRG1_PRU0_GPO7   => GPIO0_52 (SIM1_DETECT)               */
 +			AM64X_IOPAD(0x00C8, PIN_INPUT_PULLUP,   7) /* (Y8)  PRG1_PRU0_GPO4   => GPIO0_49 (SIM2_DETECT)               */
 +			AM64X_IOPAD(0x00F4, PIN_INPUT_PULLDOWN, 7) /* (Y9)  PRG1_PRU0_GPO15  => GPIO0_60 (SIM_SELECT1N_2)            */
@@ -1513,13 +1513,14 @@ index 0000000000000000000000000000000000000000..1bff7f0fc3e30363f3a85cefc411cc7a
 +	/* PMIC_EXTINT# */
 +	pinctrl_pmic_extint: main-system-extint-default-pins {
 +		pinctrl-single,pins = <
-+			AM64X_IOPAD(0x0278, PIN_INPUT, 7) /* (C19) EXTINTn, GPIO1_70 */
++			AM64X_IOPAD(0x0278, PIN_INPUT, 0) /* (C19) EXTINTn */
 +		>;
 +	};
 +
 +	main_pcie0_pins_default: main-pcie0-pins-default {
 +	    pinctrl-single,pins = <
-+		AM64X_IOPAD(0x0248, PIN_INPUT_PULLUP, 3) /* (D16) UART1_CTSn.PCIE0_CLKREQn */
++			AM64X_IOPAD(0x0248, PIN_INPUT_PULLUP, 3) /* (D16) UART1_CTSn.PCIE0_CLKREQn */
++			AM64X_IOPAD(0x009C, PIN_OUTPUT_PULLUP, 7) /* GPMC0_WAIT1 as GPIO0_38 */
 +	    >;
 +	};
 +};
@@ -1679,7 +1680,7 @@ index 0000000000000000000000000000000000000000..1bff7f0fc3e30363f3a85cefc411cc7a
 +		/* interrupt-parent = <&main_gpio1>; */
 +		/* interrupts = <70 IRQ_TYPE_EDGE_FALLING>; */
 +		interrupt-parent = <&gic500>;
-+		interrupts = <GIC_SPI 224 IRQ_TYPE_EDGE_FALLING>;
++		interrupts = <GIC_SPI 224 IRQ_TYPE_LEVEL_HIGH>;
 +
 +		buck1-supply = <&reg_vsodimm>;
 +		buck2-supply = <&reg_vsodimm>;
@@ -1766,6 +1767,16 @@ index 0000000000000000000000000000000000000000..1bff7f0fc3e30363f3a85cefc411cc7a
 +	bootph-all;
 +	pinctrl-names = "default";
 +	pinctrl-0 = <&main_gpio0_digital_pins>;
++
++	/* VSEL_SD_SWITCH (Y7/GPIO0_45) -> TPS620553 pin22 VSEL input.
++	 * Must be actively driven high (SD I/O voltage select); DTS
++	 * previously left it as a pulled-up input with no consumer. */
++	vsel-sd-switch-hog {
++		gpio-hog;
++		gpios = <45 GPIO_ACTIVE_HIGH>;
++		output-high;
++		line-name = "VSEL_SD_SWITCH";
++	};
 +};
 +
 +&main_gpio1 {
@@ -1883,8 +1894,6 @@ index 0000000000000000000000000000000000000000..1bff7f0fc3e30363f3a85cefc411cc7a
 +	phys = <&serdes0_pcie_link>;
 +	phy-names = "pcie-phy";
 +	num-lanes = <1>;
-+	snps,enable-cdm-check;
-+	pcie_aspm = "powersave";
 +};
 +
 +&gpmc0 {
@@ -1911,6 +1920,7 @@ index 0000000000000000000000000000000000000000..1bff7f0fc3e30363f3a85cefc411cc7a
 +	status = "disabled";
 +};
 +
++/* AM6412: single R5F, unused by Linux (boot R5 SPL is firmware; fTPM is OP-TEE) */
 +&main_r5fss0 {
 +	status = "disabled";	/* disable cluster; AM64 rproc needs BOTH cores or -ENODEV */
 +};
@@ -1932,7 +1942,7 @@ index 0000000000000000000000000000000000000000..1bff7f0fc3e30363f3a85cefc411cc7a
 +};
 diff --git a/arch/arm64/boot/dts/perle/k3-am642.dtsi b/arch/arm64/boot/dts/perle/k3-am642.dtsi
 new file mode 100644
-index 0000000000000000000000000000000000000000..3d6d60c3a1c2fff8547a205bc10bee4c60bdbcd5
+index 000000000000..3d6d60c3a1c2
 --- /dev/null
 +++ b/arch/arm64/boot/dts/perle/k3-am642.dtsi
 @@ -0,0 +1,43 @@
@@ -1981,7 +1991,7 @@ index 0000000000000000000000000000000000000000..3d6d60c3a1c2fff8547a205bc10bee4c
 +&main_uart6 { compatible = "ti,am64-uart", "ti,am654-uart", "ti,perleam654-uart"; };
 diff --git a/arch/arm64/boot/dts/perle/k3-pinctrl.h b/arch/arm64/boot/dts/perle/k3-pinctrl.h
 new file mode 100644
-index 0000000000000000000000000000000000000000..e46f7bf527019f46fbd8bcf037467af8a55b373e
+index 000000000000..e46f7bf52701
 --- /dev/null
 +++ b/arch/arm64/boot/dts/perle/k3-pinctrl.h
 @@ -0,0 +1,147 @@
@@ -2134,7 +2144,7 @@ index 0000000000000000000000000000000000000000..e46f7bf527019f46fbd8bcf037467af8
 +#endif
 diff --git a/arch/arm64/boot/dts/perle/k3-serdes.h b/arch/arm64/boot/dts/perle/k3-serdes.h
 new file mode 100644
-index 0000000000000000000000000000000000000000..ef36060681405ddaa109b483274af741d147cba7
+index 000000000000..ef3606068140
 --- /dev/null
 +++ b/arch/arm64/boot/dts/perle/k3-serdes.h
 @@ -0,0 +1,212 @@

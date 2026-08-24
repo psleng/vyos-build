@@ -1124,7 +1124,7 @@ new file mode 100644
 index 000000000..733731b9b
 --- /dev/null
 +++ b/arch/arm64/boot/dts/perle/k3-am642-igos.dtsi
-@@ -0,0 +1,815 @@
+@@ -0,0 +1,832 @@
 +// SPDX-License-Identifier: GPL-2.0-only OR MIT
 +/*
 + * Copyright (C) 2020-2024 Texas Instruments Incorporated - https://www.ti.com/
@@ -1147,8 +1147,8 @@ index 000000000..733731b9b
 +
 +	device-info {
 +		compatible = "perle,device-info";
-+		nvmem-cells = <&serial>, <&product>, <&model>;
-+		nvmem-cell-names = "serial", "product", "model";
++		nvmem-cells = <&vendor>, <&serial>, <&uuid>, <&product>, <&model>;
++		nvmem-cell-names = "vendor", "serial", "uuid", "product", "model";
 +	};
 +
 +	memory@80000000 {
@@ -1607,23 +1607,40 @@ index 000000000..733731b9b
 +			#address-cells = <1>;
 +			#size-cells = <1>;
 +			
-+			serial: serial@10 {
++			vendor: vendor@10 {
 +				reg = <0x10 0x10>;
 +			};
 +
-+			product: product@20 {
++			serial: serial@20 {
 +				reg = <0x20 0x10>;
-+			};	
-+
-+			model: model@30 {
-+				reg = <0x30 0x10>;
 +			};
 +
-+			wifi_mac_addr0: mac-address@be {
++			uuid: uuid@30 {
++				reg = <0x30 0x10>;
++				perle,bytes;
++			};
++
++			product: product@40 {
++				reg = <0x40 0x10>;
++			};
++
++			model: model@50 {
++				reg = <0x50 0x10>;
++			};
++
++			wifi_mac_addr0: mac-address@b2 {
++				reg = <0xb2 0x6>;
++			};
++
++			wifi_mac_addr1: mac-address@b8 {
++				reg = <0xb8 0x6>;
++			};
++
++			wifi_mac_addr2: mac-address@be {
 +				reg = <0xbe 0x6>;
 +			};
 +
-+			wifi_mac_addr1: mac-address@c4 {
++			wifi_mac_addr3: mac-address@c4 {
 +				reg = <0xc4 0x6>;
 +			};
 +

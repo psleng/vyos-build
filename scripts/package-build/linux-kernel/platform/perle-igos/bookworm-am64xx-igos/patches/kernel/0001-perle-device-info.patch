@@ -32,7 +32,7 @@ index 000000000..c1eaac39b
 +	bool "Perle device information"
 +	depends on OF && NVMEM
 +	help
-+	  Expose text-valued Perle device information stored in NVMEM
++	  Expose Perle device information stored in NVMEM
 +	  through read-only sysfs attributes.
 diff --git a/drivers/platform/perle/Makefile b/drivers/platform/perle/Makefile
 new file mode 100644
@@ -46,16 +46,15 @@ new file mode 100644
 index 000000000..2b2d45d46
 --- /dev/null
 +++ b/drivers/platform/perle/device-info.c
-@@ -0,0 +1,165 @@
+@@ -0,0 +1,197 @@
 +/*
 + * Perle device information driver
 + *
-+ * Exposes text-valued NVMEM cells as read-only sysfs attributes.
++ * Exposes NVMEM cells as read-only binary sysfs attributes.
 + */
 +
 +#include <linux/device.h>
 +#include <linux/err.h>
-+#include <linux/mm.h>
 +#include <linux/module.h>
 +#include <linux/nvmem-consumer.h>
 +#include <linux/of.h>
@@ -65,41 +64,67 @@ index 000000000..2b2d45d46
 +#include <linux/string.h>
 +
 +struct perle_device_info_attr {
-+	struct device_attribute dev_attr;
++	struct bin_attribute bin_attr;
 +	struct nvmem_cell *cell;
++	bool bytes;
 +};
 +
 +struct perle_device_info {
 +	struct perle_device_info_attr *cell_attrs;
-+	struct attribute **attrs;
++	const struct bin_attribute **bin_attrs;
 +	struct attribute_group group;
 +};
 +
-+static ssize_t perle_device_info_show(struct device *dev,
-+				      struct device_attribute *dev_attr,
-+				      char *buf)
++static ssize_t perle_device_info_read(struct file *filp, struct kobject *kobj,
++				      const struct bin_attribute *bin_attr,
++				      char *buf, loff_t pos, size_t count)
 +{
 +	struct perle_device_info_attr *device_attr;
++	char *formatted = NULL;
++	char *output;
 +	size_t len;
++	size_t output_len;
 +	size_t text_len;
 +	char *data;
 +	ssize_t ret;
 +
-+	device_attr = container_of(dev_attr, struct perle_device_info_attr,
-+				   dev_attr);
++	device_attr = container_of(bin_attr, struct perle_device_info_attr,
++				   bin_attr);
 +
 +	data = nvmem_cell_read(device_attr->cell, &len);
 +	if (IS_ERR(data))
 +		return PTR_ERR(data);
 +
-+	while (len && (data[len - 1] == '\0' ||
-+		       (unsigned char)data[len - 1] == 0xff))
-+		len--;
++	if (device_attr->bytes) {
++		output = data;
++		output_len = len;
++	} else {
++		while (len && (data[len - 1] == '\0' ||
++			       (unsigned char)data[len - 1] == 0xff))
++			len--;
 +
-+	text_len = strnlen(data, len);
-+	text_len = min_t(size_t, text_len, PAGE_SIZE - 2);
-+	ret = sysfs_emit(buf, "%.*s\n", (int)text_len, data);
++		text_len = strnlen(data, len);
++		formatted = kmalloc(text_len + 1, GFP_KERNEL);
++		if (!formatted) {
++			ret = -ENOMEM;
++			goto out;
++		}
 +
++		memcpy(formatted, data, text_len);
++		formatted[text_len] = '\n';
++		output = formatted;
++		output_len = text_len + 1;
++	}
++
++	if (pos >= output_len) {
++		ret = 0;
++	} else {
++		ret = min_t(size_t, count, output_len - pos);
++		memcpy(buf, output + pos, ret);
++	}
++
++out:
++	kfree(formatted);
 +	kfree(data);
 +
 +	return ret;
@@ -118,8 +143,8 @@ index 000000000..2b2d45d46
 +	struct device *dev = &pdev->dev;
 +	struct perle_device_info_attr *device_attr;
 +	struct perle_device_info *info;
++	struct device_node *cell_np;
 +	const char **names;
-+	char *attr_name;
 +	int count;
 +	int index;
 +	int previous;
@@ -139,9 +164,9 @@ index 000000000..2b2d45d46
 +	if (!info->cell_attrs)
 +		return -ENOMEM;
 +
-+	info->attrs = devm_kcalloc(dev, count + 1, sizeof(*info->attrs),
-+				  GFP_KERNEL);
-+	if (!info->attrs)
++	info->bin_attrs = devm_kcalloc(dev, count + 1,
++				      sizeof(*info->bin_attrs), GFP_KERNEL);
++	if (!info->bin_attrs)
 +		return -ENOMEM;
 +
 +	names = devm_kcalloc(dev, count, sizeof(*names), GFP_KERNEL);
@@ -153,7 +178,6 @@ index 000000000..2b2d45d46
 +	if (ret < 0)
 +		return dev_err_probe(dev, ret,
 +				     "failed to read NVMEM cell names\n");
-+
 +	for (index = 0; index < count; index++) {
 +		if (!perle_device_info_name_valid(names[index]))
 +			return dev_err_probe(dev, -EINVAL,
@@ -174,18 +198,26 @@ index 000000000..2b2d45d46
 +					     "failed to get NVMEM cell \"%s\"\n",
 +					     names[index]);
 +
-+		attr_name = devm_kstrdup(dev, names[index], GFP_KERNEL);
-+		if (!attr_name)
++		cell_np = of_parse_phandle(dev->of_node, "nvmem-cells", index);
++		if (!cell_np)
++			return dev_err_probe(dev, -EINVAL,
++					     "failed to parse NVMEM cell \"%s\"\n",
++					     names[index]);
++		device_attr->bytes = of_property_read_bool(cell_np, "perle,bytes");
++		of_node_put(cell_np);
++
++		device_attr->bin_attr.attr.name =
++			devm_kstrdup(dev, names[index], GFP_KERNEL);
++		if (!device_attr->bin_attr.attr.name)
 +			return -ENOMEM;
 +
-+		sysfs_attr_init(&device_attr->dev_attr.attr);
-+		device_attr->dev_attr.attr.name = attr_name;
-+		device_attr->dev_attr.attr.mode = 0444;
-+		device_attr->dev_attr.show = perle_device_info_show;
-+		info->attrs[index] = &device_attr->dev_attr.attr;
++		sysfs_bin_attr_init(&device_attr->bin_attr);
++		device_attr->bin_attr.attr.mode = 0444;
++		device_attr->bin_attr.read = perle_device_info_read;
++		info->bin_attrs[index] = &device_attr->bin_attr;
 +	}
 +
-+	info->group.attrs = info->attrs;
++	info->group.bin_attrs = info->bin_attrs;
 +	platform_set_drvdata(pdev, info);
 +
 +	ret = devm_device_add_group(dev, &info->group);

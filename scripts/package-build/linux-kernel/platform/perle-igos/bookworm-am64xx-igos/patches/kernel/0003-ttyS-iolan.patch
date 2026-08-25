@@ -1,5 +1,5 @@
 diff --git a/drivers/Makefile b/drivers/Makefile
-index 8e1ffa4358d5f..5b94eefc7a772 100644
+index 8e1ffa4358d5..5b94eefc7a77 100644
 --- a/drivers/Makefile
 +++ b/drivers/Makefile
 @@ -6,6 +6,8 @@
@@ -12,7 +12,7 @@ index 8e1ffa4358d5f..5b94eefc7a772 100644
  obj-y				+= irqchip/
  obj-y				+= bus/
 diff --git a/drivers/char/Kconfig b/drivers/char/Kconfig
-index d2cfc584e2023..9720681c14bb3 100644
+index d2cfc584e202..9720681c14bb 100644
 --- a/drivers/char/Kconfig
 +++ b/drivers/char/Kconfig
 @@ -7,6 +7,47 @@ menu "Character devices"
@@ -64,7 +64,7 @@ index d2cfc584e2023..9720681c14bb3 100644
  	tristate "TTY driver to output user messages via printk"
  	depends on EXPERT && TTY
 diff --git a/drivers/char/Makefile b/drivers/char/Makefile
-index 1291369b91265..05adca597ff9a 100644
+index 1291369b9126..05adca597ff9 100644
 --- a/drivers/char/Makefile
 +++ b/drivers/char/Makefile
 @@ -2,7 +2,7 @@
@@ -78,7 +78,7 @@ index 1291369b91265..05adca597ff9a 100644
  obj-y				+= misc.o
 diff --git a/drivers/char/fanout.c b/drivers/char/fanout.c
 new file mode 100644
-index 0000000000000..6b82eb42ee2af
+index 000000000000..6b82eb42ee2a
 --- /dev/null
 +++ b/drivers/char/fanout.c
 @@ -0,0 +1,410 @@
@@ -494,7 +494,7 @@ index 0000000000000..6b82eb42ee2af
 +
 diff --git a/drivers/perle/Kconfig b/drivers/perle/Kconfig
 new file mode 100644
-index 0000000000000..93caa95722cc0
+index 000000000000..93caa95722cc
 --- /dev/null
 +++ b/drivers/perle/Kconfig
 @@ -0,0 +1,4 @@
@@ -504,7 +504,7 @@ index 0000000000000..93caa95722cc0
 +
 diff --git a/drivers/perle/Makefile b/drivers/perle/Makefile
 new file mode 100644
-index 0000000000000..1402266c87cdd
+index 000000000000..1402266c87cd
 --- /dev/null
 +++ b/drivers/perle/Makefile
 @@ -0,0 +1,7 @@
@@ -517,7 +517,7 @@ index 0000000000000..1402266c87cdd
 +
 diff --git a/drivers/perle/perle_info.c b/drivers/perle/perle_info.c
 new file mode 100644
-index 0000000000000..606a7bdb92494
+index 000000000000..606a7bdb9249
 --- /dev/null
 +++ b/drivers/perle/perle_info.c
 @@ -0,0 +1,153 @@
@@ -675,7 +675,7 @@ index 0000000000000..606a7bdb92494
 +MODULE_DESCRIPTION("procfs for perle console server");
 +
 diff --git a/drivers/tty/serial/8250/8250.h b/drivers/tty/serial/8250/8250.h
-index 2d4f15df18f7f..75f2eab06442d 100644
+index 2d4f15df18f7..75f2eab06442 100644
 --- a/drivers/tty/serial/8250/8250.h
 +++ b/drivers/tty/serial/8250/8250.h
 @@ -13,12 +13,17 @@
@@ -728,7 +728,7 @@ index 2d4f15df18f7f..75f2eab06442d 100644
  		mctrl_gpio_set(up->gpios, serial8250_MCR_to_TIOCM(value));
  }
 diff --git a/drivers/tty/serial/8250/8250_core.c b/drivers/tty/serial/8250/8250_core.c
-index bfa421ab32536..57a8d7aa8fd59 100644
+index bfa421ab3253..57a8d7aa8fd5 100644
 --- a/drivers/tty/serial/8250/8250_core.c
 +++ b/drivers/tty/serial/8250/8250_core.c
 @@ -34,6 +34,9 @@
@@ -848,7 +848,7 @@ index bfa421ab32536..57a8d7aa8fd59 100644
  		uart->port.flags &= ~UPF_BOOT_AUTOCONF;
 diff --git a/drivers/tty/serial/8250/8250_perle.h b/drivers/tty/serial/8250/8250_perle.h
 new file mode 100644
-index 0000000000000..3109313ae1eae
+index 000000000000..3109313ae1ea
 --- /dev/null
 +++ b/drivers/tty/serial/8250/8250_perle.h
 @@ -0,0 +1,57 @@
@@ -912,10 +912,10 @@ index 0000000000000..3109313ae1eae
 \ No newline at end of file
 diff --git a/drivers/tty/serial/8250/8250_perle_helper.c b/drivers/tty/serial/8250/8250_perle_helper.c
 new file mode 100644
-index 0000000000000..720f9dd403bd1
+index 000000000000..1e63f745aa4d
 --- /dev/null
 +++ b/drivers/tty/serial/8250/8250_perle_helper.c
-@@ -0,0 +1,2232 @@
+@@ -0,0 +1,2234 @@
 +/*
 + * Helper routines for Perle IOLAN serial port support
 + *
@@ -1116,21 +1116,23 @@ index 0000000000000..720f9dd403bd1
 +
 +void perle_serial8250_out_MCR_pre(struct uart_8250_port *up, int *value)
 +{
++#ifdef PERLE_SERIAL_DEBUG
 +	int orig_value = *value;
++#endif
 +	if (up->port.rs485.flags & SER_RS422_ENABLED)
 +	{
 +		*value &= ~UART_MCR_RTS;  /* RS422: clear MCR bit to keep RTS signal LOW */
 +		*value &= ~UART_MCR_DTR;  /* RS422: keep DTR LOW */
 +	}
-+	// else if (up->port.rs485.flags & SER_RS485_ENABLED)
-+	// {
-+	// 	/* RS485: flip the RTS bit (hardware is inverted) */
-+	// 	*value ^= UART_MCR_RTS;
-+	// 	*value &= ~UART_MCR_DTR;  /* RS485: keep DTR LOW */
-+	// }
++	else if (up->port.rs485.flags & SER_RS485_ENABLED)
++	{
++		*value &= ~UART_MCR_DTR;  /* RS485: keep DTR LOW */
++	}
++#ifdef PERLE_SERIAL_DEBUG
 +	if (*value != orig_value)
 +		printk_deferred("perle_out_MCR_pre: flags=0x%x orig=0x%x new=0x%x\n",
 +			up->port.rs485.flags, orig_value, *value);
++#endif
 +}
 +EXPORT_SYMBOL_GPL(perle_serial8250_out_MCR_pre);
 +
@@ -3150,10 +3152,10 @@ index 0000000000000..720f9dd403bd1
 +EXPORT_SYMBOL_GPL(perle_serial8250_get_rs232_rts_toggle);
 diff --git a/drivers/tty/serial/8250/8250_perleomap.c b/drivers/tty/serial/8250/8250_perleomap.c
 new file mode 100644
-index 0000000000000..a880d8e1aa408
+index 000000000000..5d8733de9454
 --- /dev/null
 +++ b/drivers/tty/serial/8250/8250_perleomap.c
-@@ -0,0 +1,2039 @@
+@@ -0,0 +1,2041 @@
 +// SPDX-License-Identifier: GPL-2.0
 +/*
 + * 8250-core based driver for the OMAP internal UART
@@ -4155,11 +4157,13 @@ index 0000000000000..a880d8e1aa408
 +	{
 +		if (up->rs232_rts_toggle)
 +			mcr_new &= (~UART_MCR_RTS);	 // inactive RTS
-+		else
++		else if (rs485->flags & SER_RS232_ENABLED)  // rs232 mode?
 +			mcr_new |= UART_MCR_RTS;	// flow control - allow peer to send
 +
 +		if (rs485->flags & SER_RS232_ENABLED)  // rs232 mode?
 +			mcr_new |= UART_MCR_DTR;	// DTR on
++		else
++			mcr_new &= (~UART_MCR_DTR);	 // DTR off
 +	}
 +#ifdef PERLE_SERIAL_DEBUG
 +	printk_deferred("omap8250_rs485_config: EXIT mcr_out=0x%x mdr3=0x%x\n", mcr_new, priv->mdr3);
@@ -5194,7 +5198,7 @@ index 0000000000000..a880d8e1aa408
 +MODULE_DESCRIPTION("OMAP 8250 Driver");
 +MODULE_LICENSE("GPL v2");
 diff --git a/drivers/tty/serial/8250/8250_platform.c b/drivers/tty/serial/8250/8250_platform.c
-index fe7ec440ffa58..1a2e9b67dec99 100644
+index fe7ec440ffa5..1a2e9b67dec9 100644
 --- a/drivers/tty/serial/8250/8250_platform.c
 +++ b/drivers/tty/serial/8250/8250_platform.c
 @@ -14,6 +14,7 @@
@@ -5259,7 +5263,7 @@ index fe7ec440ffa58..1a2e9b67dec99 100644
  	if (nr_uarts == 0)
  		return -ENODEV;
 diff --git a/drivers/tty/serial/8250/8250_port.c b/drivers/tty/serial/8250/8250_port.c
-index 8785961a2a82e..f7ed96848cabf 100644
+index 8785961a2a82..f7ed96848cab 100644
 --- a/drivers/tty/serial/8250/8250_port.c
 +++ b/drivers/tty/serial/8250/8250_port.c
 @@ -39,6 +39,12 @@
@@ -5579,7 +5583,7 @@ index 8785961a2a82e..f7ed96848cabf 100644
  
  void serial8250_init_port(struct uart_8250_port *up)
 diff --git a/drivers/tty/serial/8250/Kconfig b/drivers/tty/serial/8250/Kconfig
-index f64ef0819cd4e..de131a7226f0d 100644
+index f64ef0819cd4..de131a7226f0 100644
 --- a/drivers/tty/serial/8250/Kconfig
 +++ b/drivers/tty/serial/8250/Kconfig
 @@ -590,3 +590,10 @@ config SERIAL_OF_PLATFORM
@@ -5594,7 +5598,7 @@ index f64ef0819cd4e..de131a7226f0d 100644
 +    help
 +      This option replace 8250_omap serial driver.
 diff --git a/drivers/tty/serial/8250/Makefile b/drivers/tty/serial/8250/Makefile
-index 9ec4d5fe64de5..b03e4e227e6c5 100644
+index 9ec4d5fe64de..b03e4e227e6c 100644
 --- a/drivers/tty/serial/8250/Makefile
 +++ b/drivers/tty/serial/8250/Makefile
 @@ -56,4 +56,6 @@ obj-$(CONFIG_SERIAL_8250_CS)		+= serial_cs.o
@@ -5605,7 +5609,7 @@ index 9ec4d5fe64de5..b03e4e227e6c5 100644
 +8250_perleomap-y := 8250_perleomap.o 8250_perle_helper.o
  CFLAGS_8250_ingenic.o += -I$(srctree)/scripts/dtc/libfdt
 diff --git a/drivers/tty/serial/Makefile b/drivers/tty/serial/Makefile
-index a2ccbc508ec57..cc6420db063d1 100644
+index a2ccbc508ec5..cc6420db063d 100644
 --- a/drivers/tty/serial/Makefile
 +++ b/drivers/tty/serial/Makefile
 @@ -100,3 +100,5 @@ obj-$(CONFIG_SERIAL_MCTRL_GPIO)	+= serial_mctrl_gpio.o
@@ -5615,7 +5619,7 @@ index a2ccbc508ec57..cc6420db063d1 100644
 +
 +obj-$(CONFIG_PERLE_IOLAN) += uart_trace.o
 diff --git a/drivers/tty/serial/serial_core.c b/drivers/tty/serial/serial_core.c
-index ca72454b3eb09..022f3509cfa3d 100644
+index ca72454b3eb0..022f3509cfa3 100644
 --- a/drivers/tty/serial/serial_core.c
 +++ b/drivers/tty/serial/serial_core.c
 @@ -34,6 +34,11 @@
@@ -5790,7 +5794,7 @@ index ca72454b3eb09..022f3509cfa3d 100644
  }
  
 diff --git a/drivers/tty/serial/serial_mctrl_gpio.c b/drivers/tty/serial/serial_mctrl_gpio.c
-index 7b02c5ca4afd5..77dea06e3559f 100644
+index 7b02c5ca4afd..77dea06e3559 100644
 --- a/drivers/tty/serial/serial_mctrl_gpio.c
 +++ b/drivers/tty/serial/serial_mctrl_gpio.c
 @@ -16,6 +16,15 @@
@@ -5885,7 +5889,7 @@ index 7b02c5ca4afd5..77dea06e3559f 100644
  
 diff --git a/drivers/tty/serial/uart_trace.c b/drivers/tty/serial/uart_trace.c
 new file mode 100644
-index 0000000000000..2f0596f6125fd
+index 000000000000..2f0596f6125f
 --- /dev/null
 +++ b/drivers/tty/serial/uart_trace.c
 @@ -0,0 +1,364 @@
@@ -6254,7 +6258,7 @@ index 0000000000000..2f0596f6125fd
 +
 +
 diff --git a/drivers/tty/tty_port.c b/drivers/tty/tty_port.c
-index fe67c5cb0a3f0..cbc2e723af2f5 100644
+index fe67c5cb0a3f..cbc2e723af2f 100644
 --- a/drivers/tty/tty_port.c
 +++ b/drivers/tty/tty_port.c
 @@ -492,7 +492,9 @@ int tty_port_block_til_ready(struct tty_port *port,
@@ -6269,7 +6273,7 @@ index fe67c5cb0a3f0..cbc2e723af2f5 100644
  	}
 diff --git a/include/linux/perle_serial.h b/include/linux/perle_serial.h
 new file mode 100644
-index 0000000000000..3e2a14b174bcd
+index 000000000000..3e2a14b174bc
 --- /dev/null
 +++ b/include/linux/perle_serial.h
 @@ -0,0 +1,31 @@
@@ -6305,7 +6309,7 @@ index 0000000000000..3e2a14b174bcd
 +#endif  // _LINUX_PERLE_SERIAL_H
 +
 diff --git a/include/linux/serial_8250.h b/include/linux/serial_8250.h
-index a95b2d143d248..4ae0fa72a875d 100644
+index a95b2d143d24..4ae0fa72a875 100644
 --- a/include/linux/serial_8250.h
 +++ b/include/linux/serial_8250.h
 @@ -12,6 +12,10 @@
@@ -6501,7 +6505,7 @@ index a95b2d143d248..4ae0fa72a875d 100644
 +
  #endif
 diff --git a/include/linux/serial_core.h b/include/linux/serial_core.h
-index 666430b478997..93239f574274c 100644
+index 666430b47899..93239f574274 100644
 --- a/include/linux/serial_core.h
 +++ b/include/linux/serial_core.h
 @@ -404,6 +404,11 @@ struct uart_ops {
@@ -6605,7 +6609,7 @@ index 666430b478997..93239f574274c 100644
  static inline bool uart_cts_enabled(struct uart_port *uport)
  {
 diff --git a/include/uapi/asm-generic/ioctls.h b/include/uapi/asm-generic/ioctls.h
-index cdc9f4ca8c275..22445ee25bb8e 100644
+index cdc9f4ca8c27..22445ee25bb8 100644
 --- a/include/uapi/asm-generic/ioctls.h
 +++ b/include/uapi/asm-generic/ioctls.h
 @@ -118,4 +118,94 @@
@@ -6704,7 +6708,7 @@ index cdc9f4ca8c275..22445ee25bb8e 100644
 +
  #endif /* __ASM_GENERIC_IOCTLS_H */
 diff --git a/include/uapi/asm-generic/termbits.h b/include/uapi/asm-generic/termbits.h
-index 890ef29053e2e..ab29d359b7a73 100644
+index 890ef29053e2..ab29d359b7a7 100644
 --- a/include/uapi/asm-generic/termbits.h
 +++ b/include/uapi/asm-generic/termbits.h
 @@ -146,4 +146,104 @@ struct ktermios {
@@ -6813,7 +6817,7 @@ index 890ef29053e2e..ab29d359b7a73 100644
 +
  #endif /* __ASM_GENERIC_TERMBITS_H */
 diff --git a/include/uapi/linux/serial.h b/include/uapi/linux/serial.h
-index de9b4733607e6..a52d388a67253 100644
+index de9b4733607e..a52d388a6725 100644
 --- a/include/uapi/linux/serial.h
 +++ b/include/uapi/linux/serial.h
 @@ -153,6 +153,33 @@ struct serial_rs485 {
@@ -6851,7 +6855,7 @@ index de9b4733607e6..a52d388a67253 100644
  	__u32	delay_rts_after_send;
  
 diff --git a/include/uapi/linux/tty_flags.h b/include/uapi/linux/tty_flags.h
-index cf25056d4b27e..2e6787d6a3c9c 100644
+index cf25056d4b27..2e6787d6a3c9 100644
 --- a/include/uapi/linux/tty_flags.h
 +++ b/include/uapi/linux/tty_flags.h
 @@ -32,6 +32,9 @@
@@ -6876,7 +6880,7 @@ index cf25056d4b27e..2e6787d6a3c9c 100644
  #define ASYNC_DEPRECATED	(ASYNC_SPLIT_TERMIOS | ASYNC_SESSION_LOCKOUT | \
 diff --git a/include/uapi/linux/uart_trace.h b/include/uapi/linux/uart_trace.h
 new file mode 100644
-index 0000000000000..544d51aac90be
+index 000000000000..544d51aac90b
 --- /dev/null
 +++ b/include/uapi/linux/uart_trace.h
 @@ -0,0 +1,86 @@
@@ -6967,7 +6971,7 @@ index 0000000000000..544d51aac90be
 +
 +#endif	/* __UART_TRACE__ */
 diff --git a/init/Kconfig b/init/Kconfig
-index cab3ad28ca49e..e10a83adfbc67 100644
+index cab3ad28ca49..e10a83adfbc6 100644
 --- a/init/Kconfig
 +++ b/init/Kconfig
 @@ -2198,3 +2198,9 @@ config ARCH_HAS_SYNC_CORE_BEFORE_USERMODE

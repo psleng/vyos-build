@@ -912,10 +912,10 @@ index 000000000000..3109313ae1ea
 \ No newline at end of file
 diff --git a/drivers/tty/serial/8250/8250_perle_helper.c b/drivers/tty/serial/8250/8250_perle_helper.c
 new file mode 100644
-index 000000000000..1e63f745aa4d
+index 000000000000..a1e6430462dc
 --- /dev/null
 +++ b/drivers/tty/serial/8250/8250_perle_helper.c
-@@ -0,0 +1,2234 @@
+@@ -0,0 +1,2236 @@
 +/*
 + * Helper routines for Perle IOLAN serial port support
 + *
@@ -2843,7 +2843,9 @@ index 000000000000..1e63f745aa4d
 +{
 +	unsigned int setbits=0;
 +	unsigned int clearbits=0;
++#ifdef PERLE_SERIAL_DEBUG
 +	unsigned int old_mctrl = up->port.mctrl;
++#endif
 +
 +	if (up->last_mcr_written & UART_MCR_RTS)
 +		setbits|=TIOCM_RTS;
@@ -3152,7 +3154,7 @@ index 000000000000..1e63f745aa4d
 +EXPORT_SYMBOL_GPL(perle_serial8250_get_rs232_rts_toggle);
 diff --git a/drivers/tty/serial/8250/8250_perleomap.c b/drivers/tty/serial/8250/8250_perleomap.c
 new file mode 100644
-index 000000000000..5d8733de9454
+index 000000000000..cd23031e7923
 --- /dev/null
 +++ b/drivers/tty/serial/8250/8250_perleomap.c
 @@ -0,0 +1,2041 @@
@@ -4167,7 +4169,7 @@ index 000000000000..5d8733de9454
 +	}
 +#ifdef PERLE_SERIAL_DEBUG
 +	printk_deferred("omap8250_rs485_config: EXIT mcr_out=0x%x mdr3=0x%x\n", mcr_new, priv->mdr3);
-+#endif /* PERLE_SERIAL_DEBUG */s
++#endif /* PERLE_SERIAL_DEBUG */
 +	perle_serial_out_mcr(up, mcr_new);
 +#endif /* CONFIG_PERLE_IOLAN */
 +
@@ -5794,7 +5796,7 @@ index ca72454b3eb0..022f3509cfa3 100644
  }
  
 diff --git a/drivers/tty/serial/serial_mctrl_gpio.c b/drivers/tty/serial/serial_mctrl_gpio.c
-index 7b02c5ca4afd..77dea06e3559 100644
+index 7b02c5ca4afd..a16d8aa5ce51 100644
 --- a/drivers/tty/serial/serial_mctrl_gpio.c
 +++ b/drivers/tty/serial/serial_mctrl_gpio.c
 @@ -16,6 +16,15 @@
@@ -5844,7 +5846,7 @@ index 7b02c5ca4afd..77dea06e3559 100644
  	u32 mctrl = gpios->mctrl_prev;
  	u32 mctrl_diff;
  	unsigned long flags;
-@@ -189,6 +217,34 @@ static irqreturn_t mctrl_gpio_irq_handle(int irq, void *context)
+@@ -189,6 +217,40 @@ static irqreturn_t mctrl_gpio_irq_handle(int irq, void *context)
  	mctrl_diff = mctrl ^ gpios->mctrl_prev;
  	gpios->mctrl_prev = mctrl;
  
@@ -5874,12 +5876,18 @@ index 7b02c5ca4afd..77dea06e3559 100644
 +
 +        if(up->traceMask & TRACE_BITS_SIGNALS)
 +            uartTraceAddSignals(up->tracePortIndex, &up->traceSignals, up->last_mcr_written, up->last_msr_read);
-+	}
++
++        if (mctrl_diff & TIOCM_CD)
++        {
++            uart_handle_dcd_change(port, mctrl & TIOCM_CD);
++            wake_up_interruptible(&port->state->port.delta_msr_wait);
++        }
++    }
 +#else
  	if (mctrl_diff & MCTRL_ANY_DELTA && port->state != NULL) {
  		if ((mctrl_diff & mctrl) & TIOCM_RI)
  			port->icount.rng++;
-@@ -204,6 +260,7 @@ static irqreturn_t mctrl_gpio_irq_handle(int irq, void *context)
+@@ -204,6 +266,7 @@ static irqreturn_t mctrl_gpio_irq_handle(int irq, void *context)
  
  		wake_up_interruptible(&port->state->port.delta_msr_wait);
  	}

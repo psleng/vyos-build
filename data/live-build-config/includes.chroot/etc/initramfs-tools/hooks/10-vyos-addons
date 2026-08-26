@@ -27,9 +27,10 @@ manual_add_modules igb ixgbe ixgbevf i40e i40evf
 # executable to copy to initramfs, with library dependencies
 copy_exec /usr/lib/${MULTIARCH}/libnss_dns.so.2
 
-# iproute2 (bookworm-backports) links against libbpf; ensure it is present in
-# the initramfs so `ip` works during init (e.g. init-bottom bringing links down)
-copy_exec /usr/lib/${MULTIARCH}/libbpf.so.1
+# NOTE: iproute2 `ip` is not invoked in the initramfs (dropbear-initramfs is
+# stripped in hooks/live/16-remove-dropbear-initramfs.chroot), so its libraries
+# (libbpf.so.1 / libmnl.so.0) are intentionally not copied here. Re-add them if
+# something starts using `ip` in the initramfs again.
 
 # missing fsck in initramfs
 copy_exec /usr/sbin/fsck

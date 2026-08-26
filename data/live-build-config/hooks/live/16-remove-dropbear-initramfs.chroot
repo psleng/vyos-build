@@ -1,0 +1,29 @@
+#!/bin/sh
+#
+# Strip the dropbear-initramfs integration so it is NOT baked into the initramfs
+# by the following 17-gen_initramfs.chroot hook.
+#
+# Why: this product boots a local, unencrypted live squashfs and always has
+# serial-console access. dropbear-initramfs exists only to allow SSH *into the
+# initramfs* before the root filesystem is available (its classic use is remote
+# unlock of an ENCRYPTED root) - something we never do. It is pulled in only
+# transitively: vyos-1x Depends: dropbear (metapackage) -> Depends:
+# dropbear-initramfs. Its boot script starts a dropbear daemon on EVERY boot
+# (its only gate is "is /sbin/dropbear present"), and its init-bottom script is
+# the sole initramfs consumer of the iproute2 `ip` command
+# ("Bringing down lo" -> ip link/addr/route). Removing it makes the initramfs
+# genuinely quiet and eliminates that `ip` path entirely.
+#
+# We deliberately do NOT purge the package: that would cascade up through the
+# `dropbear` metapackage to vyos-1x. Instead we keep the package installed (so
+# dependencies stay satisfied and dropbear-bin remains for the
+# `service console-server` SSH front-end) and only delete its initramfs hook +
+# boot scripts, so `update-initramfs` excludes it. Fully reversible: delete this
+# hook to restore stock behaviour.
+
+echo "I: Stripping dropbear-initramfs integration from the initramfs"
+
+rm -f /usr/share/initramfs-tools/hooks/dropbear
+rm -f /usr/share/initramfs-tools/scripts/init-premount/dropbear
+rm -f /usr/share/initramfs-tools/scripts/init-bottom/dropbear
+rm -f /usr/share/initramfs-tools/conf-hooks.d/dropbear

@@ -1,9 +1,5 @@
 [[packages]]
 name = "vyos-1x"
-<<<<<<< HEAD
 commit_id = "cf-cloud"
-=======
-commit_id = "psl-master"
->>>>>>> origin/psl-master
 scm_url = "https://github.com/psleng/vyos-1x.git"
 build_cmd = "../brand.sh && dpkg-buildpackage -uc -us -tc -b"

@@ -23,7 +23,7 @@ import os
 
 from argparse import ArgumentParser
 from pathlib import Path
-from subprocess import run, CalledProcessError
+from subprocess import run, CalledProcessError, DEVNULL
 
 
 def ensure_dependencies(dependencies: list) -> None:
@@ -74,7 +74,7 @@ def prepare_package(repo_dir: Path, install_data: str) -> None:
         raise
 
 
-def build_package(package: dict, patch_dir: Path) -> None:
+def build_package(package: dict, patch_dir: Path, clean_git=False) -> None:
     """Build a package from the repository
 
     Args:
@@ -94,12 +94,48 @@ def build_package(package: dict, patch_dir: Path) -> None:
     # PSL-iolan_apps: Skip git clone/checkout for 'local_app' mode since we build from local sources
     if build_mode != 'local_app':
         try:
-            # Clone the repository if it does not exist
+            # Clone the repository if it does not exist, otherwise check to see if we should clean / reset directory
             if not repo_dir.exists():
                 run(['git', 'clone', package['scm_url'], str(repo_dir)], check=True)
+                run(['git', 'checkout', package['commit_id']], cwd=repo_dir, check=True)
+            elif clean_git:
+                print("Repo detected; attempting to get latest rather than clone from scratch")
+                # Must clean out anything in progress; notably patches may leave them in odd states
+                run(['git', 'am', '--abort'], cwd=repo_dir, stdout=DEVNULL, stderr=DEVNULL)
+                run(['git', 'merge', '--abort'], cwd=repo_dir, stdout=DEVNULL, stderr=DEVNULL)
+                run(['git', 'rebase', '--abort'], cwd=repo_dir, stdout=DEVNULL, stderr=DEVNULL)
+                run(['git', 'cherry-pick', '--abort'], cwd=repo_dir, stdout=DEVNULL, stderr=DEVNULL)
+                run(['git', 'revert', '--abort'], cwd=repo_dir, stdout=DEVNULL, stderr=DEVNULL)
+                # Continue by getting newest from remote, and cleaning out old to ensure we can successfully merge
+                run(['git', 'fetch', 'origin', '--tags'], cwd=repo_dir, check=True)
+                run(['sudo', 'git', 'clean', '-fdx'], cwd=repo_dir, check=True)
+                # Slightly different commands if checking out a branch vs tag/sha, so do a check first to see which was passed in
+                commit_check = run(['git', 'ls-remote', '--heads', 'origin', package['commit_id']], cwd=repo_dir, capture_output=True, text=True, check=True)
+                current = run(['git', 'rev-parse', 'HEAD'], cwd=repo_dir, capture_output=True, text=True, check=True)
+                # Checking for debs; if none are present then assume we need to rebuild
+                # TODO: not sure how to guarantee there was no issue building debs; if 1 built and 1 failed this would still work
+                deb_files = list(Path.cwd().glob('*.deb'))
+                if commit_check.stdout.strip():
+                    if deb_files:
+                        remote = run(['git', 'rev-parse', f'origin/{package["commit_id"]}'], cwd=repo_dir, capture_output=True, text=True, check=True)
+                        if remote.stdout.strip() in current.stdout:
+                            print(f"I: Skipping building this package: {repo_name}\nCurrent and remote branches match, as well as their commit ID", flush=True)
+                            return
+                    run(['git', 'checkout', '--force', f'origin/{package["commit_id"]}'], cwd=repo_dir, check=True)
+                else:
+                    if deb_files:
+                        remote = run(['git', 'rev-list', '-n', '1', package['commit_id']], cwd=repo_dir, capture_output=True, text=True, check=True)
+                        tag_check = run(['git', 'ls-remote', '--tags', 'origin', package['commit_id']], cwd=repo_dir, capture_output=True, text=True, check=True)
+                        if tag_check.stdout and current.stdout.strip() in remote.stdout:
+                            print(f"I: Skipping building this package: {repo_name}\nCurrent commit ID and ID that remote tag points to both match", flush=True)
+                            return
+                        elif package["commit_id"] in remote.stdout:
+                            print(f"I: Skipping building this package: {repo_name}\nCurrent and remote SHAs/commit IDs both match", flush=True)
+                            return
+                    run(['git', 'checkout', '--force', package['commit_id']], cwd=repo_dir, check=True)
+            else:
+                run(['git', 'checkout', package['commit_id']], cwd=repo_dir, check=True)
 
-            # Check out the specific commit
-            run(['git', 'checkout', package['commit_id']], cwd=repo_dir, check=True)
         except CalledProcessError as e:
             print(f"Failed to clone or checkout for package '{repo_name}': {e}")
             sys.exit(1)
@@ -228,6 +264,9 @@ if __name__ == '__main__':
     arg_parser.add_argument('--patch-dir',
                             default='patches',
                             help='Path to the directory containing patches')
+    arg_parser.add_argument('--clean-git',
+                            action='store_true',
+                            help='Path to the directory containing patches')
     args = arg_parser.parse_args()
 
     # Load package configuration
@@ -247,7 +286,7 @@ if __name__ == '__main__':
 
     for package in packages:
         # Build the package
-        build_package(package, patch_dir)
+        build_package(package, patch_dir, args.clean_git)
 
         # Clean up build dependency packages after build
         cleanup_build_deps(Path(package['name']))

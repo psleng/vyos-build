@@ -25,7 +25,7 @@ import subprocess
 
 from argparse import ArgumentParser
 from pathlib import Path
-from subprocess import run, CalledProcessError
+from subprocess import run, CalledProcessError, DEVNULL
 
 # Relative path to defaults.toml
 defaults_path = "../../../data/defaults.toml"
@@ -54,19 +54,46 @@ def prepare_package(repo_dir: Path, install_data: str) -> None:
     print("I: Prepared package")
 
 
-def clone_or_update_repo(repo_dir: Path, scm_url: str, commit_id: str) -> None:
+def clone_or_update_repo(repo_dir: Path, scm_url: str, commit_id: str, clean_git=False) -> None:
     """Clone the repository if it does not exist, otherwise update it"""
-    if repo_dir.exists():
-        #run(['git', 'fetch'], cwd=repo_dir, check=True)
-        run(['git', 'checkout', commit_id], cwd=repo_dir, check=True)
-        #run(['git', 'pull'], cwd=repo_dir, check=True)
-    else:
-        try:
+    # if repo_dir.exists():
+    #     #run(['git', 'fetch'], cwd=repo_dir, check=True)
+    #     run(['git', 'checkout', commit_id], cwd=repo_dir, check=True)
+    #     #run(['git', 'pull'], cwd=repo_dir, check=True)
+    # else:
+    #     try:
+    #         run(['git', 'clone', scm_url, str(repo_dir)], check=True)
+    #         run(['git', 'checkout', commit_id], cwd=repo_dir, check=True)
+    #     except CalledProcessError as e:
+    #         print(f"Failed to clone or checkout: {e}")
+    #         sys.exit(1)
+    try:
+        # Clone the repository if it does not exist, otherwise check to see if we should clean / reset directory
+        if not repo_dir.exists():
             run(['git', 'clone', scm_url, str(repo_dir)], check=True)
             run(['git', 'checkout', commit_id], cwd=repo_dir, check=True)
-        except CalledProcessError as e:
-            print(f"Failed to clone or checkout: {e}")
-            sys.exit(1)
+        elif clean_git:
+            print("Repo detected; attempting to get latest rather than clone from scratch")
+            # Must clean out anything in progress; notably patches may leave them in odd states
+            run(['git', 'am', '--abort'], cwd=repo_dir, stdout=DEVNULL, stderr=DEVNULL)
+            run(['git', 'merge', '--abort'], cwd=repo_dir, stdout=DEVNULL, stderr=DEVNULL)
+            run(['git', 'rebase', '--abort'], cwd=repo_dir, stdout=DEVNULL, stderr=DEVNULL)
+            run(['git', 'cherry-pick', '--abort'], cwd=repo_dir, stdout=DEVNULL, stderr=DEVNULL)
+            run(['git', 'revert', '--abort'], cwd=repo_dir, stdout=DEVNULL, stderr=DEVNULL)
+            run(['git', 'fetch', 'origin', '--tags'], cwd=repo_dir, check=True)
+            run(['sudo', 'git', 'clean', '-fdx'], cwd=repo_dir, check=True)
+            # Slightly different commands if checking out a branch vs tag/sha, so do a check first to see which was passed in
+            commit_check = run(['git', 'ls-remote', '--heads', 'origin', commit_id], cwd=repo_dir, capture_output=True, text=True, check=True)
+            if commit_check.stdout.strip():
+                run(['git', 'checkout', '--force', f'origin/{commit_id}'], cwd=repo_dir, check=True)
+            else:
+                run(['git', 'checkout', '--force', commit_id], cwd=repo_dir, check=True)
+        else:
+            run(['git', 'checkout', commit_id], cwd=repo_dir, check=True)
+
+    except CalledProcessError as e:
+        print(f"Failed to clone or checkout: {e}")
+        sys.exit(1)
 
 
 def create_tarball(package_name, source_dir=None):
@@ -118,7 +145,8 @@ def create_tarball(package_name, source_dir=None):
 
 
 def build_package(package: dict, dependencies: list,
-                  linux_kernel_tarball: dict | None = None) -> None:
+                  linux_kernel_tarball: dict | None = None,
+                  clean_git=False) -> None:
     """Build a package from the repository
 
     Args:
@@ -148,15 +176,15 @@ def build_package(package: dict, dependencies: list,
                 linux_kernel_tarball['kernel_version'] = package['kernel_version']
                 linux_kernel_tarball['source_dir'] = source_dir
         elif package['build_cmd'] == 'build_linux_firmware':
-            build_linux_firmware(package['commit_id'], package['scm_url'])
+            build_linux_firmware(package['commit_id'], package['scm_url'], clean_git)
             create_tarball(f'{package["name"]}-{package["commit_id"]}', f'{package["name"]}')
         elif package['build_cmd'] == 'build_accel_ppp_ng':
-            build_accel_ppp_ng(package['commit_id'], package['scm_url'])
+            build_accel_ppp_ng(package['commit_id'], package['scm_url'], clean_git)
             create_tarball(f'{package["name"]}-{package["commit_id"]}', f'{package["name"]}')
         elif package['build_cmd'] == 'build_intel_qat':
             build_intel_qat()
         elif package['build_cmd'] in ['build_intel_nic']:
-            build_intel(package['name'], package['commit_id'], package['scm_url'])
+            build_intel(package['name'], package['commit_id'], package['scm_url'], clean_git)
         elif package['build_cmd'] == 'build_mellanox_ofed':
             build_mellanox_ofed()
         elif package['build_cmd'] == 'build_realtek_r8126':
@@ -166,9 +194,9 @@ def build_package(package: dict, dependencies: list,
         elif package['build_cmd'] == 'build_jool':
             build_jool()
         elif package['build_cmd'] == 'build_ipt_netflow':
-            build_ipt_netflow(package['commit_id'], package['scm_url'])
+            build_ipt_netflow(package['commit_id'], package['scm_url'], clean_git)
         elif package['build_cmd'] == 'build_nat_rtsp':
-            build_nat_rtsp(package['commit_id'], package['scm_url'])
+            build_nat_rtsp(package['commit_id'], package['scm_url'], clean_git)
         else:
             run(package['build_cmd'], cwd=repo_dir, check=True, shell=True)
 
@@ -213,17 +241,17 @@ def build_kernel(kernel_version) -> str:
     return(source_dir)
 
 
-def build_linux_firmware(commit_id, scm_url):
+def build_linux_firmware(commit_id, scm_url, clean_git):
     """Build Linux firmware"""
     repo_dir = Path('linux-firmware')
-    clone_or_update_repo(repo_dir, scm_url, commit_id)
+    clone_or_update_repo(repo_dir, scm_url, commit_id, clean_git)
     run(['./build-linux-firmware.sh'], check=True)
 
 
-def build_accel_ppp_ng(commit_id, scm_url):
+def build_accel_ppp_ng(commit_id, scm_url, clean_git):
     """Build accel-ppp-ng"""
     repo_dir = Path('accel-ppp-ng')
-    clone_or_update_repo(repo_dir, scm_url, commit_id)
+    clone_or_update_repo(repo_dir, scm_url, commit_id, clean_git)
     run(['./build-accel-ppp-ng.sh'], check=True)
 
 
@@ -232,10 +260,10 @@ def build_intel_qat():
     run(['./build-intel-qat.sh'], check=True)
 
 
-def build_intel(driver_name: str, commit_id: str, scm_url: str):
+def build_intel(driver_name: str, commit_id: str, scm_url: str, clean_git):
     """Build Intel driver from Git repository"""
     repo_dir = Path(f'ethernet-linux-{driver_name}')
-    clone_or_update_repo(repo_dir, scm_url, commit_id)
+    clone_or_update_repo(repo_dir, scm_url, commit_id, clean_git)
     run(['./build-intel-nic.sh', driver_name], check=True)
 
 
@@ -258,17 +286,17 @@ def build_jool():
     """Build Jool"""
     run(['echo y | ./build-jool.py'], check=True, shell=True)
 
-def build_ipt_netflow(commit_id, scm_url):
+def build_ipt_netflow(commit_id, scm_url, clean_git):
     """Build ipt_NETFLOW"""
     repo_dir = Path('ipt-netflow')
-    clone_or_update_repo(repo_dir, scm_url, commit_id)
+    clone_or_update_repo(repo_dir, scm_url, commit_id, clean_git)
     run(['./build-ipt-netflow.sh'], check=True, shell=True)
 
 
-def build_nat_rtsp(commit_id, scm_url):
+def build_nat_rtsp(commit_id, scm_url, clean_git):
     """Build RTSP netfilter helper"""
     repo_dir = Path('nat-rtsp')
-    clone_or_update_repo(repo_dir, scm_url, commit_id)
+    clone_or_update_repo(repo_dir, scm_url, commit_id, clean_git)
     run(['./build-nat-rtsp.sh'], check=True)
 
 
@@ -278,6 +306,7 @@ if __name__ == '__main__':
     arg_parser.add_argument('--config', default='package.toml', help='Path to the package configuration file')
     arg_parser.add_argument('--packages', nargs='+', help='Names of packages to build (default: all)', default=[])
     arg_parser.add_argument('--install-dependencies', '-i', help='Only install build dependencies', action='store_true')
+    arg_parser.add_argument('--clean-git', help='Cleans out build artifacts and resets', action='store_true')
     args = arg_parser.parse_args()
 
     # Load package configuration
@@ -310,7 +339,7 @@ if __name__ == '__main__':
         dependencies = package.get('dependencies', {}).get('packages', [])
 
         # Build the package
-        build_package(package, dependencies, linux_kernel_tarball)
+        build_package(package, dependencies, linux_kernel_tarball, args.clean_git)
 
         # Copy generated .deb packages to parent directory
         copy_packages(Path(package['name']))

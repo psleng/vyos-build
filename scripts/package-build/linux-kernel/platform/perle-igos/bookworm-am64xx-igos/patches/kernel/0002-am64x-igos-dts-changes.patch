@@ -1613,25 +1613,25 @@ index 000000000..733731b9b
 +			#address-cells = <1>;
 +			#size-cells = <1>;
 +			
-+			vendor: vendor@10 {
++			serial: serial@10 {
 +				reg = <0x10 0x10>;
 +			};
 +
-+			serial: serial@20 {
++			product: product@20 {
 +				reg = <0x20 0x10>;
 +			};
 +
-+			uuid: uuid@30 {
++			model: model@30 {
 +				reg = <0x30 0x10>;
++			};
++
++			uuid: uuid@60 {
++				reg = <0x60 0x10>;
 +				perle,bytes;
 +			};
 +
-+			product: product@40 {
-+				reg = <0x40 0x10>;
-+			};
-+
-+			model: model@50 {
-+				reg = <0x50 0x10>;
++			vendor: vendor@70 {
++				reg = <0x70 0x10>;
 +			};
 +
 +			wifi_mac_addr0: mac-address@b2 {

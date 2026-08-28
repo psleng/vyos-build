@@ -46,7 +46,7 @@ new file mode 100644
 index 000000000..2b2d45d46
 --- /dev/null
 +++ b/drivers/platform/perle/device-info.c
-@@ -0,0 +1,197 @@
+@@ -0,0 +1,181 @@
 +/*
 + * Perle device information driver
 + *
@@ -80,11 +80,8 @@ index 000000000..2b2d45d46
 +				      char *buf, loff_t pos, size_t count)
 +{
 +	struct perle_device_info_attr *device_attr;
-+	char *formatted = NULL;
-+	char *output;
 +	size_t len;
 +	size_t output_len;
-+	size_t text_len;
 +	char *data;
 +	ssize_t ret;
 +
@@ -96,35 +93,22 @@ index 000000000..2b2d45d46
 +		return PTR_ERR(data);
 +
 +	if (device_attr->bytes) {
-+		output = data;
 +		output_len = len;
 +	} else {
 +		while (len && (data[len - 1] == '\0' ||
 +			       (unsigned char)data[len - 1] == 0xff))
 +			len--;
 +
-+		text_len = strnlen(data, len);
-+		formatted = kmalloc(text_len + 1, GFP_KERNEL);
-+		if (!formatted) {
-+			ret = -ENOMEM;
-+			goto out;
-+		}
-+
-+		memcpy(formatted, data, text_len);
-+		formatted[text_len] = '\n';
-+		output = formatted;
-+		output_len = text_len + 1;
++		output_len = strnlen(data, len);
 +	}
 +
 +	if (pos >= output_len) {
 +		ret = 0;
 +	} else {
 +		ret = min_t(size_t, count, output_len - pos);
-+		memcpy(buf, output + pos, ret);
++		memcpy(buf, data + pos, ret);
 +	}
 +
-+out:
-+	kfree(formatted);
 +	kfree(data);
 +
 +	return ret;

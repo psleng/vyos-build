@@ -2005,13 +2005,13 @@ index 000000000..3d6d60c3a
 + * Preserved here to keep the DTB byte-equivalent to the previous fork; drop if
 + * confirmed unused by any out-of-tree iGOS driver.
 + */
-+&main_uart0 { compatible = "ti,am64-uart", "ti,am654-uart", "ti,perleam654-uart"; };
-+&main_uart1 { compatible = "ti,am64-uart", "ti,am654-uart", "ti,perleam654-uart"; };
-+&main_uart2 { compatible = "ti,am64-uart", "ti,am654-uart", "ti,perleam654-uart"; };
-+&main_uart3 { compatible = "ti,am64-uart", "ti,am654-uart", "ti,perleam654-uart"; };
-+&main_uart4 { compatible = "ti,am64-uart", "ti,am654-uart", "ti,perleam654-uart"; };
-+&main_uart5 { compatible = "ti,am64-uart", "ti,am654-uart", "ti,perleam654-uart"; };
-+&main_uart6 { compatible = "ti,am64-uart", "ti,am654-uart", "ti,perleam654-uart"; };
++&main_uart0 { compatible = "ti,am64-uart", "ti,perleam654-uart"; };
++&main_uart1 { compatible = "ti,am64-uart", "ti,perleam654-uart"; };
++&main_uart2 { compatible = "ti,am64-uart", "ti,perleam654-uart"; };
++&main_uart3 { compatible = "ti,am64-uart", "ti,perleam654-uart"; };
++&main_uart4 { compatible = "ti,am64-uart", "ti,perleam654-uart"; };
++&main_uart5 { compatible = "ti,am64-uart", "ti,perleam654-uart"; };
++&main_uart6 { compatible = "ti,am64-uart", "ti,perleam654-uart"; };
 diff --git a/arch/arm64/boot/dts/perle/k3-pinctrl.h b/arch/arm64/boot/dts/perle/k3-pinctrl.h
 new file mode 100644
 index 000000000..e46f7bf52

@@ -22,6 +22,13 @@ kernel_version = "6.18.38"
 kernel_flavor = "vyos"
 bootloaders = "syslinux,grub-efi"
 
+# dm-verity root-squashfs integrity (fork feature). Default OFF so upstream and
+# non-verity flavors are completely unaffected. Verity flavors (e.g.
+# igos-am64x-*) set dm_verity = true, which arms: root-hash baking into the
+# per-version initramfs (binary hook), a fail-closed veritysetup-open at boot,
+# and the live-media=/dev/mapper/verity-root kernel cmdline token.
+dm_verity = false
+
 squashfs_compression_type = "lz4 -b 1M -no-fragments"
 
 website_url = "https://vyos.io"

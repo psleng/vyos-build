@@ -1,0 +1,130 @@
+#!/bin/sh
+# igOS dm-verity: unlock the sealed root squashfs as /dev/mapper/verity-root
+# BEFORE live-boot mounts the root filesystem.
+#
+# Runs at the initramfs-tools init-premount stage (after udev, before
+# mountroot/live-boot's Live()). live-boot is told `plainroot
+# root=/dev/mapper/verity-root`, so it uses this device-mapper node directly as
+# the read-only root squashfs and builds its overlay union on top.
+#
+# SELF-GATED: acts only if 28-igos-dm-verity.binary baked /etc/verity/params
+#   into this initramfs (i.e. a verity flavor). On any other image it exits 0
+#   immediately and boot proceeds unchanged.
+# FAIL-CLOSED: any error -- squashfs not found, veritysetup open/verify failure
+#   (tampering) -- calls panic(). A verity image that cannot prove its root
+#   integrity MUST NOT boot.
+
+PREREQ=""
+prereqs() { echo "$PREREQ"; }
+case "$1" in
+    prereqs) prereqs; exit 0 ;;
+esac
+
+PARAMS=/etc/verity/params
+
+# --- self-gate: only verity images carry the baked params --------------------
+[ -r "${PARAMS}" ] || exit 0
+
+# shellcheck disable=SC1090
+. "${PARAMS}"
+
+# panic() is provided by /scripts/functions (sourced by /init); define a
+# fallback so this hook still fails closed if it is ever run standalone.
+if ! command -v panic >/dev/null 2>&1; then
+    panic() { echo "dm-verity PANIC: $*" >&2; sleep 5; exit 1; }
+fi
+
+fail() { panic "dm-verity: $* -- refusing to boot (fail-closed)"; }
+
+: "${VERITY_ROOT_HASH:?dm-verity: missing VERITY_ROOT_HASH}"
+: "${VERITY_HASH_OFFSET:?dm-verity: missing VERITY_HASH_OFFSET}"
+: "${VERITY_MAPPER_NAME:=verity-root}"
+: "${VERITY_SQUASHFS_NAME:=filesystem.squashfs}"
+
+echo "I: dm-verity: sealing root, mapper=${VERITY_MAPPER_NAME} offset=${VERITY_HASH_OFFSET}"
+
+# Already open (e.g. hook re-run)? Then we are done.
+if [ -b "/dev/mapper/${VERITY_MAPPER_NAME}" ]; then
+    echo "I: dm-verity: /dev/mapper/${VERITY_MAPPER_NAME} already present"
+    exit 0
+fi
+
+# --- make sure the machinery is loaded ---------------------------------------
+for m in loop squashfs dm-mod dm-bufio dm-verity; do
+    modprobe -q "${m}" || true
+done
+command -v veritysetup >/dev/null 2>&1 || fail "veritysetup missing from initramfs"
+command -v losetup     >/dev/null 2>&1 || fail "losetup missing from initramfs"
+
+# Let USB/eMMC block devices settle before we scan for the medium.
+command -v udevadm >/dev/null 2>&1 && { udevadm trigger --action=add >/dev/null 2>&1 || true; udevadm settle || true; }
+
+MP=/run/verity-medium
+mkdir -p "${MP}"
+
+# --- locate the medium that carries the root squashfs ------------------------
+# Candidate squashfs paths (relative to a mounted medium), in priority order:
+#   1. installed image  boot/<name>/<name>.squashfs  (from vyos-union=/boot/<name>
+#      on the kernel cmdline; covers installed versions AND default-firmware)
+#   2. live ISO / SD     live/<VERITY_SQUASHFS_NAME>  (LIVE_MEDIA_PATH default)
+verity_candidates() {
+    for _tok in $(cat /proc/cmdline); do
+        case "${_tok}" in
+            vyos-union=/boot/*)
+                _u="${_tok#vyos-union=}"     # /boot/<name>
+                _n="${_u##*/}"               # <name>
+                [ -n "${_n}" ] && echo "boot/${_n}/${_n}.squashfs"
+                ;;
+        esac
+    done
+    echo "live/${VERITY_SQUASHFS_NAME}"
+}
+
+find_squashfs() {
+    for _name in $(awk 'NR>2 {print $4}' /proc/partitions); do
+        case "${_name}" in
+            loop*|ram*|dm-*|md*) continue ;;
+        esac
+        _dev="/dev/${_name}"
+        [ -b "${_dev}" ] || continue
+        for _fs in iso9660 vfat ext4 ext3 ext2; do
+            if mount -t "${_fs}" -o ro "${_dev}" "${MP}" 2>/dev/null; then
+                for _rel in $(verity_candidates); do
+                    if [ -f "${MP}/${_rel}" ]; then
+                        echo "${MP}/${_rel}"
+                        return 0
+                    fi
+                done
+                umount "${MP}" 2>/dev/null || true
+                break
+            fi
+        done
+    done
+    return 1
+}
+
+SQ=""
+i=0
+while [ "${i}" -lt 30 ]; do
+    if SQ=$(find_squashfs) && [ -n "${SQ}" ]; then
+        break
+    fi
+    SQ=""
+    sleep 1
+    i=$((i + 1))
+done
+[ -n "${SQ}" ] || fail "root squashfs (live/${VERITY_SQUASHFS_NAME}) not found on any medium"
+echo "I: dm-verity: found root squashfs at ${SQ}"
+
+# --- loop-back the combined squashfs+hash file and open verity ---------------
+# The medium stays mounted on purpose: the loop device is backed by a file on it.
+LOOP=$(losetup -r -f --show "${SQ}") || fail "losetup on ${SQ} failed"
+
+if ! veritysetup open "${LOOP}" "${VERITY_MAPPER_NAME}" "${LOOP}" "${VERITY_ROOT_HASH}" \
+        --hash-offset="${VERITY_HASH_OFFSET}"; then
+    fail "verity open/verify failed (root hash mismatch or corrupt hash tree)"
+fi
+
+[ -b "/dev/mapper/${VERITY_MAPPER_NAME}" ] || fail "/dev/mapper/${VERITY_MAPPER_NAME} missing after open"
+echo "I: dm-verity: /dev/mapper/${VERITY_MAPPER_NAME} is open and verified"
+exit 0

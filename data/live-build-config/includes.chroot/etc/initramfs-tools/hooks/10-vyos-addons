@@ -41,3 +41,14 @@ copy_exec /usr/sbin/fsck.ext4
 # copy other files ("other" here is a file type, so do not delete this keyword)
 copy_file other /etc/ssl/certs/ca-certificates.crt
 copy_file other /etc/ssl/openssl.cnf
+
+# dm-verity: on verity flavors (cryptsetup-bin installed) pull veritysetup and
+# its shared-library dependencies into the initramfs so the init-premount
+# verity-open hook can unlock the root squashfs. copy_exec resolves the library
+# closure automatically. Guarded so non-verity images stay unaffected.
+for _vs in /usr/sbin/veritysetup /sbin/veritysetup; do
+    if [ -x "$_vs" ]; then
+        copy_exec "$_vs"
+        break
+    fi
+done

@@ -6,11 +6,19 @@
 
 image_format = "iso"
 
+# Enable dm-verity integrity protection of the root squashfs (see
+# igos-am64x-all.toml / data/defaults.toml). Arms root-hash baking into the
+# initramfs + fail-closed verify at boot.
+dm_verity = true
+
 pinmap_file = "igos-am64x-evm/pinmap.py"
 
 # Runtime deps (parity with the family images; libgpiod for serial-control/GPIO).
 packages = [
   "python3-libgpiod",
+  # veritysetup (dm-verity setup tool). Pulled into the image so the initramfs
+  # verity-open hook can unlock the root squashfs; required by dm_verity = true.
+  "cryptsetup-bin",
 ]
 
 # Per-model definition tree (relative to data/models/). Ships data/models/am64x-evm/

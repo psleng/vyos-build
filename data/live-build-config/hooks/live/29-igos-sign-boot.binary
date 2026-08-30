@@ -1,0 +1,108 @@
+#!/bin/sh
+# igOS: secure-boot signing — GPG detached-sign the FINAL kernel + initrd.
+#
+# WHY (this is a .binary hook, numbered AFTER 28-igos-dm-verity.binary)
+#   The initrd is only final AFTER 28 appends the dm-verity root hash to it, so
+#   the detached signature must be produced here, at the binary stage, once
+#   live/initrd.img (and the kernel) are their final bytes. A custom grub with a
+#   file-type verifier checks <file>.sig for the kernel + initrd it loads; those
+#   .sig files ride next to the artifacts in /live (and are copied by the
+#   installer into /boot/<version>/), so no menuentry changes are needed.
+#
+# COUPLING (secure = dm-verity AND signatures; non-secure = neither)
+#   Gate 1: only runs on verity builds (sibling chroot carries veritysetup — the
+#           same signal hook 28 uses). Non-verity images: no-op.
+#   Gate 2: only signs if build-vyos-image staged a signing key under
+#           ../signing/gpg-signing-key.asc (host-only, never shipped). A verity
+#           build WITHOUT a key is left unsigned (verity still applies) with a
+#           warning, not a failure — signature ENFORCEMENT lives in the custom
+#           grub, which is wired separately.
+#
+# KEY HANDLING
+#   The private key is imported into a throwaway GNUPGHOME and removed on exit.
+#   build-vyos-image places the key OUTSIDE chroot/ and binary/ so it never
+#   enters the ISO, and deletes it after `lb build`. The signing key should be
+#   passphrase-less (automated build signing); a protected key will fail closed.
+
+set -e
+
+# --- gate 1: verity build? (sibling chroot carries veritysetup, like hook 28) -
+CHROOT=""
+for c in ../chroot chroot ../../chroot; do
+    if [ -x "${c}/usr/sbin/veritysetup" ] || [ -x "${c}/sbin/veritysetup" ]; then
+        CHROOT="${c}"
+        break
+    fi
+done
+if [ -z "${CHROOT}" ]; then
+    echo "I: sign-boot(iso): not a verity flavor -- nothing to sign"
+    exit 0
+fi
+
+# --- gate 2: was a signing key staged on the build host? ---------------------
+KEY=""
+for k in ../signing/gpg-signing-key.asc signing/gpg-signing-key.asc \
+         ../../signing/gpg-signing-key.asc; do
+    if [ -f "${k}" ]; then
+        KEY="${k}"
+        break
+    fi
+done
+if [ -z "${KEY}" ]; then
+    echo "W: sign-boot(iso): verity build but NO signing key staged --"
+    echo "W: sign-boot(iso): kernel/initrd left UNSIGNED (pass --gpg-signing-key to build-vyos-image)"
+    exit 0
+fi
+
+echo "I: sign-boot(iso): signing key found, signing final kernel + initrd"
+
+# --- import the key into a throwaway keyring ---------------------------------
+command -v gpg >/dev/null 2>&1 || {
+    echo "E: sign-boot(iso): gpg not found on the build host"
+    exit 1
+}
+
+GNUPGHOME_TMP="$(mktemp -d)"
+export GNUPGHOME="${GNUPGHOME_TMP}"
+cleanup() { rm -rf "${GNUPGHOME_TMP}"; }
+trap cleanup EXIT INT TERM
+
+if ! gpg --batch --quiet --import "${KEY}"; then
+    echo "E: sign-boot(iso): failed to import signing key ${KEY}"
+    exit 1
+fi
+
+# First available secret key (long key id).
+KEYID="$(gpg --list-secret-keys --with-colons 2>/dev/null | awk -F: '/^sec:/ { print $5; exit }')"
+if [ -z "${KEYID}" ]; then
+    echo "E: sign-boot(iso): no secret key found in ${KEY}"
+    exit 1
+fi
+echo "I: sign-boot(iso): using signing key ${KEYID}"
+
+# --- detached-sign every boot artifact grub may load -------------------------
+# The plain names (installed path: /boot/<ver>/{vmlinuz,initrd.img}) and the
+# versioned names (live ISO grub.cfg: /live/{vmlinuz,initrd.img}-<ver>) are
+# hardlinks to the same bytes; sign each so whichever filename grub references
+# has a matching detached signature.
+signed_any=0
+for f in live/vmlinuz live/vmlinuz-* live/initrd.img live/initrd.img-*; do
+    [ -f "${f}" ] || continue
+    case "${f}" in *.sig) continue ;; esac
+    if gpg --batch --yes --pinentry-mode loopback \
+           --digest-algo SHA512 --local-user "${KEYID}" \
+           --detach-sign --output "${f}.sig" "${f}"; then
+        echo "I: sign-boot(iso): wrote ${f}.sig"
+        signed_any=1
+    else
+        echo "E: sign-boot(iso): failed to sign ${f}"
+        exit 1
+    fi
+done
+
+if [ "${signed_any}" -eq 0 ]; then
+    echo "E: sign-boot(iso): no kernel/initrd found under live/ to sign"
+    exit 1
+fi
+
+echo "I: sign-boot(iso): done"

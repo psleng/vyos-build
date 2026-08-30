@@ -239,6 +239,13 @@ def build():
         "build-comment": ("Optional build comment", None),
         "build-hook-opts": ("Custom options for the post-build hook", None),
         "bootloaders": ("Bootloaders to include in the image", None),
+        "gpg-signing-key": (
+            "Path to an exported GPG secret key used to detached-sign the "
+            "kernel + initrd on secure (dm-verity) builds. Passed in by the "
+            "outer build system (e.g. nexus-build); the key is used on the "
+            "build host only and never enters the image.",
+            None,
+        ),
     }
 
     # Create the option parser
@@ -462,6 +469,22 @@ def build():
         shutil.copytree(
             sb_certs, f"{lb_config_dir}/includes.chroot/var/lib/shim-signed/mok"
         )
+
+    ## Secure boot signing - stage the GPG signing key on the build HOST so the
+    ## binary-stage hook 29-igos-sign-boot.binary can detached-sign the final
+    ## kernel + initrd. This is coupled to dm-verity: the hook only signs verity
+    ## builds. The key is placed under build/signing -- OUTSIDE chroot/ and
+    ## binary/ -- so it never enters the ISO, and it is removed after lb build.
+    gpg_signing_key = build_config.get("gpg_signing_key")
+    if gpg_signing_key:
+        if not os.path.isfile(gpg_signing_key):
+            raise ImageBuildError(
+                f"GPG signing key file not found: {gpg_signing_key}"
+            )
+        signing_dir = os.path.join(defaults.BUILD_DIR, "signing")
+        os.makedirs(signing_dir, exist_ok=True)
+        shutil.copy(gpg_signing_key, os.path.join(signing_dir, "gpg-signing-key.asc"))
+        print(f"I: staged GPG signing key for secure-boot signing from {gpg_signing_key}")
 
     # Switch to the build directory, this is crucial for the live-build work
     # because the effective build config files etc. are there.
@@ -1005,6 +1028,12 @@ Pin-Priority: 600
         if debug:
             print("D: It's not like I'm building this specially for you or anything!")
         cmd("lb build 2>&1")
+
+        # Remove the host-only staged GPG signing key now that the binary-stage
+        # signing hook has run. It lived under build/signing (never inside
+        # chroot/ or binary/), so it was never part of the image; this is just
+        # build-tree hygiene so the private key does not linger.
+        shutil.rmtree("signing", ignore_errors=True)
 
         # Copy the image
         shutil.copy(

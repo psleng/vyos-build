@@ -472,9 +472,11 @@ def build():
 
     ## Secure boot signing - stage the GPG signing key on the build HOST so the
     ## binary-stage hook 29-igos-sign-boot.binary can detached-sign the final
-    ## kernel + initrd. This is coupled to dm-verity: the hook only signs verity
-    ## builds. The key is placed under build/signing -- OUTSIDE chroot/ and
-    ## binary/ -- so it never enters the ISO, and it is removed after lb build.
+    ## kernel + initrd. Signing is INDEPENDENT of dm-verity: the hook signs
+    ## whenever a key is staged here (i.e. whenever --gpg-signing-key is passed),
+    ## regardless of the flavor's dm_verity setting. The key is placed under
+    ## build/signing -- OUTSIDE chroot/ and binary/ -- so it never enters the
+    ## ISO, and it is removed after lb build.
     gpg_signing_key = build_config.get("gpg_signing_key")
     if gpg_signing_key:
         if not os.path.isfile(gpg_signing_key):

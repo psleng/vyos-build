@@ -9,14 +9,17 @@
 #   .sig files ride next to the artifacts in /live (and are copied by the
 #   installer into /boot/<version>/), so no menuentry changes are needed.
 #
-# COUPLING (secure = dm-verity AND signatures; non-secure = neither)
-#   Gate 1: only runs on verity builds (sibling chroot carries veritysetup — the
-#           same signal hook 28 uses). Non-verity images: no-op.
-#   Gate 2: only signs if build-vyos-image staged a signing key under
-#           ../signing/gpg-signing-key.asc (host-only, never shipped). A verity
-#           build WITHOUT a key is left unsigned (verity still applies) with a
-#           warning, not a failure — signature ENFORCEMENT lives in the custom
-#           grub, which is wired separately.
+# SIGNING IS INDEPENDENT OF DM-VERITY (decoupled by request)
+#   Signing is gated ONLY on whether a signing key was staged by build-vyos-image
+#   (--gpg-signing-key) under ../signing/gpg-signing-key.asc (host-only, never
+#   shipped). dm-verity is a separate, flavor-driven feature (dm_verity in the
+#   build flavor, applied by hook 28); the two are orthogonal:
+#     - key staged       -> kernel + initrd are detached-signed (this hook)
+#     - dm_verity = true  -> root squashfs sealed + hash baked into initrd (hook 28)
+#   Any combination is valid. Signature ENFORCEMENT lives in the custom grub
+#   (embeds the public half), wired separately. This hook still runs AFTER 28 so
+#   that on verity builds it signs the initrd in its FINAL (hash-appended) form;
+#   on non-verity builds 28 is a no-op and the initrd is already final.
 #
 # KEY HANDLING
 #   The private key is imported into a throwaway GNUPGHOME and removed on exit.
@@ -26,20 +29,7 @@
 
 set -e
 
-# --- gate 1: verity build? (sibling chroot carries veritysetup, like hook 28) -
-CHROOT=""
-for c in ../chroot chroot ../../chroot; do
-    if [ -x "${c}/usr/sbin/veritysetup" ] || [ -x "${c}/sbin/veritysetup" ]; then
-        CHROOT="${c}"
-        break
-    fi
-done
-if [ -z "${CHROOT}" ]; then
-    echo "I: sign-boot(iso): not a verity flavor -- nothing to sign"
-    exit 0
-fi
-
-# --- gate 2: was a signing key staged on the build host? ---------------------
+# --- gate: was a signing key staged on the build host? (--gpg-signing-key) ---
 KEY=""
 for k in ../signing/gpg-signing-key.asc signing/gpg-signing-key.asc \
          ../../signing/gpg-signing-key.asc; do
@@ -49,8 +39,8 @@ for k in ../signing/gpg-signing-key.asc signing/gpg-signing-key.asc \
     fi
 done
 if [ -z "${KEY}" ]; then
-    echo "W: sign-boot(iso): verity build but NO signing key staged --"
-    echo "W: sign-boot(iso): kernel/initrd left UNSIGNED (pass --gpg-signing-key to build-vyos-image)"
+    echo "I: sign-boot(iso): no signing key staged -- kernel/initrd left UNSIGNED"
+    echo "I: sign-boot(iso): (pass --gpg-signing-key to build-vyos-image to enable signing)"
     exit 0
 fi
 

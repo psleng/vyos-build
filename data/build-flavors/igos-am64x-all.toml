@@ -31,11 +31,11 @@
 
 image_format = "iso"
 
-# Enable dm-verity integrity protection of the root squashfs for this hardware
-# image (overrides the defaults.toml default of false). Arms root-hash baking
-# into the initramfs + fail-closed verify at boot; see data/defaults.toml for
-# the full effect.
-dm_verity = true
+# dm-verity integrity protection of the root squashfs for this hardware image.
+# When true, overrides the defaults.toml default (false) and arms root-hash
+# baking into the initramfs + fail-closed verify at boot; see data/defaults.toml
+# for the full effect. Set to false here for the bootstrap build.
+dm_verity = false
 
 # Per-flavor pin map (relative to data/igos-pinmaps/).
 pinmap_file = "igos-am64x-all/pinmap.py"

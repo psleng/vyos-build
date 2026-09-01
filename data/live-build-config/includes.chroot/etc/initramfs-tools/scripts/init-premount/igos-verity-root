@@ -41,6 +41,26 @@ fail() { panic "dm-verity: $* -- refusing to boot (fail-closed)"; }
 : "${VERITY_MAPPER_NAME:=verity-root}"
 : "${VERITY_SQUASHFS_NAME:=filesystem.squashfs}"
 
+# --- fail-closed policy: verity is a property of the IMAGE, not the cmdline ---
+# The presence of these params (baked into this GPG-signed initrd by
+# 28-igos-dm-verity.binary) is the image-intrinsic, tamper-proof statement
+# "this image was built with dm-verity". The kernel cmdline is only untrusted
+# plumbing that tells live-boot which device to mount as root. If it does not
+# route root through the verity device, we must NOT let live-boot fall back to
+# mounting the raw (unverified) squashfs -- refuse to boot. This makes a verity
+# image impossible to silently downgrade to non-verity by editing or
+# mis-generating the cmdline (root=UUID=..., missing plainroot, ...).
+VERITY_ROOT_DEV="/dev/mapper/${VERITY_MAPPER_NAME}"
+_cmdline_root=""
+for _tok in $(cat /proc/cmdline); do
+    case "${_tok}" in
+        root=*) _cmdline_root="${_tok#root=}" ;;
+    esac
+done
+if [ "${_cmdline_root}" != "${VERITY_ROOT_DEV}" ]; then
+    fail "verity image, but kernel cmdline root=${_cmdline_root:-<unset>} does not route through ${VERITY_ROOT_DEV}"
+fi
+
 echo "I: dm-verity: sealing root, mapper=${VERITY_MAPPER_NAME} offset=${VERITY_HASH_OFFSET}"
 
 # Already open (e.g. hook re-run)? Then we are done.

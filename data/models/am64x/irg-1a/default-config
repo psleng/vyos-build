@@ -1,6 +1,7 @@
 interfaces {
     bridge br1 {
         address 192.168.1.1/24
+        address fd08::1/8
         member {
             interface eth0 {
             }
@@ -105,6 +106,14 @@ system {
     }
     option {
         reboot-on-upgrade-failure 5
+    }
+    static-host-mapping {
+        host-name igos.local {
+            inet 192.168.1.1
+        }
+        host-name igos.local6 {
+            inet fd08::1
+        }
     }
     syslog {
         local {

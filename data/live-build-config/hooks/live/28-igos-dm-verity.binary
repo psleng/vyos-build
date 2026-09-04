@@ -97,8 +97,15 @@ rm -f "${HASHTMP}"
 echo "I: dm-verity(iso): root hash ${ROOT_HASH}"
 
 # --- 2. bake the root hash + geometry into the live initramfs ----------------
-# The kernel concatenates gzip/zstd cpio segments, so appending a gzipped cpio
-# to the (already compressed) initrd overlays these files onto the initramfs.
+# The kernel overlays extra initramfs content by concatenating cpio segments,
+# but it only extracts a following segment when that segment starts on a 4-byte
+# boundary. The base initrd is a single zstd stream of arbitrary length, so we
+# MUST zero-pad it to a 4-byte boundary BEFORE appending the gzip params cpio;
+# otherwise the append lands mid-word, the kernel silently drops it, and
+# /etc/verity/params never appears at boot. The init-premount hook then
+# self-gates OFF and a sealed verity image boots UNVERIFIED. Observed in the
+# field: an installed verity image whose params segment sat at an odd offset
+# booted with no /dev/mapper/verity-root and no panic.
 STAGE=$(mktemp -d)
 mkdir -p "${STAGE}/etc/verity"
 cat > "${STAGE}/etc/verity/params" <<EOF
@@ -111,8 +118,30 @@ VERITY_HASH_BLOCK_SIZE=${BS}
 VERITY_MAPPER_NAME=${VERITY_NAME}
 VERITY_SQUASHFS_NAME=${SQUASHFS_NAME}
 EOF
+
+# Zero-pad the initrd to a 4-byte boundary so the appended cpio is aligned.
+INITRD_BYTES=$(stat -c %s "${INITRD}")
+PAD=$(( (4 - (INITRD_BYTES % 4)) % 4 ))
+if [ "${PAD}" -ne 0 ]; then
+    dd if=/dev/zero bs=1 count="${PAD}" >> "${INITRD}" 2>/dev/null
+fi
+APPEND_OFFSET=$(stat -c %s "${INITRD}")   # 4-byte aligned: where the gzip starts
+
 ( cd "${STAGE}" && find . | cpio --quiet -o -H newc ) | gzip -9 >> "${INITRD}"
 rm -rf "${STAGE}"
+echo "I: dm-verity(iso): appended params cpio at ${APPEND_OFFSET} (+${PAD}B pad)"
 
-echo "I: dm-verity(iso): baked /etc/verity/params into ${INITRD}"
+# --- 3. fail-closed BUILD check: params MUST be re-extractable ----------------
+# If the appended segment cannot be recovered, the image would boot unverified.
+# Carve from the known aligned offset and require etc/verity/params; otherwise
+# fail the build so an unverifiable "verity" image can never ship.
+if ! dd if="${INITRD}" bs=1 skip="${APPEND_OFFSET}" 2>/dev/null \
+        | gzip -dc 2>/dev/null | cpio -t 2>/dev/null \
+        | grep -q 'etc/verity/params'; then
+    echo "E: dm-verity(iso): /etc/verity/params not re-extractable from ${INITRD}"
+    echo "E: dm-verity(iso): refusing to ship a verity image that would boot unverified"
+    exit 1
+fi
+
+echo "I: dm-verity(iso): baked + verified /etc/verity/params in ${INITRD}"
 echo "I: dm-verity(iso): done"

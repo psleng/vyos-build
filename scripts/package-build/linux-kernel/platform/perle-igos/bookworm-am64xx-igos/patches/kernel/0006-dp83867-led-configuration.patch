@@ -1,0 +1,21 @@
+diff --git a/drivers/net/phy/dp83867.c b/drivers/net/phy/dp83867.c
+index 36a0c1b7f59c..bedcf7eeb285 100644
+--- a/drivers/net/phy/dp83867.c
++++ b/drivers/net/phy/dp83867.c
+@@ -887,6 +887,16 @@ static int dp83867_config_init(struct phy_device *phydev)
+ 			       mask, val);
+ 	}
+ 
++	/* Register 0x0018 (LEDCR1) */
++	/* LED_3 (LED_GPIO_SEL) = 0x8 (10/100BT link) (bits 15:12) 
++	   LED_2 = 0x1 (Receive or Transmit activity) (bits 11:8), 
++	   LED_0 = 0x5 (1000BT link) (bits 3:0) */
++	phy_write(phydev, 0x0018, 0x8105);
++
++	/* Extended Register 0x0172 (GPIO_MUX_CTRL) */
++	/* Map GPIO_0 to LED_3 function (0x6) */
++	phy_write_mmd(phydev, DP83867_DEVADDR, 0x0172, 0x0006);
++
+ 	return 0;
+ }
+ 

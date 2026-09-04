@@ -1,0 +1,124 @@
+Description: Enforce signature verification and improve diagnostics
+Author: Dennis Kong dkong@perle.com
+Forwarded: not-needed
+Last-Update: 2026-08-31
+
+diff --git a/grub-core/commands/pgp.c b/grub-core/commands/pgp.c
+index 5daa1e9d0..a8267e73a 100644
+--- a/grub-core/commands/pgp.c
++++ b/grub-core/commands/pgp.c
+@@ -863,7 +863,8 @@ grub_cmd_verify_signature (grub_extcmd_context_t ctxt,
+   return err;
+ }
+ 
+-static int sec = 0;
++// PERLE - always assume security/signature checking enabled
++static int sec = 1;
+ 
+ static grub_err_t
+ grub_pubkey_init (grub_file_t io, enum grub_file_type type __attribute__ ((unused)),
+@@ -874,12 +875,23 @@ grub_pubkey_init (grub_file_t io, enum grub_file_type type __attribute__ ((unuse
+   grub_err_t err;
+   struct grub_pubkey_context *ctxt;
+ 
++
+   if (!sec)
+     {
+       *flags = GRUB_VERIFY_FLAGS_SKIP_VERIFICATION;
+       return GRUB_ERR_NONE;
+     }
+ 
++
++  if ((type & GRUB_FILE_TYPE_MASK) == GRUB_FILE_TYPE_CONFIG)
++  {
++    // PERLE -  ignoring config file (.cfg or .env) debug print
++    grub_printf("verify: ignoring signature for %s type=0x%x\n", io->name ? io->name : "(null)", type);
++
++    *flags = GRUB_VERIFY_FLAGS_SKIP_VERIFICATION;
++    return GRUB_ERR_NONE;
++  }
++
+   fsuf = grub_malloc (grub_strlen (io->name) + sizeof (".sig"));
+   if (!fsuf)
+     return grub_errno;
+@@ -888,8 +900,12 @@ grub_pubkey_init (grub_file_t io, enum grub_file_type type __attribute__ ((unuse
+ 
+   sig = grub_file_open (fsuf, GRUB_FILE_TYPE_SIGNATURE);
+   grub_free (fsuf);
++
++  // PERLE - better error message for no signature file
+   if (!sig)
+-    return grub_errno;
++  {
++    return grub_error (GRUB_ERR_BAD_SIGNATURE, "missing signature for %s", io->name);
++  }
+ 
+   ctxt = grub_malloc (sizeof (*ctxt));
+   if (!ctxt)
+@@ -904,7 +920,11 @@ grub_pubkey_init (grub_file_t io, enum grub_file_type type __attribute__ ((unuse
+       grub_file_close (sig);
+       return err;
+     }
+-  *context = ctxt;
++  *context = ctxt; 
++
++  // PERLE -  valid signature debug print
++  grub_printf("verify: valid signature for %s type=0x%x\n", io->name ? io->name : "(null)", type);
++
+   return GRUB_ERR_NONE;
+ }
+ 
+@@ -914,12 +934,21 @@ grub_pubkey_fini (void *ctxt)
+   return grub_verify_signature_real (ctxt, NULL);
+ }
+ 
++// PERLE - always return signature is enforce
++static const char *
++grub_env_read_sec (struct grub_env_var *var __attribute__ ((unused)),
++		    const char *val __attribute__ ((unused)))
++{
++  return grub_strdup ("enforce");
++}
++
+ static char *
+ grub_env_write_sec (struct grub_env_var *var __attribute__ ((unused)),
+-		    const char *val)
++		    const char *val __attribute__ ((unused)))
+ {
+-  sec = (*val == '1') || (*val == 'e');
+-  return grub_strdup (sec ? "enforce" : "no");
++  // PERLE - always assume security/signature checking enabled
++  sec = 1;
++  return grub_strdup ("enforce");
+ }
+ 
+ static grub_ssize_t 
+@@ -954,13 +983,11 @@ GRUB_MOD_INIT(pgp)
+   const char *val;
+   struct grub_module_header *header;
+ 
+-  val = grub_env_get ("check_signatures");
+-  if (val && (val[0] == '1' || val[0] == 'e'))
+-    sec = 1;
+-  else
+-    sec = 0;
++  // PERLE - always assume security/signature checking enabled
++  val = "enforce";
++  sec = 1;
+ 
+-  grub_register_variable_hook ("check_signatures", 0, grub_env_write_sec);
++  grub_register_variable_hook ("check_signatures", grub_env_read_sec, grub_env_write_sec);
+   grub_env_export ("check_signatures");
+ 
+   grub_pk_trusted = 0;
+@@ -987,8 +1014,8 @@ GRUB_MOD_INIT(pgp)
+     grub_pk_trusted = pk;
+   }
+ 
+-  if (!val)
+-    grub_env_set ("check_signatures", grub_pk_trusted ? "enforce" : "no");
++  // PERLE - always assume security/signature checking enabled
++  grub_env_set ("check_signatures", "enforce");
+ 
+   cmd = grub_register_extcmd ("verify_detached", grub_cmd_verify_signature, 0,
+ 			      N_("[-s|--skip-sig] FILE SIGNATURE_FILE [PUBKEY_FILE]"),

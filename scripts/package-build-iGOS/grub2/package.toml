@@ -1,0 +1,5 @@
+[[packages]]
+name = "grub2"
+commit_id = "bookworm"
+scm_url = "https://salsa.debian.org/grub-team/grub.git"
+build_cmd = "dpkg-buildpackage -uc -us -tc -b"

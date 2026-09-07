@@ -35,7 +35,7 @@ image_format = "iso"
 # When true, overrides the defaults.toml default (false) and arms root-hash
 # baking into the initramfs + fail-closed verify at boot; see data/defaults.toml
 # for the full effect. Set to false here for the bootstrap build.
-dm_verity = true
+dm_verity = false
 
 # Secure-boot signing: GPG detached-sign the FINAL kernel + initrd (hook
 # 29-igos-sign-boot.binary). Overrides the defaults.toml default (false).

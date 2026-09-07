@@ -10,11 +10,13 @@
 #   installer into /boot/<version>/), so no menuentry changes are needed.
 #
 # SIGNING IS INDEPENDENT OF DM-VERITY (decoupled by request)
-#   Signing is gated ONLY on whether a signing key was staged by build-vyos-image
-#   (--gpg-signing-key) under ../signing/gpg-signing-key.asc (host-only, never
-#   shipped). dm-verity is a separate, flavor-driven feature (dm_verity in the
-#   build flavor, applied by hook 28); the two are orthogonal:
-#     - key staged       -> kernel + initrd are detached-signed (this hook)
+#   Signing is driven by the per-flavor `sign_boot` flag: build-vyos-image
+#   stages the signing key + passphrase under ../signing/ ONLY when the flavor
+#   sets sign_boot = true, so the mere presence of ../signing/gpg-signing-key.asc
+#   (host-only, never shipped) is this hook's gate. dm-verity is a separate,
+#   flavor-driven feature (dm_verity in the build flavor, applied by hook 28);
+#   the two are orthogonal:
+#     - sign_boot = true  -> kernel + initrd are detached-signed (this hook)
 #     - dm_verity = true  -> root squashfs sealed + hash baked into initrd (hook 28)
 #   Any combination is valid. Signature ENFORCEMENT lives in the custom grub
 #   (embeds the public half), wired separately. This hook still runs AFTER 28 so
@@ -23,13 +25,16 @@
 #
 # KEY HANDLING
 #   The private key is imported into a throwaway GNUPGHOME and removed on exit.
-#   build-vyos-image places the key OUTSIDE chroot/ and binary/ so it never
-#   enters the ISO, and deletes it after `lb build`. The signing key should be
-#   passphrase-less (automated build signing); a protected key will fail closed.
+#   build-vyos-image stages the passphrase-protected secret key AND its
+#   passphrase (both discovered by glob in --gpg-signing-key-dir) under
+#   ../signing/, OUTSIDE chroot/ and binary/ so they never enter the ISO, and
+#   deletes them after `lb build`. The passphrase is supplied non-interactively
+#   via --passphrase-file (gpg loopback pinentry). No fallback: a staged key
+#   without its passphrase fails the build closed.
 
 set -e
 
-# --- gate: was a signing key staged on the build host? (--gpg-signing-key) ---
+# --- gate: did build-vyos-image stage signing material? (flavor sign_boot=true) ---
 KEY=""
 for k in ../signing/gpg-signing-key.asc signing/gpg-signing-key.asc \
          ../../signing/gpg-signing-key.asc; do
@@ -39,12 +44,20 @@ for k in ../signing/gpg-signing-key.asc signing/gpg-signing-key.asc \
     fi
 done
 if [ -z "${KEY}" ]; then
-    echo "I: sign-boot(iso): no signing key staged -- kernel/initrd left UNSIGNED"
-    echo "I: sign-boot(iso): (pass --gpg-signing-key to build-vyos-image to enable signing)"
+    echo "I: sign-boot(iso): no signing material staged (flavor sign_boot != true) -- kernel/initrd left UNSIGNED"
     exit 0
 fi
 
-echo "I: sign-boot(iso): signing key found, signing final kernel + initrd"
+# The passphrase is staged next to the key by build-vyos-image. No fallback:
+# a staged key with no passphrase must fail closed, never sign passphrase-less.
+PASS="$(dirname "${KEY}")/gpg-signing-passphrase"
+if [ ! -f "${PASS}" ]; then
+    echo "E: sign-boot(iso): signing key staged but passphrase file missing at ${PASS}"
+    echo "E: sign-boot(iso): refusing to fall back to unsigned/passphrase-less -- failing closed"
+    exit 1
+fi
+
+echo "I: sign-boot(iso): signing key + passphrase found, signing final kernel + initrd"
 
 # --- import the key into a throwaway keyring ---------------------------------
 command -v gpg >/dev/null 2>&1 || {
@@ -54,8 +67,19 @@ command -v gpg >/dev/null 2>&1 || {
 
 GNUPGHOME_TMP="$(mktemp -d)"
 export GNUPGHOME="${GNUPGHOME_TMP}"
-cleanup() { rm -rf "${GNUPGHOME_TMP}"; }
+chmod 700 "${GNUPGHOME_TMP}"
+cleanup() { gpgconf --kill gpg-agent >/dev/null 2>&1 || true; rm -rf "${GNUPGHOME_TMP}"; }
 trap cleanup EXIT INT TERM
+
+# There is NO interactive user during the build. Permit gpg-agent to accept the
+# passphrase from --passphrase-file (loopback pinentry), and force any pinentry
+# attempt to fail immediately (pinentry-program /bin/false) so the build can
+# never hang or pop a prompt waiting for a human.
+{
+    echo "allow-loopback-pinentry"
+    echo "pinentry-program /bin/false"
+} > "${GNUPGHOME_TMP}/gpg-agent.conf"
+gpgconf --kill gpg-agent >/dev/null 2>&1 || true
 
 if ! gpg --batch --quiet --import "${KEY}"; then
     echo "E: sign-boot(iso): failed to import signing key ${KEY}"
@@ -80,6 +104,7 @@ for f in live/vmlinuz live/vmlinuz-* live/initrd.img live/initrd.img-*; do
     [ -f "${f}" ] || continue
     case "${f}" in *.sig) continue ;; esac
     if gpg --batch --yes --pinentry-mode loopback \
+           --passphrase-file "${PASS}" \
            --digest-algo SHA512 --local-user "${KEYID}" \
            --detach-sign --output "${f}.sig" "${f}"; then
         echo "I: sign-boot(iso): wrote ${f}.sig"

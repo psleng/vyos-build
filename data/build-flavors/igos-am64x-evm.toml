@@ -11,6 +11,11 @@ image_format = "iso"
 # initramfs + fail-closed verify at boot.
 dm_verity = true
 
+# Secure-boot signing: GPG detached-sign the FINAL kernel + initrd (hook
+# 29-igos-sign-boot.binary; see igos-am64x-all.toml / data/defaults.toml).
+# Requires --gpg-signing-key-dir; no fallback to unsigned.
+sign_boot = true
+
 pinmap_file = "igos-am64x-evm/pinmap.py"
 
 # Runtime deps (parity with the family images; libgpiod for serial-control/GPIO).

@@ -1,5 +1,20 @@
 interfaces {
+    ethernet eth0 {
+        address dhcp
+    }
     loopback lo {
+    }
+}
+nat {
+    source {
+        rule 10 {
+            outbound-interface {
+                name eth0
+            }
+            translation {
+                address masquerade
+            }
+        }
     }
 }
 service {
@@ -19,7 +34,6 @@ service {
             }
         }
         enable-http-redirect
-        port 443
     }
     ntp {
         allow-client {

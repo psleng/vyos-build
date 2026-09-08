@@ -1,13 +1,8 @@
 interfaces {
-    bridge br1 {
-        address 192.168.1.1/24
-        address fd08::1/8
-        member {
-            interface eth1 {
-            }
-         }
-    }
     ethernet eth0 {
+        address dhcp
+    }
+    ethernet eth1 {
         address dhcp
     }
     loopback lo {
@@ -23,31 +18,17 @@ nat {
                 address masquerade
             }
         }
-    }
-}
-service {
-    dhcp-server {
-        listen-interface br1
-        shared-network-name default-dhcp-pool {
-            subnet 192.168.1.0/24 {
-                option {
-                    default-router 192.168.1.1
-                    name-server 192.168.1.1
-                }
-                range range_1 {
-                    start 192.168.1.100
-                    stop 192.168.1.200
-                }
-                subnet-id 1
+        rule 20 {
+            outbound-interface {
+                name eth1
+            }
+            translation {
+                address masquerade
             }
         }
     }
-    dns {
-        forwarding {
-            allow-from 0.0.0.0/0
-            listen-address 192.168.1.1
-        }
-    }
+}
+service {
     https {
         api {
             graphql {

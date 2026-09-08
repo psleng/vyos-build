@@ -1,17 +1,8 @@
 interfaces {
-    bridge br1 {
-        address 192.168.1.1/24
-        address fd08::1/8
-        member {
-            interface eth1 {
-            }
-            interface wlan0 {
-            }
-            interface wlan1 {
-            }
-        }
-    }
     ethernet eth0 {
+        address dhcp
+    }
+    ethernet eth1 {
         address dhcp
     }
     loopback lo {
@@ -22,6 +13,14 @@ nat {
         rule 10 {
             outbound-interface {
                 name eth0
+            }
+            translation {
+                address masquerade
+            }
+        }
+        rule 20 {
+            outbound-interface {
+                name eth1
             }
             translation {
                 address masquerade

@@ -96,14 +96,6 @@ system {
     option {
         reboot-on-upgrade-failure 5
     }
-    static-host-mapping {
-        host-name igos.lan {
-            inet 192.168.1.1
-        }
-        host-name igos.lan6 {
-            inet fd08::1
-        }
-    }
     syslog {
         local {
             facility all {

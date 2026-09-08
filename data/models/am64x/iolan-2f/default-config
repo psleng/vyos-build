@@ -1,4 +1,14 @@
 interfaces {
+    bridge br1 {
+        address 192.168.1.1/24
+        address fd08::1/8
+        member {
+            interface wlan0 {
+            }
+            interface wlan1 {
+            }
+         }
+    }
     ethernet eth0 {
         address dhcp
     }
@@ -31,7 +41,7 @@ nat {
 service {
     dhcp-server {
         listen-interface br1
-        shared-network-name wifi-dhcp {
+        shared-network-name default-dhcp-pool {
             subnet 192.168.1.0/24 {
                 option {
                     default-router 192.168.1.1
@@ -43,6 +53,12 @@ service {
                 }
                 subnet-id 1
             }
+        }
+    }
+    dns {
+        forwarding {
+            allow-from 0.0.0.0/0
+            listen-address 192.168.1.1
         }
     }
     https {
@@ -111,6 +127,14 @@ system {
     }
     option {
         reboot-on-upgrade-failure 5
+    }
+    static-host-mapping {
+        host-name igos.lan {
+            inet 192.168.1.1
+        }
+        host-name igos.lan6 {
+            inet fd08::1
+        }
     }
     syslog {
         local {

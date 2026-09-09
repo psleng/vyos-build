@@ -5,7 +5,7 @@ index 13173795c..95e775606 100644
 @@ -146,6 +146,12 @@ config ARCH_K3
  	  This enables support for Texas Instruments' K3 multicore SoC
  	  architecture.
- 
+
 +config TARGET_AM6412_IOLAN
 +	bool "AM6412 IOLAN Board"
 +	depends on ARCH_K3

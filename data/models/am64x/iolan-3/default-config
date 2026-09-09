@@ -19,7 +19,6 @@ service {
             }
         }
         enable-http-redirect
-        port 443
     }
     ntp {
         allow-client {

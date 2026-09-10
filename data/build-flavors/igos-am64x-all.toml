@@ -79,7 +79,7 @@ uboot_payload = "none"
 # arm64 default. NOTE: the final igos-live ISO only reflects this once the nexus
 # buildiGOS_iso.sh re-squash (which forces xz) is retired; the vyos-build hybrid
 # ISO already honors it.
-squashfs_compression_type = "lz4 -b 1M -no-fragments"
+squashfs_compression_type = "zstd -Xcompression-level 9 -b 1M -no-fragments"
 
 [architectures.arm64]
 # Inherit the arm64 default console settings from architectures/arm64.toml.

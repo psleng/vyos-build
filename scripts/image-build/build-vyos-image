@@ -480,7 +480,11 @@ def build():
     ## secret key AND its passphrase are discovered by glob (filenames
     ## containing 'privatekey' / 'passphrase') inside --gpg-signing-key-dir and
     ## staged under build/signing -- OUTSIDE chroot/ and binary/ -- so they
-    ## never enter the ISO; the directory is removed after `lb build`.
+    ## never enter the ISO; the directory is removed after `lb build`. The
+    ## matching PUBLIC key (glob 'pubkey') is instead baked INTO the image at
+    ## /gpgkeys/perle.pubkey.bin so the installer's `grub-install --pubkey` can
+    ## embed it into the enforcing grub core at factory/install time (public key,
+    ## no secret -- safe to ship).
     ## No fallback: sign_boot = true with missing/ambiguous key material FAILS
     ## the build rather than shipping an unsigned image; sign_boot = false
     ## stages nothing and signs nothing even if a key dir is supplied.
@@ -517,6 +521,27 @@ def build():
         os.chmod(staged_pass, 0o600)
         print(
             "I: staged GPG signing key + passphrase for secure-boot signing "
+            f"(sign_boot = true) from {key_dir}"
+        )
+
+        # The PUBLIC key is baked INTO the image (unlike the secret key +
+        # passphrase above, which stay host-only). grub-install --pubkey embeds
+        # it into the enforcing grub core at factory/install time, reading it
+        # from /gpgkeys/perle.pubkey.bin inside the rootfs. Fixed dest name to
+        # match the installer's grub-install --pubkey=/gpgkeys/perle.pubkey.bin.
+        pub_matches = sorted(glob.glob(os.path.join(key_dir, "*pubkey*")))
+        if len(pub_matches) != 1:
+            raise ImageBuildError(
+                f"expected exactly one '*pubkey*' file in {key_dir}, "
+                f"found {len(pub_matches)}: {pub_matches}"
+            )
+        gpgkeys_dir = os.path.join(lb_config_dir, "includes.chroot/gpgkeys")
+        os.makedirs(gpgkeys_dir, exist_ok=True)
+        staged_pub = os.path.join(gpgkeys_dir, "perle.pubkey.bin")
+        shutil.copy(pub_matches[0], staged_pub)
+        os.chmod(staged_pub, 0o644)
+        print(
+            "I: staged GPG public key into image /gpgkeys/perle.pubkey.bin "
             f"(sign_boot = true) from {key_dir}"
         )
 

@@ -96,6 +96,18 @@ for conf in "${MODELS_ROOT}"/*/*/model.conf; do
     else
         echo "I: dtb-stage(iso):   ${found} -> /${dst}   (renamed from ${src})"
     fi
+
+    # Optional clean bootloader-facing name (model.conf `dtb_alias`, relative to
+    # /boot/dtb/): a real COPY of the staged dtb so U-Boot's env / GRUB can load
+    # the dtb by that name. Empty = no alias. A copy (not a symlink) needs no
+    # Rock Ridge on the ISO and gets its own detached .sig in hook 29.
+    alias=$(get_key "${conf}" dtb_alias)
+    if [ -n "${alias}" ]; then
+        adst="${DTB_DEST}/${alias}"
+        mkdir -p "$(dirname "${adst}")"
+        cp "${dst}" "${adst}"
+        echo "I: dtb-stage(iso):   aliased /${dst} as /${adst}"
+    fi
     staged=$((staged + 1))
 done
 

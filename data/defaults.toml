@@ -37,6 +37,18 @@ dm_verity = false
 # sign_boot flavor with missing key material fails the build (never unsigned).
 sign_boot = false
 
+# Secure-boot ENFORCEMENT in grub (fork feature). Default OFF. Separate knob
+# from sign_boot: sign_boot only produces the .sig files, whereas secure_grub
+# selects the signature-ENFORCING grub build and bakes the public key into the
+# rootfs (/gpgkeys/perle.pubkey.bin) so the installer's grub-install --pubkey
+# embeds it -- kernel/initrd/dtb/module .sig are then checked at boot. Arm a
+# flavor by: secure_grub = true and keep sign_boot = true -- the build then
+# auto-adds the enforcing grub module package (grub-efi-arm64-bin-secure, which
+# Conflicts/Replaces stock grub-efi-arm64-bin) and stages the pubkey. REQUIRES
+# sign_boot (an enforcing grub over unsigned artifacts will not boot); the build
+# fails closed otherwise.
+secure_grub = false
+
 squashfs_compression_type = "lz4 -b 1M -no-fragments"
 
 website_url = "https://vyos.io"

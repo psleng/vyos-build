@@ -2,4 +2,8 @@
 name = "grub2"
 commit_id = "bookworm"
 scm_url = "https://salsa.debian.org/grub-team/grub.git"
-build_cmd = "dpkg-buildpackage -uc -us -tc -b"
+# After the normal build, repack the enforcing arm64 module package under the
+# distinct name grub-efi-arm64-bin-secure (see secure-repack.sh). A build then
+# selects it via secure_grub instead of shipping enforcing grub under the stock
+# name for every image.
+build_cmd = "dpkg-buildpackage -uc -us -tc -b && sh ../secure-repack.sh"

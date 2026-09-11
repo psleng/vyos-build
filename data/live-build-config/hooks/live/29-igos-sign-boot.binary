@@ -1,17 +1,19 @@
 #!/bin/sh
-# igOS: secure-boot signing — GPG detached-sign the FINAL kernel + initrd,
-#   the grub modules (.mod) + index (.lst) files, the device-tree blobs, and the
-#   grub UI assets (fonts/splash/theme) the enforcing menu loads.
+# igOS: secure-boot signing — GPG detached-sign the FINAL kernel + initrd and
+#   the per-model device-tree blobs (the only artifacts the enforcing GRUB core
+#   loads + verifies from disk).
 #
 # WHY (this is a .binary hook, numbered AFTER 28-igos-dm-verity.binary)
 #   The initrd is only final AFTER 28 appends the dm-verity root hash to it, so
 #   the detached signature must be produced here, at the binary stage, once
-#   live/initrd.img (and the kernel) are their final bytes. A custom grub with a
-#   file-type verifier checks <file>.sig for the kernel + initrd it loads, and
-#   (with check_signatures enforcing) for every grub module + .lst index it
-#   pulls from disk; those .sig files ride next to the artifacts in /live and
-#   boot/grub/ (and are copied by the installer into /boot/<version>/), so no
-#   menuentry changes are needed.
+#   live/initrd.img (and the kernel) are their final bytes. The custom enforcing
+#   GRUB core (built by 25-igos-grub-core.chroot, MONOLITHIC: every module it
+#   needs is embedded) verifies <file>.sig only for what it loads from disk --
+#   the kernel, the initrd, and the per-image dtb. It never autoloads grub
+#   modules from disk, so on-disk *.mod/*.lst and UI assets need NO signature.
+#   The kernel/initrd .sig ride in /live; the dtb .sig ride in boot/dtb (both
+#   copied per-image by the installer into /boot/<version>/), so no menuentry
+#   changes are needed.
 #
 # SIGNING IS INDEPENDENT OF DM-VERITY (decoupled by request)
 #   Signing is driven by the per-flavor `sign_boot` flag: build-vyos-image
@@ -124,33 +126,6 @@ if [ "${signed_any}" -eq 0 ]; then
     exit 1
 fi
 
-# --- detached-sign grub modules + their on-disk index (.lst) files ------------
-# A signature-enforcing grub core verifies EVERY file it pulls from disk: not
-# just each module (.mod) but the indexes it consults to resolve/autoload them
-# -- moddep.lst (dependency map) and command/fs/crypto/terminal/partmap/
-# parttool/video/fdt .lst (autoload maps). Signing the modules but not the
-# indexes still fails the load, so sign both. The verifier + pubkey + the
-# bootstrap modules live embedded in the signed core; these on-disk copies feed
-# the from-disk insmod path used by the live ISO and the installed /boot/grub.
-grub_signed=0
-for MODDIR in boot/grub/*-efi boot/grub/i386-pc; do
-    [ -d "${MODDIR}" ] || continue
-    for f in "${MODDIR}"/*.mod "${MODDIR}"/*.lst; do
-        [ -f "${f}" ] || continue
-        case "${f}" in *.sig) continue ;; esac
-        if gpg --batch --yes --pinentry-mode loopback \
-               --passphrase-file "${PASS}" \
-               --digest-algo SHA512 --local-user "${KEYID}" \
-               --detach-sign --output "${f}.sig" "${f}"; then
-            grub_signed=$(( grub_signed + 1 ))
-        else
-            echo "E: sign-boot(iso): failed to sign ${f}"
-            exit 1
-        fi
-    done
-done
-echo "I: sign-boot(iso): signed ${grub_signed} grub module/index files"
-
 # --- detached-sign device-tree blobs (grub loads the dtb via `devicetree`) ----
 # With GRUB (not U-Boot) loading the dtb, the load is a
 # GRUB_FILE_TYPE_DEVICE_TREE_IMAGE file open, so an enforcing core checks
@@ -174,28 +149,5 @@ if [ -d boot/dtb ]; then
     done
 fi
 echo "I: sign-boot(iso): signed ${dtb_signed} device-tree blob(s)"
-
-# --- detached-sign grub UI assets (fonts, splash, theme) ----------------------
-# The enforcing verifier checks a .sig for EVERY file grub opens except
-# GRUB_FILE_TYPE_CONFIG (.cfg/.env). The menu loads fonts (loadfont *.pf2), the
-# splash (background_image *.png) and the theme (set theme=.../theme.txt), so
-# those need signatures too or the menu fails to render. The *.cfg files
-# (grub.cfg/config.cfg/theme.cfg) are intentionally left unsigned -- CONFIG is
-# skipped by the verifier and VyOS regenerates them.
-asset_signed=0
-for f in boot/grub/*.pf2 boot/grub/*.png boot/grub/live-theme/*; do
-    [ -f "${f}" ] || continue
-    case "${f}" in *.sig|*.cfg|*.env) continue ;; esac
-    if gpg --batch --yes --pinentry-mode loopback \
-           --passphrase-file "${PASS}" \
-           --digest-algo SHA512 --local-user "${KEYID}" \
-           --detach-sign --output "${f}.sig" "${f}"; then
-        asset_signed=$(( asset_signed + 1 ))
-    else
-        echo "E: sign-boot(iso): failed to sign ${f}"
-        exit 1
-    fi
-done
-echo "I: sign-boot(iso): signed ${asset_signed} grub UI asset(s) (fonts/splash/theme)"
 
 echo "I: sign-boot(iso): done"

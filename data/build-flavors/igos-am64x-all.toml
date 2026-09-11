@@ -44,6 +44,13 @@ dm_verity = false
 # unsigned boot artifacts.
 sign_boot = true
 
+# Secure-boot ENFORCEMENT in grub (see data/defaults.toml). false = ship the
+# plain non-verifying grub (current bring-up). To arm: set true and keep
+# sign_boot = true -- the build then auto-adds grub-efi-arm64-bin-secure (the
+# signature-enforcing grub module package) and bakes in the pubkey. The build
+# fails closed if secure_grub = true without sign_boot = true.
+secure_grub = false
+
 # Per-flavor pin map (relative to data/igos-pinmaps/).
 pinmap_file = "igos-am64x-all/pinmap.py"
 

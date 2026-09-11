@@ -488,6 +488,16 @@ def build():
     ## No fallback: sign_boot = true with missing/ambiguous key material FAILS
     ## the build rather than shipping an unsigned image; sign_boot = false
     ## stages nothing and signs nothing even if a key dir is supplied.
+    ## secure_grub (enforcing grub + embedded pubkey) is meaningless without the
+    ## signatures it enforces: require sign_boot, else fail closed (never ship a
+    ## brick that enforces over unsigned kernel/initrd/dtb).
+    if bool(build_config.get("secure_grub", False)) and not bool(
+        build_config.get("sign_boot", False)
+    ):
+        raise ImageBuildError(
+            "secure_grub = true requires sign_boot = true (an enforcing grub "
+            "over unsigned kernel/initrd/dtb will not boot)"
+        )
     if bool(build_config.get("sign_boot", False)):
         key_dir = build_config.get("gpg_signing_key_dir")
         if not key_dir:
@@ -524,26 +534,27 @@ def build():
             f"(sign_boot = true) from {key_dir}"
         )
 
-        # The PUBLIC key is baked INTO the image (unlike the secret key +
-        # passphrase above, which stay host-only). grub-install --pubkey embeds
-        # it into the enforcing grub core at factory/install time, reading it
-        # from /gpgkeys/perle.pubkey.bin inside the rootfs. Fixed dest name to
-        # match the installer's grub-install --pubkey=/gpgkeys/perle.pubkey.bin.
-        pub_matches = sorted(glob.glob(os.path.join(key_dir, "*pubkey*")))
-        if len(pub_matches) != 1:
-            raise ImageBuildError(
-                f"expected exactly one '*pubkey*' file in {key_dir}, "
-                f"found {len(pub_matches)}: {pub_matches}"
+        # The PUBLIC key is baked INTO the image ONLY for secure_grub flavors
+        # (the enforcing grub needs it; a sign-only build does not). Unlike the
+        # secret key + passphrase above (host-only), the public key is safe to
+        # ship. grub-install --pubkey reads it from /gpgkeys/perle.pubkey.bin in
+        # the rootfs at install time. Fixed dest name to match that install cmd.
+        if bool(build_config.get("secure_grub", False)):
+            pub_matches = sorted(glob.glob(os.path.join(key_dir, "*pubkey*")))
+            if len(pub_matches) != 1:
+                raise ImageBuildError(
+                    f"expected exactly one '*pubkey*' file in {key_dir}, "
+                    f"found {len(pub_matches)}: {pub_matches}"
+                )
+            gpgkeys_dir = os.path.join(lb_config_dir, "includes.chroot/gpgkeys")
+            os.makedirs(gpgkeys_dir, exist_ok=True)
+            staged_pub = os.path.join(gpgkeys_dir, "perle.pubkey.bin")
+            shutil.copy(pub_matches[0], staged_pub)
+            os.chmod(staged_pub, 0o644)
+            print(
+                "I: staged GPG public key into image /gpgkeys/perle.pubkey.bin "
+                f"(secure_grub = true) from {key_dir}"
             )
-        gpgkeys_dir = os.path.join(lb_config_dir, "includes.chroot/gpgkeys")
-        os.makedirs(gpgkeys_dir, exist_ok=True)
-        staged_pub = os.path.join(gpgkeys_dir, "perle.pubkey.bin")
-        shutil.copy(pub_matches[0], staged_pub)
-        os.chmod(staged_pub, 0o644)
-        print(
-            "I: staged GPG public key into image /gpgkeys/perle.pubkey.bin "
-            f"(sign_boot = true) from {key_dir}"
-        )
 
     # Switch to the build directory, this is crucial for the live-build work
     # because the effective build config files etc. are there.
@@ -638,6 +649,9 @@ def build():
             # Whether the kernel + initrd were GPG detached-signed at build
             # time (per-flavor sign_boot flag; see data/defaults.toml).
             "sign_boot": bool(build_config.get("sign_boot", False)),
+            # Whether grub ENFORCES those signatures (per-flavor secure_grub
+            # flag; read at install by grub.install() to gate --pubkey).
+            "secure_grub": bool(build_config.get("secure_grub", False)),
         }
 
         version_data = {
@@ -813,6 +827,19 @@ DOCUMENTATION_URL="{build_config['documentation_url']}"
                 build_config.setdefault("packages", [])
                 build_config["packages"] += _pkgs
                 print(f'I: {_payload_key} adds package(s): {" ".join(_pkgs)}')
+
+        ## Fork-only: when secure_grub = true, pull the signature-enforcing grub
+        ## module build in place of stock. grub-efi-arm64-bin-secure ships the
+        ## same file paths but Conflicts/Replaces the stock grub-efi-arm64-bin
+        ## (and satisfies grub-efi-arm64's strict dependency via a versioned
+        ## Provides), so grub-install and u-boot are unaffected -- only the
+        ## compiled-in pgp enforcement differs. secure_grub = false pulls
+        ## nothing, leaving stock (non-verifying) grub from the Debian mirror.
+        if bool(build_config.get("secure_grub", False)):
+            build_config.setdefault("packages", [])
+            if "grub-efi-arm64-bin-secure" not in build_config["packages"]:
+                build_config["packages"].append("grub-efi-arm64-bin-secure")
+                print("I: secure_grub = true adds package: grub-efi-arm64-bin-secure")
 
         # Add custom packages
         if has_nonempty_key(build_config, "packages"):

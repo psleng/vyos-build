@@ -12,10 +12,12 @@
 #
 # HOW
 #   For every model.conf in the model tree staged inside the chroot, read `dtb =`
-#   (DESTINATION, relative to /boot/dtb/) and optional `dtb_src =` (SOURCE path in
-#   the kernel output; defaults to `dtb`). Copy the source blob from the chroot's
-#   kernel output to the ISO's boot/dtb/<dtb>, VERBATIM, so it matches what U-Boot
-#   loads. `dtb_src` allows a full rename (source and dest are independent paths).
+#   (the SOURCE path in the kernel output, vendor-prefixed the way the kernel
+#   organises them: perle/, ti/, broadcom/, ...) and optional `dtb_src =` (source
+#   override; defaults to `dtb`). Copy that blob from the chroot's kernel output
+#   to the ISO's boot/dtb/ FLAT -- by basename, vendor dir stripped -- so every
+#   dtb (and its optional `dtb_alias` copy) lands directly under /boot/dtb. GRUB
+#   then loads the per-image dtb by a vendor-neutral name.
 #
 #   Only the dtbs the models declare are carried -- not every dtb the kernel
 #   builds. Each image ships a SINGLE platform's model tree (igos-am64x = the
@@ -60,10 +62,11 @@ skipped=0
 for conf in "${MODELS_ROOT}"/*/*/model.conf; do
     [ -f "${conf}" ] || continue
 
-    # `dtb` = DESTINATION (relative to the ISO /boot/dtb/, i.e. what U-Boot loads).
+    # `dtb` = SOURCE path in the kernel output, vendor-prefixed (perle/, ti/,
+    # broadcom/, ...). Staged FLAT (by basename) under the ISO /boot/dtb/.
     dest=$(get_key "${conf}" dtb)
     [ -n "${dest}" ] || continue
-    # `dtb_src` = optional SOURCE override in the kernel output (full rename).
+    # `dtb_src` = optional SOURCE override in the kernel output.
     src=$(get_key "${conf}" dtb_src)
     [ -n "${src}" ] || src="${dest}"
 
@@ -88,7 +91,10 @@ for conf in "${MODELS_ROOT}"/*/*/model.conf; do
         continue
     fi
 
-    dst="${DTB_DEST}/${dest}"
+    # Stage the blob FLAT: strip any vendor dir from the source path so every
+    # dtb lands directly under /boot/dtb (perle/..., ti/..., broadcom/... all
+    # collapse to their basename). GRUB then loads by a vendor-neutral name.
+    dst="${DTB_DEST}/$(basename "${dest}")"
     mkdir -p "$(dirname "${dst}")"
     cp "${found}" "${dst}"
     if [ "${src}" = "${dest}" ]; then
@@ -97,13 +103,14 @@ for conf in "${MODELS_ROOT}"/*/*/model.conf; do
         echo "I: dtb-stage(iso):   ${found} -> /${dst}   (renamed from ${src})"
     fi
 
-    # Optional clean bootloader-facing name (model.conf `dtb_alias`, relative to
-    # /boot/dtb/): a real COPY of the staged dtb so U-Boot's env / GRUB can load
-    # the dtb by that name. Empty = no alias. A copy (not a symlink) needs no
-    # Rock Ridge on the ISO and gets its own detached .sig in hook 29.
+    # Optional clean bootloader-facing name (model.conf `dtb_alias`): a real
+    # COPY of the staged dtb, also FLAT (basename) under /boot/dtb, so GRUB can
+    # load the dtb by a vendor-neutral name. Empty = no alias. A copy (not a
+    # symlink) needs no Rock Ridge on the ISO and gets its own detached .sig in
+    # hook 29.
     alias=$(get_key "${conf}" dtb_alias)
     if [ -n "${alias}" ]; then
-        adst="${DTB_DEST}/${alias}"
+        adst="${DTB_DEST}/$(basename "${alias}")"
         mkdir -p "$(dirname "${adst}")"
         cp "${dst}" "${adst}"
         echo "I: dtb-stage(iso):   aliased /${dst} as /${adst}"

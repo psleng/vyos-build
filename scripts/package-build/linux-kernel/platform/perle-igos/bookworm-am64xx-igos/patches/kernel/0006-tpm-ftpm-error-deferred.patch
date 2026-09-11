@@ -1,0 +1,13 @@
+Fix for suppressing ERR_INVALID when the ftpm driver is deferred to retry opening a session
+to the tee_supplicant which is loaded later in the boot process
+
+--- a/drivers/char/tpm/tpm_ftpm_tee.c
++++ b/drivers/char/tpm/tpm_ftpm_tee.c
+@@ -199,6 +199,8 @@ static int ftpm_tee_probe(struct device *dev)
+ 	rc = tee_client_open_session(pvt_data->ctx, &sess_arg, NULL);
+ 	if ((rc < 0) || (sess_arg.ret != 0)) {
++		if (rc == -EPROBE_DEFER)   /* if deferred error, don't emit error, return reason code to caller */
++			return rc;
+ 		dev_err(dev, "%s: tee_client_open_session failed, err=%x\n",
+ 			__func__, sess_arg.ret);
+ 		rc = -EINVAL;

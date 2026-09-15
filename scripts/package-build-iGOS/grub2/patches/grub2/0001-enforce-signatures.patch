@@ -29,9 +29,9 @@ index 5daa1e9d0..a8267e73a 100644
      }
  
 +
-+  if ((type & GRUB_FILE_TYPE_MASK) == GRUB_FILE_TYPE_CONFIG)
++  if ((type & GRUB_FILE_TYPE_MASK) == GRUB_FILE_TYPE_CONFIG || (type & GRUB_FILE_TYPE_MASK) == GRUB_FILE_TYPE_LOADENV)
 +  {
-+    // PERLE -  ignoring config file (.cfg or .env) debug print
++    // PERLE -  ignoring config/env file (.cfg/.env/grubenv) debug print
 +    grub_printf("verify: ignoring signature for %s type=0x%x\n", io->name ? io->name : "(null)", type);
 +
 +    *flags = GRUB_VERIFY_FLAGS_SKIP_VERIFICATION;

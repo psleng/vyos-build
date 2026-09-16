@@ -1,8 +1,55 @@
 interfaces {
+    bridge br1 {
+        address 192.168.1.1/24
+        address fd08::1/8
+        member {
+            interface eth0 {
+            }
+         }
+    }
     loopback lo {
+    }
+    wwan wwan0 {
+        ipv6-bridging {
+            interface br1
+        }
+    }
+}
+nat {
+    source {
+        rule 10 {
+            outbound-interface {
+                name wwan0
+            }
+            translation {
+                address masquerade
+            }
+        }
     }
 }
 service {
+    dhcp-server {
+        listen-interface br1
+        shared-network-name default-dhcp-pool {
+            subnet 192.168.1.0/24 {
+                option {
+                    default-router 192.168.1.1
+                    name-server 192.168.1.1
+                }
+                range range_1 {
+                    start 192.168.1.100
+                    stop 192.168.1.200
+                }
+                subnet-id 1
+            }
+        }
+    }
+    dns {
+        forwarding {
+            allow-from 0.0.0.0/0
+            listen-address 192.168.1.1
+        }
+    }
     https {
         api {
             graphql {
@@ -19,9 +66,18 @@ service {
             }
         }
         enable-http-redirect
-        port 443
     }
     ntp {
+        allow-client {
+            address "127.0.0.0/8"
+            address "169.254.0.0/16"
+            address "10.0.0.0/8"
+            address "172.16.0.0/12"
+            address "192.168.0.0/16"
+            address "::1/128"
+            address "fe80::/10"
+            address "fc00::/7"
+        }
         server 0.pool.ntp.org {
         }
         server 1.pool.ntp.org {
@@ -60,6 +116,14 @@ system {
     }
     option {
         reboot-on-upgrade-failure 5
+    }
+    static-host-mapping {
+        host-name igos.lan {
+            inet 192.168.1.1
+        }
+        host-name igos.lan6 {
+            inet fd08::1
+        }
     }
     syslog {
         local {

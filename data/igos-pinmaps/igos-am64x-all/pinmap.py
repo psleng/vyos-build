@@ -30,12 +30,12 @@ PINS = {
     "MODEM0_SIM_DETECT_1":  _P(bank=0, line=49, dir="in",  bias="pull-up",   group="cell"),
     "MODEM0_SIM_DETECT_0":  _P(bank=0, line=52, dir="in",  bias="pull-up",   group="cell"),
     "MODEM0_SIM_SELECT_1N_OR_2":  _P(bank=0, line=60, dir="out", bias="pull-down", default=0, group="cell"),
-    "MODEM0_SHUTDOWN_N":    _P(bank=0, line=56, dir="out", active_low=True, bias="pull-up",   default=1, group="cell"),
+    "MODEM0_SHUTDOWN_N":    _P(bank=0, line=56, dir="out", active_low=True, bias="pull-up",   default=0, group="cell"),
     "MODEM0_UNCOND_RESET":  _P(bank=0, line=59, dir="out", bias="pull-down", default=0, group="cell"),
     "MODEM0_FLIGHT_MODE":   _P(bank=0, line=85, dir="out", bias="pull-down", default=0, group="cell"),
     "MODEM0_GNSS_DISABLE":  _P(bank=0, line=86, dir="out", bias="pull-down", default=0, group="cell"),
-    "MODEM0_STAT_RED":       _P(bank=0, line=63, dir="out", active_low=False, bias="pull-up", default=0, group="cell"),
-    "MODEM0_STAT_GREEN":     _P(bank=0, line=61, dir="out", active_low=False, bias="pull-down", default=1, group="cell"),
+    "MODEM0_STAT_RED":       _P(bank=0, line=63, dir="out", active_low=False, bias="pull-up", default=1, group="cell"),
+    "MODEM0_STAT_GREEN":     _P(bank=0, line=61, dir="out", active_low=False, bias="pull-down", default=0, group="cell"),
     "MODEM0_STAT_BLUE":       _P(bank=0, line=48, dir="out", active_low=False, bias="pull-down", default=0, group="cell"),
     "MODEM0_PASS_THROUGH_SELECT": _P(bank=0, line=37, dir="out", bias="pull-down", default=0, group="cell"),
 
@@ -46,16 +46,16 @@ PINS = {
     # shorthand for ACTIVE-LOW: physical line high = radio powered,
     # low = held in power-down. vyos.hardware passes physical levels
     # through (no software inversion), matching what a scope would show.
-    "WIFI0_PD_N":        _P(bank=0, line=14, dir="out", bias="pull-up",   default=1, group="wifi0"),
-    "WIFI0_STAT_RED":     _P(bank=0, line=64, dir="out", active_low=False, bias="pull-up", default=0, group="wifi0"),
-    "WIFI0_STAT_GREEN":   _P(bank=0, line=58, dir="out", active_low=False, bias="pull-down", default=1, group="wifi0"),
+    "WIFI0_PD_N":        _P(bank=0, line=14, dir="out", active_low=True, bias="pull-up",   default=1, group="wifi0"),
+    "WIFI0_STAT_RED":     _P(bank=0, line=64, dir="out", active_low=False, bias="pull-up", default=1, group="wifi0"),
+    "WIFI0_STAT_GREEN":   _P(bank=0, line=58, dir="out", active_low=False, bias="pull-down", default=0, group="wifi0"),
     "WIFI0_STAT_BLUE":    _P(bank=0, line=47, dir="out", active_low=False, bias="pull-down", default=0, group="wifi0"),
     # ---------------- CONTROL ----------------
     "VPP_LDO_EN":        _P(bank=0, line=33, dir="out", bias="pull-down", default=0, group="control"),
     "VSEL_SD_SWITCH":    _P(bank=0, line=45, dir="out", bias="pull-up",   default=1, group="control"),
     "PMIC_STBY":         _P(bank=0, line=51, dir="out", bias="pull-up",   default=1, group="control"),
-    "SYS_STAT_RED":      _P(bank=0, line=62, dir="out", active_low=False, bias="pull-up", default=0, group="control"),
-    "SYS_STAT_GREEN":    _P(bank=0, line=57, dir="out", active_low=False, bias="pull-down", default=1, group="control"),
+    "SYS_STAT_RED":      _P(bank=0, line=62, dir="out", active_low=False, bias="pull-up", default=1, group="control"),
+    "SYS_STAT_GREEN":    _P(bank=0, line=57, dir="out", active_low=False, bias="pull-down", default=0, group="control"),
     "SYS_STAT_BLUE":     _P(bank=0, line=46, dir="out", active_low=False, bias="pull-down", default=0, group="control"),
     # ---------------- BUTTON / INPUT ----------------
     # ``_N`` = active-low at the silicon. *_VALID_N inputs read 0 when
@@ -67,8 +67,8 @@ PINS = {
 
     # ---------------- UARTC0 (THVD4431) ----------------
     "UARTC0_MODE0":      _P(bank=1, line=46, dir="out", bias="pull-up",   default=1, group="uartc0"),
-    "UARTC0_MODE1":      _P(bank=1, line=42, dir="out", bias="pull-up",   default=0, group="uartc0"),
-    "UARTC0_MODE2":      _P(bank=1, line=43, dir="out", bias="pull-up",   default=0, group="uartc0"),
+    "UARTC0_MODE1":      _P(bank=1, line=42, dir="out", bias="pull-up",   default=1, group="uartc0"),
+    "UARTC0_MODE2":      _P(bank=1, line=43, dir="out", bias="pull-up",   default=1, group="uartc0"),
     "UARTC0_TERM_TX":    _P(bank=1, line=44, dir="out", bias="pull-down", default=0, group="uartc0"),
     "UARTC0_TERM_RX":    _P(bank=1, line=45, dir="out", bias="pull-down", default=0, group="uartc0"),
     "UARTC0_SLR":        _P(bank=1, line=49, dir="out", bias="pull-up",   default=1, group="uartc0"),
@@ -76,8 +76,8 @@ PINS = {
 
     # ---------------- UARTC2 (THVD4431) ----------------
     "UARTC2_MODE0":      _P(bank=0, line=40, dir="out", bias="pull-up",   default=1, group="uartc2"),
-    "UARTC2_MODE1":      _P(bank=0, line=44, dir="out", bias="pull-up",   default=0, group="uartc2"),
-    "UARTC2_MODE2":      _P(bank=0, line=32, dir="out", bias="pull-up",   default=0, group="uartc2"),
+    "UARTC2_MODE1":      _P(bank=0, line=44, dir="out", bias="pull-up",   default=1, group="uartc2"),
+    "UARTC2_MODE2":      _P(bank=0, line=32, dir="out", bias="pull-up",   default=1, group="uartc2"),
     "UARTC2_TERM_TX":    _P(bank=0, line=41, dir="out", bias="pull-down", default=0, group="uartc2"),
     "UARTC2_TERM_RX":    _P(bank=0, line=42, dir="out", bias="pull-down", default=0, group="uartc2"),
     "UARTC2_SLR":        _P(bank=0, line=35, dir="out", bias="pull-up",   default=1, group="uartc2"),
@@ -85,8 +85,8 @@ PINS = {
 
     # ---------------- UARTC4 (THVD4431) ----------------
     "UARTC4_MODE0":      _P(bank=1, line=5,  dir="out", bias="pull-up",   default=1, group="uartc4"),
-    "UARTC4_MODE1":      _P(bank=1, line=1,  dir="out", bias="pull-up",   default=0, group="uartc4"),
-    "UARTC4_MODE2":      _P(bank=1, line=26, dir="out", bias="pull-up",   default=0, group="uartc4"),
+    "UARTC4_MODE1":      _P(bank=1, line=1,  dir="out", bias="pull-up",   default=1, group="uartc4"),
+    "UARTC4_MODE2":      _P(bank=1, line=26, dir="out", bias="pull-up",   default=1, group="uartc4"),
     "UARTC4_TERM_TX":    _P(bank=1, line=41, dir="out", bias="pull-down", default=0, group="uartc4"),
     "UARTC4_TERM_RX":    _P(bank=1, line=40, dir="out", bias="pull-down", default=0, group="uartc4"),
     "UARTC4_SLR":        _P(bank=1, line=13, dir="out", bias="pull-up",   default=1, group="uartc4"),
@@ -94,8 +94,8 @@ PINS = {
 
     # ---------------- UARTC5 (THVD4431) ----------------
     "UARTC5_MODE0":      _P(bank=1, line=15, dir="out", bias="pull-up",   default=1, group="uartc5"),
-    "UARTC5_MODE1":      _P(bank=1, line=35, dir="out", bias="pull-up",   default=0, group="uartc5"),
-    "UARTC5_MODE2":      _P(bank=1, line=37, dir="out", bias="pull-up",   default=0, group="uartc5"),
+    "UARTC5_MODE1":      _P(bank=1, line=35, dir="out", bias="pull-up",   default=1, group="uartc5"),
+    "UARTC5_MODE2":      _P(bank=1, line=37, dir="out", bias="pull-up",   default=1, group="uartc5"),
     "UARTC5_TERM_TX":    _P(bank=1, line=14, dir="out", bias="pull-down", default=0, group="uartc5"),
     "UARTC5_TERM_RX":    _P(bank=1, line=16, dir="out", bias="pull-down", default=0, group="uartc5"),
     "UARTC5_SLR":        _P(bank=1, line=30, dir="out", bias="pull-up",   default=1, group="uartc5"),

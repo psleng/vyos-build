@@ -27,9 +27,10 @@ manual_add_modules igb ixgbe ixgbevf i40e i40evf
 # executable to copy to initramfs, with library dependencies
 copy_exec /usr/lib/${MULTIARCH}/libnss_dns.so.2
 
-# iproute2 (bookworm-backports) links against libbpf; ensure it is present in
-# the initramfs so `ip` works during init (e.g. init-bottom bringing links down)
-copy_exec /usr/lib/${MULTIARCH}/libbpf.so.1
+# NOTE: iproute2 `ip` is not invoked in the initramfs (dropbear-initramfs is
+# stripped in hooks/live/16-remove-dropbear-initramfs.chroot), so its libraries
+# (libbpf.so.1 / libmnl.so.0) are intentionally not copied here. Re-add them if
+# something starts using `ip` in the initramfs again.
 
 # missing fsck in initramfs
 copy_exec /usr/sbin/fsck
@@ -40,3 +41,14 @@ copy_exec /usr/sbin/fsck.ext4
 # copy other files ("other" here is a file type, so do not delete this keyword)
 copy_file other /etc/ssl/certs/ca-certificates.crt
 copy_file other /etc/ssl/openssl.cnf
+
+# dm-verity: on verity flavors (cryptsetup-bin installed) pull veritysetup and
+# its shared-library dependencies into the initramfs so the init-premount
+# verity-open hook can unlock the root squashfs. copy_exec resolves the library
+# closure automatically. Guarded so non-verity images stay unaffected.
+for _vs in /usr/sbin/veritysetup /sbin/veritysetup; do
+    if [ -x "$_vs" ]; then
+        copy_exec "$_vs"
+        break
+    fi
+done

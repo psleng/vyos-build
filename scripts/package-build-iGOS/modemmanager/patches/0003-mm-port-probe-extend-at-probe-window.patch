@@ -1,0 +1,51 @@
+Description: Extend the generic AT-probe window (18 s -> 42 s) for slow modems.
+ ModemManager 1.20.6 sends the generic "AT" port probe up to 6 times with a
+ 3-second timeout each (src/mm-port-probe.c: at_probing[]), giving a serial
+ port only ~18 s to answer before it is classified as non-AT.  When no AT port
+ answers, MM logs "Failed to find primary AT port" and creates no modem
+ object.  Some Telit modems (notably FN920C04, firmware M0V.060001) can take
+ longer than 18 s to bring their AT command stack up after USB enumeration, so
+ MM gives up too early and the device shows "no modem" until something forces a
+ re-probe (e.g. a ModemManager restart).
+ .
+ Upstream ModemManager (>= 1.24) solves this with the per-port
+ ID_MM_TTY_AT_PROBE_TRIES udev tag (default 6, max 20; each try is 3 s) -- see
+ include/ModemManager-tags.h -- but that tag mechanism does not exist in
+ 1.20.6.  As the 1.20.6-era equivalent, grow the shared at_probing[] array from
+ 6 to 14 entries so a slow port gets up to 42 s (14 x 3 s) to respond -- the
+ same probe budget upstream applies to the FN920C04.
+ .
+ A port that answers responds on the first probe and returns immediately, so
+ healthy modems are unaffected; only a genuinely slow or unresponsive AT port
+ consumes the longer window.  With the port-type rules in
+ 0002-telit-fn920c04-fn990b40-port-types.patch the AT probe is confined to the
+ AT-primary port on the FN920C04, so the extra time is not spent blind-probing
+ its GPS/QCDM ports.  Because 1.20.6 has no per-PID probe count, this window
+ applies to every AT probe; to change it, add or remove "AT" lines in the array
+ (max 20 = 60 s, matching the upstream ID_MM_TTY_AT_PROBE_TRIES ceiling).
+ .
+ NOTE: this only helps the slow-to-become-ready case.  It does NOT recover a
+ hard command-stack wedge (a port dead for minutes) -- that still requires a
+ modem reset.
+Author: VyOS / iGOS WWAN team
+Last-Update: 2026-08-21
+Forwarded: not-needed
+Origin: backport-equivalent of ID_MM_TTY_AT_PROBE_TRIES=14 (ModemManager >= 1.24)
+
+--- a/src/mm-port-probe.c
++++ b/src/mm-port-probe.c
+@@ -1104,6 +1104,14 @@
+     { "AT",  3, mm_port_probe_response_processor_is_at },
+     { "AT",  3, mm_port_probe_response_processor_is_at },
+     { "AT",  3, mm_port_probe_response_processor_is_at },
++    { "AT",  3, mm_port_probe_response_processor_is_at },
++    { "AT",  3, mm_port_probe_response_processor_is_at },
++    { "AT",  3, mm_port_probe_response_processor_is_at },
++    { "AT",  3, mm_port_probe_response_processor_is_at },
++    { "AT",  3, mm_port_probe_response_processor_is_at },
++    { "AT",  3, mm_port_probe_response_processor_is_at },
++    { "AT",  3, mm_port_probe_response_processor_is_at },
++    { "AT",  3, mm_port_probe_response_processor_is_at },
+     { NULL }
+ };
+ 

@@ -27,6 +27,6 @@ uboot_payload = "none"
 # larger image. Set at the flavor level so it overrides architectures/arm64.toml
 # (layer order defaults < architecture < flavor) without touching the upstream
 # arm64 default.
-squashfs_compression_type = "lz4 -b 1M -no-fragments"
+squashfs_compression_type = "zstd -Xcompression-level 9 -b 1M -no-fragments"
 
 [architectures.arm64]

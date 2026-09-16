@@ -1,13 +1,19 @@
 #!/bin/sh
-# igOS: secure-boot signing — GPG detached-sign the FINAL kernel + initrd.
+# igOS: secure-boot signing — GPG detached-sign the FINAL kernel + initrd and
+#   the per-model device-tree blobs (the only artifacts the enforcing GRUB core
+#   loads + verifies from disk).
 #
 # WHY (this is a .binary hook, numbered AFTER 28-igos-dm-verity.binary)
 #   The initrd is only final AFTER 28 appends the dm-verity root hash to it, so
 #   the detached signature must be produced here, at the binary stage, once
-#   live/initrd.img (and the kernel) are their final bytes. A custom grub with a
-#   file-type verifier checks <file>.sig for the kernel + initrd it loads; those
-#   .sig files ride next to the artifacts in /live (and are copied by the
-#   installer into /boot/<version>/), so no menuentry changes are needed.
+#   live/initrd.img (and the kernel) are their final bytes. The custom enforcing
+#   GRUB core (built by 25-igos-grub-core.chroot, MONOLITHIC: every module it
+#   needs is embedded) verifies <file>.sig only for what it loads from disk --
+#   the kernel, the initrd, and the per-image dtb. It never autoloads grub
+#   modules from disk, so on-disk *.mod/*.lst and UI assets need NO signature.
+#   The kernel/initrd .sig ride in /live; the dtb .sig ride in boot/dtb (both
+#   copied per-image by the installer into /boot/<version>/), so no menuentry
+#   changes are needed.
 #
 # SIGNING IS INDEPENDENT OF DM-VERITY (decoupled by request)
 #   Signing is driven by the per-flavor `sign_boot` flag: build-vyos-image
@@ -119,5 +125,29 @@ if [ "${signed_any}" -eq 0 ]; then
     echo "E: sign-boot(iso): no kernel/initrd found under live/ to sign"
     exit 1
 fi
+
+# --- detached-sign device-tree blobs (grub loads the dtb via `devicetree`) ----
+# With GRUB (not U-Boot) loading the dtb, the load is a
+# GRUB_FILE_TYPE_DEVICE_TREE_IMAGE file open, so an enforcing core checks
+# <dtb>.sig. NOTE: the grub verifier patch MUST enforce that file type
+# (kernel+initrd+module alone is not enough) or these .sig are inert. Sign every
+# staged dtb AND its model.conf `dtb_alias` copy so whichever clean name the
+# bootloader loads has a matching detached signature.
+dtb_signed=0
+if [ -d boot/dtb ]; then
+    for f in $(find boot/dtb -type f -name '*.dtb' 2>/dev/null); do
+        [ -f "${f}" ] || continue
+        if gpg --batch --yes --pinentry-mode loopback \
+               --passphrase-file "${PASS}" \
+               --digest-algo SHA512 --local-user "${KEYID}" \
+               --detach-sign --output "${f}.sig" "${f}"; then
+            dtb_signed=$(( dtb_signed + 1 ))
+        else
+            echo "E: sign-boot(iso): failed to sign ${f}"
+            exit 1
+        fi
+    done
+fi
+echo "I: sign-boot(iso): signed ${dtb_signed} device-tree blob(s)"
 
 echo "I: sign-boot(iso): done"

@@ -1,0 +1,109 @@
+#!/bin/sh
+# igOS: build the SIGNED, self-contained GRUB core carried INSIDE the image
+#
+# WHY
+#   On secure_grub builds the unit must run a signature-ENFORCING GRUB whose
+#   trust is anchored by u-boot (which loads /EFI/VyOS/grubaa64.efi from the ESP).
+#   That enforcing core canNOT be produced on a deployed unit: the private key is
+#   offline, so a unit-side `grub-install` could never sign what it builds. So we
+#   build the core HERE, at image build time, and CARRY it in the squashfs. Both
+#   consumers pull this one file:
+#     * manufacturing (prod_image.py) copies it to the ESP, and
+#     * `update firmware --component grub` (op-mode) copies it to the ESP on a
+#       running unit -- i.e. GRUB is replaceable from a new image, like u-boot.
+#
+#   grub-mkstandalone bakes EVERYTHING into a single EFI binary: the pgp verifier
+#   + the embedded trusted pubkey (--pubkey => check_signatures enforce), every
+#   module the boot path needs (incl. fdt for the per-image `devicetree`, ext2 to
+#   read /boot, gzio for the kernel), and a memdisk config. So the core never
+#   autoloads an unsigned module from disk -- the (unsigned) on-disk
+#   /boot/grub/arm64-efi tree is irrelevant to it.
+#
+# DISCOVERY (unit-agnostic, no per-unit UUID)
+#   The embedded config finds its root by the FIXED filesystem label the
+#   installer always stamps on p3 (mkfs.ext4 -L persistence, in BOTH disk.py and
+#   the manufacturing script), then hands off to the real, mutable on-disk
+#   grub.cfg. Nothing baked here is per-unit, so one signed core boots every unit.
+#
+# GATE
+#   secure_grub only. Signal = the enforcing grub package is installed
+#   (build-vyos-image appends grub-efi-arm64-bin-secure to the package list ONLY
+#   when secure_grub = true; it Replaces stock so /usr/lib/grub/arm64-efi holds
+#   the pgp-enforcing modules). Non-secure images skip this and keep stock grub.
+#
+# NOTE
+#   This embeds the pubkey (so the core VERIFIES kernel/initrd/dtb). Signing the
+#   core itself FOR u-boot (EFI Secure Boot / sbsign) is a SEPARATE, later step
+#   (paired with enabling EFI SB in u-boot); see 93-sb-sign-kernel.chroot for the
+#   existing sbsign flow to extend.
+
+set -e
+
+CORE="/usr/lib/grub/arm64-efi/monolithic/grubaa64.efi"
+PUBKEY="/gpgkeys/perle.pubkey.bin"
+LABEL="persistence"
+
+# --- gate: secure_grub? (enforcing grub package present) ---------------------
+if ! dpkg-query -W -f='${Status}' grub-efi-arm64-bin-secure 2>/dev/null \
+        | grep -q 'install ok installed'; then
+    echo "I: grub-core(chroot): grub-efi-arm64-bin-secure not installed (secure_grub != true) -- skipping"
+    exit 0
+fi
+
+echo "I: grub-core(chroot): secure_grub build -- generating enforcing GRUB core"
+
+# --- fail closed: a secure build MUST be able to produce the core ------------
+if [ ! -f "${PUBKEY}" ]; then
+    echo "E: grub-core(chroot): secure_grub set but ${PUBKEY} is missing -- cannot embed the trusted key"
+    exit 1
+fi
+if ! command -v grub-mkstandalone >/dev/null 2>&1; then
+    echo "E: grub-core(chroot): grub-mkstandalone not found (grub-common missing?)"
+    exit 1
+fi
+if [ ! -d /usr/lib/grub/arm64-efi ]; then
+    echo "E: grub-core(chroot): /usr/lib/grub/arm64-efi modules missing"
+    exit 1
+fi
+
+# --- memdisk config: run first, locate root by label, hand off to grub.cfg ---
+# check_signatures skips CONFIG file type (patched pgp), so loading the mutable
+# on-disk grub.cfg is allowed; the crown-jewel enforcement is on kernel/initrd/
+# dtb/modules, which the embedded pubkey covers.
+EMBED_CFG="$(mktemp)"
+cat > "${EMBED_CFG}" <<EOF
+search --no-floppy --label ${LABEL} --set=root
+set prefix=(\$root)/boot/grub
+configfile (\$root)/boot/grub/grub.cfg
+EOF
+
+# Every module the installed boot path touches, embedded so the core is fully
+# self-contained (no from-disk autoload under enforce):
+#   discovery/fs : search search_label search_fs_uuid part_gpt part_msdos ext2 fat
+#   loader/cfg   : normal configfile loadenv regexp test echo probe minicmd
+#   kernel/dtb   : linux gzio fdt
+#   console      : serial terminal terminfo efi_gop
+#   verifier     : pgp gcry_rsa gcry_sha256 gcry_sha512
+GRUB_MODULES="normal loadenv regexp configfile test echo probe minicmd \
+search search_label search_fs_uuid part_gpt part_msdos ext2 fat \
+linux gzio fdt serial terminal terminfo efi_gop \
+pgp gcry_rsa gcry_sha256 gcry_sha512"
+
+mkdir -p "$(dirname "${CORE}")"
+
+echo "I: grub-core(chroot): grub-mkstandalone -> ${CORE} (pubkey embedded, label=${LABEL})"
+grub-mkstandalone \
+    --format=arm64-efi \
+    --output="${CORE}" \
+    --pubkey="${PUBKEY}" \
+    --modules="${GRUB_MODULES}" \
+    "boot/grub/grub.cfg=${EMBED_CFG}"
+
+rm -f "${EMBED_CFG}"
+
+if [ ! -s "${CORE}" ]; then
+    echo "E: grub-core(chroot): core build produced no output at ${CORE}"
+    exit 1
+fi
+
+echo "I: grub-core(chroot): enforcing core ready ($(stat -c %s "${CORE}") bytes) -- carried in image for prod_image.py / 'update firmware --component grub'"

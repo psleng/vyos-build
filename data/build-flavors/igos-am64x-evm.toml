@@ -16,6 +16,13 @@ dm_verity = true
 # Requires --gpg-signing-key-dir; no fallback to unsigned.
 sign_boot = true
 
+# Secure-boot ENFORCEMENT in grub (see data/defaults.toml). false = ship the
+# plain non-verifying grub (current bring-up). To arm: set true and keep
+# sign_boot = true -- the build then auto-adds grub-efi-arm64-bin-secure (the
+# signature-enforcing grub module package) and bakes in the pubkey. The build
+# fails closed if secure_grub = true without sign_boot = true.
+secure_grub = true
+
 pinmap_file = "igos-am64x-evm/pinmap.py"
 
 # Runtime deps (parity with the family images; libgpiod for serial-control/GPIO).

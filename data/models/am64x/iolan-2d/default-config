@@ -125,6 +125,8 @@ system {
             }
         }
     }
+	name-server eth0
+	name-server eth1
     option {
         reboot-on-upgrade-failure 5
     }

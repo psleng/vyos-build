@@ -1,0 +1,81 @@
+From 9f6cc7679b04e77d8ae12ccf08f2b4c75f9f1b4a Mon Sep 17 00:00:00 2001
+From: John Feeney <john.feeney@perle.com>
+Date: Wed, 2 Sep 2026 12:00:00 +0000
+Subject: [PATCH] misc-helpers: skip rw remount on immutable root-backed mounts
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Avoid attempting a remount with non-RO options when the already-mounted
+backing device is immutable (notably dm-verity).
+
+This prevents noisy boot-time kernel warnings like:
+  dm-0: Can't mount, would change RO state
+
+while preserving existing behavior for mutable devices.
+
+Signed-off-by: John Feeney <john.feeney@perle.com>
+---
+ components/9990-misc-helpers.sh | 34 +++++++++++++++++++++++++++++++++-
+ 1 file changed, 33 insertions(+), 1 deletion(-)
+
+diff --git a/components/9990-misc-helpers.sh b/components/9990-misc-helpers.sh
+index 1111111..2222222 100755
+--- a/components/9990-misc-helpers.sh
++++ b/components/9990-misc-helpers.sh
+@@ -700,6 +700,35 @@ what_is_mounted_on ()
+ 	grep -m1 "^[^ ]\+ ${dir} " /proc/mounts | cut -d' ' -f1
+ }
+
++is_immutable_mount ()
++{
++	local dev mountp mnt_opts devbase
++	dev="${1}"
++	mountp="${2}"
++
++	mnt_opts="$(grep -m1 "^[^ ]\+ ${mountp} " /proc/mounts | awk '{print $4}')"
++	case ",${mnt_opts}," in
++		*,ro,*)
++			;;
++		*)
++			return 1
++			;;
++	esac
++
++	devbase="${dev#/dev/}"
++
++	if [ -r "/sys/class/block/${devbase}/dm/uuid" ] && \
++	   grep -q '^VERITY-' "/sys/class/block/${devbase}/dm/uuid"
++	then
++		return 0
++	fi
++
++	if [ -r "/sys/class/block/${devbase}/ro" ] && \
++	   [ "$(cat "/sys/class/block/${devbase}/ro")" = "1" ]
++	then
++		return 0
++	fi
++
++	return 1
++}
++
+ chown_ref ()
+ {
+ 	local reference targets owner
+@@ -792,7 +821,10 @@ try_mount ()
+ 	if [ -n "${old_mountp}" ]
+ 	then
+ 		if [ "${opts}" != "ro" ]
+-		then
++		then
++			if is_immutable_mount "${dev}" "${old_mountp}"
++			then
++				log_warning_msg "Skipping remount of immutable mount ${dev} on ${old_mountp} with options=${opts}"
++			else
+ 			mount -o remount,"${opts}" "${dev}" "${old_mountp}" || panic "Remounting ${dev} ${opts} on ${old_mountp} failed"
++			fi
+ 		fi
+
+ 		mount -o bind "${old_mountp}" "${mountp}" || panic "Cannot bind-mount ${old_mountp} on ${mountp}"
+--
+2.43.0

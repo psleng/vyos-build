@@ -5,6 +5,15 @@ echo I: Create initramfs if it does not exist.
 # Kernel complains about non available nls_ascii module when booting from USB pendrive
 echo "nls_ascii" >> /etc/initramfs-tools/modules
 
+# dm-verity flavors ship veritysetup (cryptsetup-bin); when present, force the
+# device-mapper + verity modules into the initramfs so the init-premount
+# verity-open hook can set up /dev/mapper/verity-root before live-boot mounts
+# the root squashfs. Gated on veritysetup so non-verity images are untouched.
+if [ -x /usr/sbin/veritysetup ] || [ -x /sbin/veritysetup ]; then
+    echo "I: dm-verity: adding dm-mod/dm-bufio/dm-verity to initramfs modules"
+    printf 'dm_mod\ndm_bufio\ndm_verity\n' >> /etc/initramfs-tools/modules
+fi
+
 if [ -e /boot/initrd.img-* ]; then
 	rm -f /boot/initrd.img-*
 fi

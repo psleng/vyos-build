@@ -82,6 +82,7 @@ system {
             }
         }
     }
+    name-server eth0
     option {
         reboot-on-upgrade-failure 5
     }

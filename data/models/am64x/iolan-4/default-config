@@ -5,6 +5,18 @@ interfaces {
     loopback lo {
     }
 }
+nat {
+    source {
+        rule 10 {
+            outbound-interface {
+                name eth0
+            }
+            translation {
+                address masquerade
+            }
+        }
+    }
+}
 service {
     https {
         api {

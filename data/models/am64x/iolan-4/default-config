@@ -1,4 +1,7 @@
 interfaces {
+    ethernet eth0 {
+        address dhcp
+    }
     loopback lo {
     }
 }

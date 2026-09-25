@@ -283,3 +283,12 @@ index 85dcff104936..5a9a433f07bc 100644
  };
  
  /* mcu_gpio0 and mcu_gpio_intr are reserved for mcu firmware usage */
+@@ -733,8 +848,6 @@ &gpmc0 {
+ };
+ 
+ &icssg1_iep0 {
+-	pinctrl-names = "default";
+-	pinctrl-0 = <&icssg1_iep0_pins_default>;
+ };
+ 
+ #include "k3-am64-ti-ipc-firmware.dtsi"

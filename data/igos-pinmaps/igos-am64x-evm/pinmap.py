@@ -23,8 +23,14 @@ SERIAL_PORTS = {}
 # Path format:  <parent-devpath>#<port-number>
 #   <parent-devpath> : sysfs device path of the ethernet controller (board-stable,
 #                      derived from device-tree platform addresses).
-#   <port-number>    : which physical port on that controller (from DT port@N
-#                      node matching, or kernel dev_port for PCI NICs).
+#   <port-number>    : the port's PHYSICAL location on that controller -- the
+#                      trailing integer of the sysfs attribute(s) named by
+#                      ETH_PORT_ID_SOURCE (below). For the AM64x CPSW that is
+#                      phys_port_name ("p1"/"p2" -> #1/#2). The igos-eth-port-id
+#                      helper is generic: it only reads the attribute the pin
+#                      map names -- no MAC addresses, no board assumptions -- so
+#                      a new SoC (J7200) or an external switch chip is handled
+#                      entirely here on the build side.
 #
 # Example: /devices/platform/bus@f4000/8000000.ethernet#2
 #   -> port 2 of the CPSW ethernet switch at SoC address 0x08000000
@@ -33,34 +39,37 @@ SERIAL_PORTS = {}
 #
 # Run as one command:
 """
-printf '%-6s  %-17s  %s\n' IFACE MAC IGOS_ETH_PORT; \
-printf '%-6s  %-17s  %s\n' ----- --- -------------; \
+printf '%-6s  %-16s  %s\n' IFACE PHYS_LOC IGOS_ETH_PORT; \
+printf '%-6s  %-16s  %s\n' ----- -------- -------------; \
+srcs=$(cat /usr/lib/igos/eth-port-id.source 2>/dev/null); \
 for sys in /sys/class/net/eth*; do \
   [ -d "$sys" ] || continue; \
   ifname=${sys##*/}; \
   parent=$(readlink "$sys" | sed -e 's|^\.\./\.\.||' -e 's|/net/[^/]*$||'); \
-  mac=$(cat "$sys/address"); \
-  port=; pd="$sys/device/of_node/ethernet-ports"; \
-  if [ -d "$pd" ]; then \
-    for p in "$pd"/port@*; do \
-      [ -d "$p" ] || continue; \
-      bytes=$(od -An -tx1 -N6 "$p/local-mac-address" 2>/dev/null | tr -d ' '); \
-      pmac=$(printf '%s' "$bytes" | sed 's/../&:/g;s/:$//'); \
-      [ "$pmac" = "$mac" ] && { port=$((0x${p##*port@})); break; }; \
-    done; \
-  fi; \
-  [ -n "$port" ] || port=$(cat "$sys/dev_port" 2>/dev/null || echo 0); \
-  printf '%-6s  %-17s  %s#%s\n' "$ifname" "$mac" "$parent" "$port"; \
+  loc=; port=0; \
+  for a in $srcs; do \
+    v=$(cat "$sys/$a" 2>/dev/null); \
+    [ -n "$v" ] || continue; \
+    loc="$a=$v"; port=$(printf '%s' "$v" | sed 's/.*[^0-9]//'); \
+    [ -n "$port" ] && break; \
+  done; \
+  [ -n "$port" ] || port=0; \
+  printf '%-6s  %-16s  %s#%s\n' "$ifname" "$loc" "$parent" "$port"; \
 done
 """
 #
-# If dev port (the number following #) is 0 verify with the following
-#
-"""
-cat /sys/class/net/eth0/dev_port
-"""
-#
-# If the previous command resulted in a number other than 0 use that as dev port (the number following the #)
+# ETH_PORT_ID_SOURCE names the /sys/class/net/<iface> attribute(s) whose
+# trailing integer is the "#<port-number>" above. It lives HERE, on the build
+# side, so the generic igos-eth-port-id helper needs no changes as new SoCs
+# (e.g. J7200) or external switch chips are added -- each pin map just declares
+# how ITS ports are identified. Give a list to try several in order (e.g. a
+# board mixing the on-SoC CPSW with an external switch). The AM64x CPSW numbers
+# ports as phys_port_name "p1"/"p2". Written at build time to
+# /usr/lib/igos/eth-port-id.source.
+ETH_PORT_ID_SOURCE = "phys_port_name"
+
+# eth0 is the FIRST CPSW socket (port@1 / phys_port_name p1) and eth1 the
+# second (port@2 / p2), matching the AM64x EVM's physical port order.
 ETH_INTERFACES = {
     "eth0": {
         "path": "/devices/platform/bus@f4000/8000000.ethernet#1",

@@ -23,6 +23,10 @@ sign_boot = true
 # fails closed if secure_grub = true without sign_boot = true.
 secure_grub = true
 
+# Secure-boot of the grub EFI core FOR u-boot (see data/defaults.toml /
+# igos-am64x-all.toml). Requires --uboot-signing-key-dir; fails closed.
+sign_grub = true
+
 pinmap_file = "igos-am64x-evm/pinmap.py"
 
 # Runtime deps (parity with the family images; libgpiod for serial-control/GPIO).

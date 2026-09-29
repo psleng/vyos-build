@@ -51,6 +51,11 @@ sign_boot = true
 # fails closed if secure_grub = true without sign_boot = true.
 secure_grub = true
 
+# Secure-boot of the grub EFI core FOR u-boot (see data/defaults.toml). sbsign
+# grubaa64.efi with the UEFI db key so an EFI_SECURE_BOOT u-boot verifies it.
+# Requires --uboot-signing-key-dir and secure_grub = true; fails closed.
+sign_grub = true
+
 # Per-flavor pin map (relative to data/igos-pinmaps/).
 pinmap_file = "igos-am64x-all/pinmap.py"
 

@@ -49,6 +49,16 @@ sign_boot = false
 # fails closed otherwise.
 secure_grub = false
 
+# Secure-boot of the GRUB EFI binary FOR u-boot (fork feature). Default OFF.
+# When true, the monolithic grub core (built by 25-igos-grub-core.chroot under
+# secure_grub) is sbsign'd with the UEFI db key so a u-boot built with
+# EFI_SECURE_BOOT + the enrolled db verifies grubaa64.efi before bootefi.
+# Requires --uboot-signing-key-dir (db key + cert, discovered by glob) and
+# secure_grub = true (the core must exist to sign); the build fails closed
+# otherwise. Backward-compatible: a signed core still boots on a non-enforcing
+# (Setup Mode) u-boot.
+sign_grub = false
+
 squashfs_compression_type = "lz4 -b 1M -no-fragments"
 
 website_url = "https://vyos.io"

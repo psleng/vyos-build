@@ -249,6 +249,16 @@ def build():
             "material is used on the build host only and never enters the image.",
             None,
         ),
+        "uboot-signing-key-dir": (
+            "Path to a directory holding the UEFI Secure Boot db key material "
+            "used to sbsign grubaa64.efi on flavors that set sign_grub = true, "
+            "so a u-boot with EFI_SECURE_BOOT verifies GRUB. Scanned (glob) for "
+            "one '*db*.key' (private) and one '*db*.crt' (cert). Passed in by "
+            "the outer build system (e.g. nexus-build, from the sbkeys repo); "
+            "the private key is used on the build host / in the chroot only and "
+            "is scrubbed before the image is assembled.",
+            None,
+        ),
     }
 
     # Create the option parser
@@ -556,6 +566,57 @@ def build():
                 f"(secure_grub = true) from {key_dir}"
             )
 
+    ## sign_grub (fork feature): sbsign the monolithic grub core so a u-boot
+    ## with EFI_SECURE_BOOT verifies grubaa64.efi before bootefi. The core only
+    ## exists on secure_grub builds (25-igos-grub-core.chroot), so sign_grub
+    ## requires secure_grub. The db PRIVATE key must reach the in-chroot core,
+    ## so unlike the host-only GPG secret it is staged into includes.chroot and
+    ## removed by 26-igos-sign-grub-uboot.chroot BEFORE the squashfs is built
+    ## (build-vyos-image also scrubs the host-side copy after lb build). No
+    ## fallback: sign_grub without a key or without secure_grub fails closed.
+    if bool(build_config.get("sign_grub", False)):
+        if not bool(build_config.get("secure_grub", False)):
+            raise ImageBuildError(
+                "sign_grub = true requires secure_grub = true (there is no "
+                "monolithic grub core to sign otherwise)"
+            )
+        uboot_key_dir = build_config.get("uboot_signing_key_dir")
+        if not uboot_key_dir:
+            raise ImageBuildError(
+                "sign_grub = true for this flavor but no --uboot-signing-key-dir "
+                "was given; refusing to build with an unsigned grub core"
+            )
+        if not os.path.isdir(uboot_key_dir):
+            raise ImageBuildError(
+                f"u-boot signing key directory not found: {uboot_key_dir}"
+            )
+        db_key_matches = sorted(glob.glob(os.path.join(uboot_key_dir, "*db*.key")))
+        db_crt_matches = sorted(glob.glob(os.path.join(uboot_key_dir, "*db*.crt")))
+        if len(db_key_matches) != 1:
+            raise ImageBuildError(
+                f"expected exactly one '*db*.key' file in {uboot_key_dir}, "
+                f"found {len(db_key_matches)}: {db_key_matches}"
+            )
+        if len(db_crt_matches) != 1:
+            raise ImageBuildError(
+                f"expected exactly one '*db*.crt' file in {uboot_key_dir}, "
+                f"found {len(db_crt_matches)}: {db_crt_matches}"
+            )
+        uboot_sb_dir = os.path.join(
+            lb_config_dir, "includes.chroot/etc/uboot-sb-signing"
+        )
+        os.makedirs(uboot_sb_dir, exist_ok=True)
+        staged_db_key = os.path.join(uboot_sb_dir, "db.key")
+        staged_db_crt = os.path.join(uboot_sb_dir, "db.crt")
+        shutil.copy(db_key_matches[0], staged_db_key)
+        shutil.copy(db_crt_matches[0], staged_db_crt)
+        os.chmod(staged_db_key, 0o600)
+        os.chmod(staged_db_crt, 0o644)
+        print(
+            "I: staged u-boot db key for grub sbsign (sign_grub = true) from "
+            f"{uboot_key_dir}"
+        )
+
     # Switch to the build directory, this is crucial for the live-build work
     # because the effective build config files etc. are there.
     #
@@ -652,6 +713,9 @@ def build():
             # Whether grub ENFORCES those signatures (per-flavor secure_grub
             # flag; read at install by grub.install() to gate --pubkey).
             "secure_grub": bool(build_config.get("secure_grub", False)),
+            # Whether the grub EFI core was sbsign'd for u-boot verification
+            # (per-flavor sign_grub flag; see data/defaults.toml).
+            "sign_grub": bool(build_config.get("sign_grub", False)),
         }
 
         version_data = {
@@ -840,6 +904,14 @@ DOCUMENTATION_URL="{build_config['documentation_url']}"
             if "grub-efi-arm64-bin-secure" not in build_config["packages"]:
                 build_config["packages"].append("grub-efi-arm64-bin-secure")
                 print("I: secure_grub = true adds package: grub-efi-arm64-bin-secure")
+
+        ## sign_grub needs sbsign/sbverify in the chroot for
+        ## 26-igos-sign-grub-uboot.chroot to sign the grub core.
+        if bool(build_config.get("sign_grub", False)):
+            build_config.setdefault("packages", [])
+            if "sbsigntool" not in build_config["packages"]:
+                build_config["packages"].append("sbsigntool")
+                print("I: sign_grub = true adds package: sbsigntool")
 
         # Add custom packages
         if has_nonempty_key(build_config, "packages"):
@@ -1157,6 +1229,17 @@ Pin-Priority: 600
         # image; this is just build-tree hygiene so the secret material does not
         # linger.
         shutil.rmtree("signing", ignore_errors=True)
+
+        # Also scrub the staged u-boot db key from the includes tree. The chroot
+        # hook (26-igos-sign-grub-uboot.chroot) already removed it from the
+        # rootfs before the squashfs was built; this drops the host-side source
+        # copy so the secret does not linger.
+        shutil.rmtree(
+            os.path.join(
+                defaults.LB_CONFIG_DIR, "includes.chroot/etc/uboot-sb-signing"
+            ),
+            ignore_errors=True,
+        )
 
         # Copy the image
         shutil.copy(

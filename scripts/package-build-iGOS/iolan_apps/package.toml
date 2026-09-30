@@ -5,7 +5,7 @@ commit_id = "psl-master"
 build_cmd = """
 set -e
 
-LIB_ORDER="lib libjsonparse libsslperle libpamperle"
+LIB_ORDER="lib libjsonparse libsslperle libpamperle libigos_serial"
 
 for d in $LIB_ORDER; do
     if [ -d "$d" ] && [ -f "$d/debian/control" ]; then

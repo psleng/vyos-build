@@ -12,11 +12,12 @@ echo === $0 BEGIN in $PWD
 #BRANCH=lf-6.6.52_2.2.0
 #BRANCH=lf-6.12.20_2.0.0
 #BRANCH=hotfix/lf-6.12.34_2.1.0_hotfix
-BRANCH=lf-6.12.49_2.2.0
+#BRANCH=lf-6.12.49_2.2.0
+BRANCH=lf-6.18.20_2.0.0
 
 # Version for the resulting .deb
 # If you bump BRANCH above, bump this too.
-VERS=1.0.4
+VERS=1.0.5
 
 echo "Build/Install NXP 88Q9098/88W9098 branch $BRANCH"
 

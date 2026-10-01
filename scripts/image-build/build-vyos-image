@@ -977,7 +977,7 @@ DOCUMENTATION_URL="{build_config['documentation_url']}"
             # Load network interface definitions from pinmap source without executing module init
             import ast
 
-            interface_search = {"ETH_INTERFACES", "WWAN_INTERFACES"}
+            interface_search = {"ETH_INTERFACES", "WWAN_INTERFACES", "WIFI_INTERFACES"}
             interface_dicts = {}
 
             with open(pinmap_src, "r", encoding="utf-8") as f:
@@ -1004,6 +1004,7 @@ DOCUMENTATION_URL="{build_config['documentation_url']}"
             # Keeping this on the build side lets new SoCs / external switch
             # chips be supported without touching vyos-1x.
             eth_port_id_sources: list = []
+            wifi_mac_nvmem_source: str = ""
             for node in pinmap_ast_tree.body:
                 if isinstance(node, ast.Assign):
                     node_targets = [t for t in node.targets if isinstance(t, ast.Name)]
@@ -1021,6 +1022,8 @@ DOCUMENTATION_URL="{build_config['documentation_url']}"
                         eth_port_id_sources = [value]
                     elif isinstance(value, (list, tuple)):
                         eth_port_id_sources = [str(v) for v in value]
+                if any(t.id == "WIFI_MAC_NVMEM_SOURCE" for t in node_targets):
+                    wifi_mac_nvmem_source = str(ast.literal_eval(node_value))
 
             # Generate /usr/lib/igos/interfaces.conf from "path" entries
             conf_lines = []
@@ -1076,6 +1079,31 @@ DOCUMENTATION_URL="{build_config['documentation_url']}"
                 os.makedirs(os.path.dirname(udev_60_rule_path), exist_ok=True)
                 with open(udev_60_rule_path, "w", encoding="utf-8") as udev_60_file:
                     udev_60_file.write(udev_60_rule_data)
+
+            # Generate /usr/lib/igos/wifi-interfaces.conf from WIFI_INTERFACES.
+            # NXP wlan0..3 are runtime PCIe netdevs (not DT nodes), so their
+            # factory MACs can't be assigned via the device tree like CPSW ports.
+            # Each line maps a radio netdev to the nvmem cell (perle-device-info
+            # sysfs attr) holding its MAC; the generic vyos-1x helper reads this
+            # and applies each exact MAC verbatim. "source" names the exposing
+            # perle-device-info platform device (WIFI_MAC_NVMEM_SOURCE).
+            wifi_interfaces: dict = dict(interface_dicts.get("WIFI_INTERFACES", {}))
+            wifi_lines = []
+            if wifi_mac_nvmem_source.strip():
+                wifi_lines.append(f"source {wifi_mac_nvmem_source.strip()}")
+            for wlan, data in wifi_interfaces.items():
+                cell = str(data.get("mac_nvmem", "")).strip()
+                if cell:
+                    wifi_lines.append(f"{wlan} {cell}")
+            # Only emit when we have a source AND at least one radio mapping.
+            if len(wifi_lines) >= 2:
+                wifi_conf_path = os.path.join(
+                    chroot_includes_dir,
+                    "usr/lib/igos/wifi-interfaces.conf",
+                )
+                os.makedirs(os.path.dirname(wifi_conf_path), exist_ok=True)
+                with open(wifi_conf_path, "w", encoding="utf-8") as wifi_conf_file:
+                    wifi_conf_file.write("\n".join(wifi_lines) + "\n")
 
         ## Fork-only: copy per-flavor overlay directory (if present) into chroot.
         ## Files in data/igos-pinmaps/<build_flavor>/overlays/ are laid out

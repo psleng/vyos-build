@@ -49,6 +49,42 @@ stop) # Stop all wifi stuff
     ;;
 
 *) # Start all wifi stuff
+    # Only load the NXP driver on a wifi model. model.conf `wifi` is the
+    # authoritative hardware fact (one family image serves wifi and non-wifi
+    # models). Fail OPEN: if the model system is unavailable or the value is
+    # anything but an explicit false, load as before -- detection must never
+    # wrongly disable wifi.
+    wifi_present=$(python3 - 2>/dev/null <<'PY'
+try:
+    from vyos.system import model
+    m = model.find_model()
+    v = ""
+    if m is not None:
+        try:
+            v = (m.conf.get("wifi", "") or "").strip().lower()
+        except Exception:
+            v = ""
+        if not v:
+            try:
+                for ln in open(m.model_conf):
+                    ln = ln.strip()
+                    if ln.startswith("wifi") and "=" in ln:
+                        v = ln.split("=", 1)[1].strip().lower()
+                        break
+            except Exception:
+                pass
+    print(v)
+except Exception:
+    pass
+PY
+)
+    case "$wifi_present" in
+        false|0|no|off)
+            echo "model.conf wifi=$wifi_present: no radio on this model; skipping NXP driver load"
+            exit 0
+            ;;
+    esac
+
     sudo modprobe cfg80211
     sudo insmod /usr/lib/modules/nxp/mlan.ko drvdbg=$d
     sudo insmod /usr/lib/modules/nxp/moal.ko mod_para=/nxp/wifi_mod_para.conf drvdbg=$d

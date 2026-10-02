@@ -5,7 +5,7 @@
 echo === $0 BEGIN in $PWD
 
 # Initialize repository URL variable
-: ${REPO_URL:="https://github.com/psleng"}
+: ${REPO_URL:="https://github.com/nxp-imx"}
 : ${ROOTDIR:=$(dirname $(sudo git rev-parse --show-toplevel))}
 
 #BRANCH=lf-6.6.3_1.0.0

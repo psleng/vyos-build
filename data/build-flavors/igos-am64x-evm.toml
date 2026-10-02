@@ -35,6 +35,11 @@ packages = [
   # veritysetup (dm-verity setup tool). Pulled into the image so the initramfs
   # verity-open hook can unlock the root squashfs; required by dm_verity = true.
   "cryptsetup-bin",
+  # NXP 88W9098 Wi-Fi driver stack (nxp-wifi .deb from build_iGOS_drivers; same
+  # rationale as igos-am64x-all). NOTE: the EVM `evm` model has `wifi = false`,
+  # so nxp.sh won't load it here -- installed for parity/bring-up. Needs the EVM
+  # build flow to actually produce nxp-wifi.deb or `lb build` fails to find it.
+  "nxp-wifi",
 ]
 
 # Per-model definition tree (relative to data/models/). Ships data/models/am64x-evm/

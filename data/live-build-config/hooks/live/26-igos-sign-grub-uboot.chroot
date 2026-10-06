@@ -1,0 +1,62 @@
+#!/bin/sh
+# igOS: sbsign the monolithic GRUB core FOR u-boot (EFI Secure Boot).
+#
+# WHY / WHERE
+#   grubaa64.efi is what u-boot loads via `bootefi`. To have u-boot VERIFY it,
+#   the core is sbsign'd here with the UEFI db key. 25-igos-grub-core.chroot
+#   builds the enforcing core inside the chroot and it is carried in the
+#   squashfs, so signing must run in the chroot AFTER 25 and BEFORE the squashfs
+#   is built -- hence this .chroot hook (26). This is the step 25's header points
+#   to ("Signing the core itself FOR u-boot ... a SEPARATE, later step").
+#
+# GATE / KEY HANDLING
+#   Gate = the db key staged by build-vyos-image at ${KEYDIR}, which happens
+#   ONLY when the flavor sets sign_grub = true. sbsign needs the PRIVATE key in
+#   the chroot, so it is placed here transiently and REMOVED below before the
+#   squashfs is built; build-vyos-image also scrubs the host-side source copy
+#   after `lb build`. A guard fails the build closed if the key survives. No
+#   fallback: sign_grub set but core/cert/tool missing fails the build.
+set -e
+
+CORE="/usr/lib/grub/arm64-efi/monolithic/grubaa64.efi"
+KEYDIR="/etc/uboot-sb-signing"
+KEY="${KEYDIR}/db.key"
+CERT="${KEYDIR}/db.crt"
+
+# --- gate: did build-vyos-image stage a db key? (flavor sign_grub = true) ----
+if [ ! -f "${KEY}" ]; then
+    echo "I: sign-grub(chroot): no db key staged (sign_grub != true) -- grub core left UNSIGNED for u-boot"
+    exit 0
+fi
+
+# --- fail closed on anything missing -----------------------------------------
+if [ ! -s "${CORE}" ]; then
+    echo "E: sign-grub(chroot): sign_grub set but ${CORE} missing (secure_grub must build the core first)"
+    rm -rf "${KEYDIR}"
+    exit 1
+fi
+if [ ! -f "${CERT}" ]; then
+    echo "E: sign-grub(chroot): db.key present but db.crt missing at ${CERT}"
+    rm -rf "${KEYDIR}"
+    exit 1
+fi
+if ! command -v sbsign >/dev/null 2>&1 || ! command -v sbverify >/dev/null 2>&1; then
+    echo "E: sign-grub(chroot): sbsign/sbverify not found (sbsigntool missing from chroot)"
+    rm -rf "${KEYDIR}"
+    exit 1
+fi
+
+echo "I: sign-grub(chroot): sbsign ${CORE} with u-boot db key"
+sbsign --key "${KEY}" --cert "${CERT}" "${CORE}" --output "${CORE}"
+sbverify --cert "${CERT}" "${CORE}"
+
+# --- remove the private key from the chroot BEFORE the squashfs is built -----
+rm -rf "${KEYDIR}"
+
+# --- guard: never let a private key ride into the image ----------------------
+if [ -e "${KEY}" ] || [ -d "${KEYDIR}" ]; then
+    echo "E: sign-grub(chroot): ${KEYDIR} still present after cleanup -- failing closed"
+    exit 1
+fi
+
+echo "I: sign-grub(chroot): grub core signed for u-boot verification; db key scrubbed from chroot"

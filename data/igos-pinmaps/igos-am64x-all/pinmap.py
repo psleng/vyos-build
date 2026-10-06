@@ -221,3 +221,25 @@ WWAN_INTERFACES = {
         "ID_MM_PHYSDEV_UID": "modem0",
     }
 }
+
+# Pinned WiFi radio MACs (NXP 88W9098 / JODY-W374).
+#
+# The NXP moal driver creates wlan0..3 at runtime over PCIe, so (unlike the CPSW
+# ethernet ports) their MACs cannot be assigned from the device tree. Each entry
+# maps a radio netdev to the EEPROM nvmem cell holding its factory-assigned MAC.
+# At build time this is written to /usr/lib/igos/wifi-interfaces.conf; the generic
+# vyos-1x helper (vyos.utils.nxpwifiutils.provisioned_wifi_mac) reads it and
+# applies each exact MAC verbatim. Switching wifi supplier is a change here only.
+#
+# netdev<->cell follows the driver/udev order (uap0=wlan0, muap0=wlan1,
+# mlan0=wlan2, mmlan0=wlan3). mac_nvmem is the perle-device-info sysfs attribute
+# name (= nvmem cell name) exposing that radio's 6-byte MAC under
+# WIFI_MAC_NVMEM_SOURCE.
+WIFI_MAC_NVMEM_SOURCE = "device-info"
+
+WIFI_INTERFACES = {
+    "wlan0": {"mac_nvmem": "wifi_mac_addr0"},
+    "wlan1": {"mac_nvmem": "wifi_mac_addr1"},
+    "wlan2": {"mac_nvmem": "wifi_mac_addr2"},
+    "wlan3": {"mac_nvmem": "wifi_mac_addr3"},
+}

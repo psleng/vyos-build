@@ -51,6 +51,11 @@ sign_boot = true
 # fails closed if secure_grub = true without sign_boot = true.
 secure_grub = true
 
+# Secure-boot of the grub EFI core FOR u-boot (see data/defaults.toml). sbsign
+# grubaa64.efi with the UEFI db key so an EFI_SECURE_BOOT u-boot verifies it.
+# Requires --uboot-signing-key-dir and secure_grub = true; fails closed.
+sign_grub = true
+
 # Per-flavor pin map (relative to data/igos-pinmaps/).
 pinmap_file = "igos-am64x-all/pinmap.py"
 
@@ -62,6 +67,12 @@ packages = [
   # veritysetup (dm-verity setup tool). Pulled into the image so the initramfs
   # verity-open hook can unlock the root squashfs; required by dm_verity = true.
   "cryptsetup-bin",
+  # NXP 88W9098 Wi-Fi driver stack (moal/mlan modules + firmware + nxp.service),
+  # locally built by scripts/package-build/linux-kernel/build_iGOS_drivers into
+  # the nxp-wifi .deb. MUST be listed to be installed -- live-build only pulls
+  # local packages.chroot debs that are referenced (same as vyos-1x). nxp.sh
+  # no-ops on models whose model.conf has `wifi = false`.
+  "nxp-wifi",
 ]
 
 # Per-model definition tree (relative to data/models/). Ships data/models/am64x/

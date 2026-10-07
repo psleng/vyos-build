@@ -1130,7 +1130,7 @@ new file mode 100644
 index 000000000..733731b9b
 --- /dev/null
 +++ b/arch/arm64/boot/dts/perle/k3-am642-igos.dtsi
-@@ -0,0 +1,832 @@
+@@ -0,0 +1,843 @@
 +// SPDX-License-Identifier: GPL-2.0-only OR MIT
 +/*
 + * Copyright (C) 2020-2024 Texas Instruments Incorporated - https://www.ti.com/
@@ -1153,8 +1153,8 @@ index 000000000..733731b9b
 +
 +	device-info {
 +		compatible = "perle,device-info";
-+		nvmem-cells = <&vendor>, <&serial>, <&uuid>, <&product>, <&model>;
-+		nvmem-cell-names = "vendor", "serial", "uuid", "product", "model";
++		nvmem-cells = <&vendor>, <&serial>, <&uuid>, <&product>, <&model>, <&wifi_mac_addr0>, <&wifi_mac_addr1>, <&wifi_mac_addr2>, <&wifi_mac_addr3>, <&mac_addr2>, <&mac_addr3>, <&mac_addr4>, <&mac_addr5>, <&mac_addr6>, <&mac_addr7>, <&mac_addr8>;
++		nvmem-cell-names = "vendor", "serial", "uuid", "product", "model", "wifi_mac_addr0", "wifi_mac_addr1", "wifi_mac_addr2", "wifi_mac_addr3", "mac_addr2", "mac_addr3", "mac_addr4", "mac_addr5", "mac_addr6", "mac_addr7", "mac_addr8";
 +	};
 +
 +	memory@80000000 {
@@ -1636,18 +1636,22 @@ index 000000000..733731b9b
 +
 +			wifi_mac_addr0: mac-address@b2 {
 +				reg = <0xb2 0x6>;
++				perle,bytes;
 +			};
 +
 +			wifi_mac_addr1: mac-address@b8 {
 +				reg = <0xb8 0x6>;
++				perle,bytes;
 +			};
 +
 +			wifi_mac_addr2: mac-address@be {
 +				reg = <0xbe 0x6>;
++				perle,bytes;
 +			};
 +
 +			wifi_mac_addr3: mac-address@c4 {
 +				reg = <0xc4 0x6>;
++				perle,bytes;
 +			};
 +
 +			mac_addr0: mac-address@ca {
@@ -1660,30 +1664,37 @@ index 000000000..733731b9b
 +
 +			mac_addr2: mac-address@d6 {
 +				reg = <0xd6 0x6>;
++				perle,bytes;
 +			};
 +
 +			mac_addr3: mac-address@dc {
 +				reg = <0xdc 0x6>;
++				perle,bytes;
 +			};
 +
 +			mac_addr4: mac-address@e2 {
 +				reg = <0xe2 0x6>;
++				perle,bytes;
 +			};
 +
 +			mac_addr5: mac-address@e8 {
 +				reg = <0xe8 0x6>;
++				perle,bytes;
 +			};
 +
 +			mac_addr6: mac-address@ee {
 +				reg = <0xee 0x6>;
++				perle,bytes;
 +			};
 +
 +			mac_addr7: mac-address@f4 {
 +				reg = <0xf4 0x6>;
++				perle,bytes;
 +			};
 +
 +			mac_addr8: mac-address@fa {
 +				reg = <0xfa 0x6>;
++				perle,bytes;
 +			};
 +		};
 +	};

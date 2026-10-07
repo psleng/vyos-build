@@ -16,6 +16,17 @@ dm_verity = true
 # Requires --gpg-signing-key-dir; no fallback to unsigned.
 sign_boot = true
 
+# Secure-boot ENFORCEMENT in grub (see data/defaults.toml). false = ship the
+# plain non-verifying grub (current bring-up). To arm: set true and keep
+# sign_boot = true -- the build then auto-adds grub-efi-arm64-bin-secure (the
+# signature-enforcing grub module package) and bakes in the pubkey. The build
+# fails closed if secure_grub = true without sign_boot = true.
+secure_grub = true
+
+# Secure-boot of the grub EFI core FOR u-boot (see data/defaults.toml /
+# igos-am64x-all.toml). Requires --uboot-signing-key-dir; fails closed.
+sign_grub = true
+
 pinmap_file = "igos-am64x-evm/pinmap.py"
 
 # Runtime deps (parity with the family images; libgpiod for serial-control/GPIO).
@@ -24,6 +35,11 @@ packages = [
   # veritysetup (dm-verity setup tool). Pulled into the image so the initramfs
   # verity-open hook can unlock the root squashfs; required by dm_verity = true.
   "cryptsetup-bin",
+  # NXP 88W9098 Wi-Fi driver stack (nxp-wifi .deb from build_iGOS_drivers; same
+  # rationale as igos-am64x-all). NOTE: the EVM `evm` model has `wifi = false`,
+  # so nxp.sh won't load it here -- installed for parity/bring-up. Needs the EVM
+  # build flow to actually produce nxp-wifi.deb or `lb build` fails to find it.
+  "nxp-wifi",
 ]
 
 # Per-model definition tree (relative to data/models/). Ships data/models/am64x-evm/

@@ -45,6 +45,17 @@ do
     fi
 done
 
+KERNEL_BUILD_DIR="$ROOTDIR/vyos-build/scripts/package-build/linux-kernel"
+
+# Load kernel environment variables (KERNEL_DIR, EPHEMERAL_KEY, EPHEMERAL_CERT)
+if [ -f "${KERNEL_BUILD_DIR}/kernel-vars" ]; then
+    echo "=== Loading Kernel Build Variables"
+    . "${KERNEL_BUILD_DIR}/kernel-vars"
+else
+    echo "=== ERROR: ${KERNEL_BUILD_DIR}/kernel-vars not found! Build kernel first."
+    exit 1
+fi
+
 # Build
 echo "=== Building NXP kernel modules"
 if [ -d mwifiex/mxm_wifiex/wlan_src ]; then
@@ -53,8 +64,25 @@ if [ -d mwifiex/mxm_wifiex/wlan_src ]; then
 else
     cd mwifiex
 fi
-make -j -C $ROOTDIR/vyos-build/scripts/package-build/linux-kernel/linux M=$PWD
+make -j -C ${KERNEL_DIR} M=$PWD
 cd -
+
+# --- SIGNING OUT-OF-TREE MODULES ---
+echo "=== Signing compiled NXP kernel modules"
+SIGN_FILE="${KERNEL_DIR}/scripts/sign-file"
+
+if [ -f "${SIGN_FILE}" ] && [ -f "${EPHEMERAL_KEY}" ] && [ -f "${EPHEMERAL_CERT}" ]; then
+    for ko in $(find mwifiex -name '*.ko'); do
+        echo "=== Signing ${ko}"
+        "${SIGN_FILE}" sha512 "${EPHEMERAL_KEY}" "${EPHEMERAL_CERT}" "${ko}"
+    done
+else
+    echo "=== ERROR: Missing sign-file tool or keys!"
+    echo "    SIGN_FILE      : ${SIGN_FILE}"
+    echo "    EPHEMERAL_KEY  : ${EPHEMERAL_KEY}"
+    echo "    EPHEMERAL_CERT : ${EPHEMERAL_CERT}"
+    exit 1
+fi
 
 #
 # Set up nxp-wifi pieces as they would appear in the final filesystem

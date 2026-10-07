@@ -4,6 +4,9 @@
 #
 echo === $0 BEGIN in $PWD
 
+CWD=$(cd .. && pwd)
+KERNEL_VAR_FILE="${CWD}/kernel-vars"
+
 # Initialize repository URL variable
 : ${REPO_URL:="https://github.com/nxp-imx"}
 : ${ROOTDIR:=$(dirname $(sudo git rev-parse --show-toplevel))}
@@ -20,6 +23,14 @@ BRANCH=lf-6.18.20_2.0.0
 VERS=1.0.5
 
 echo "Build/Install NXP 88Q9098/88W9098 branch $BRANCH"
+
+if [ ! -f "${KERNEL_VAR_FILE}" ]; then
+    echo "Kernel variable file '${KERNEL_VAR_FILE}' does not exist, Build kernel first"
+    exit 1
+fi
+
+echo "=== Loading Kernel Build Variables"
+. "${KERNEL_VAR_FILE}"
 
 # Clone the repos
 for i in mwifiex imx-firmware
@@ -53,7 +64,7 @@ if [ -d mwifiex/mxm_wifiex/wlan_src ]; then
 else
     cd mwifiex
 fi
-make -j -C $ROOTDIR/vyos-build/scripts/package-build/linux-kernel/linux M=$PWD
+make -j -C ${KERNEL_DIR} M=$PWD
 cd -
 
 #
@@ -70,6 +81,12 @@ DST=fs/lib/modules/nxp
 mkdir -p $DST
 cp -f $(find mwifiex -name '*.ko') $DST
 cp -f nxp.sh $DST
+
+# Sign generated Kernel modules (silent if keys are missing)
+if [ -x "${CWD}/sign-modules.sh" ]; then
+    echo "=== Signing NXP kernel modules using sign-modules.sh"
+    ${CWD}/sign-modules.sh ${DST}
+fi
 
 # Copy the systemd service file to start/stop wifi cleanly
 echo "=== Installing NXP system service"

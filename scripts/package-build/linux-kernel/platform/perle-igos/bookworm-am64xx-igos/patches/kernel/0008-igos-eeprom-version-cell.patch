@@ -1,0 +1,24 @@
+--- a/arch/arm64/boot/dts/perle/k3-am642-igos.dtsi
++++ b/arch/arm64/boot/dts/perle/k3-am642-igos.dtsi
+@@ -20,8 +20,8 @@
+ 
+ 	device-info {
+ 		compatible = "perle,device-info";
+-		nvmem-cells = <&vendor>, <&serial>, <&uuid>, <&product>, <&model>, <&board_revision>, <&ssid>, <&password>, <&wifi_mac_addr0>, <&wifi_mac_addr1>, <&wifi_mac_addr2>, <&wifi_mac_addr3>, <&mac_addr2>, <&mac_addr3>, <&mac_addr4>, <&mac_addr5>, <&mac_addr6>, <&mac_addr7>, <&mac_addr8>;
+-		nvmem-cell-names = "vendor", "serial", "uuid", "product", "model", "board_revision", "ssid", "password", "wifi_mac_addr0", "wifi_mac_addr1", "wifi_mac_addr2", "wifi_mac_addr3", "mac_addr2", "mac_addr3", "mac_addr4", "mac_addr5", "mac_addr6", "mac_addr7", "mac_addr8";
++		nvmem-cells = <&vendor>, <&serial>, <&uuid>, <&product>, <&model>, <&board_revision>, <&version>, <&ssid>, <&password>, <&wifi_mac_addr0>, <&wifi_mac_addr1>, <&wifi_mac_addr2>, <&wifi_mac_addr3>, <&mac_addr2>, <&mac_addr3>, <&mac_addr4>, <&mac_addr5>, <&mac_addr6>, <&mac_addr7>, <&mac_addr8>;
++		nvmem-cell-names = "vendor", "serial", "uuid", "product", "model", "board_revision", "version", "ssid", "password", "wifi_mac_addr0", "wifi_mac_addr1", "wifi_mac_addr2", "wifi_mac_addr3", "mac_addr2", "mac_addr3", "mac_addr4", "mac_addr5", "mac_addr6", "mac_addr7", "mac_addr8";
+ 	};
+ 
+ 	memory@80000000 {
+@@ -480,6 +480,10 @@
+ 			#address-cells = <1>;
+ 			#size-cells = <1>;
+ 			
++			version: version@4 {
++				reg = <0x04 0x04>;
++			};
++
+ 			board_revision: board-revision@8 {
+ 				reg = <0x08 0x08>;
+ 			};

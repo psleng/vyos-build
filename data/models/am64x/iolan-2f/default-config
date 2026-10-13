@@ -17,6 +17,14 @@ interfaces {
     }
     loopback lo {
     }
+    wireless wlan0 {
+    }
+    wireless wlan1 {
+    }
+    wireless wlan2 {
+    }
+    wireless wlan3 {
+    }
 }
 nat {
     source {
@@ -147,5 +155,8 @@ system {
                 level "debug"
             }
         }
+    }
+    wireless {
+        country-code 00
     }
 }

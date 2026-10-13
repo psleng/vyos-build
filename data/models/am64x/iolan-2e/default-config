@@ -2,12 +2,6 @@ interfaces {
     bridge br1 {
         address 192.168.1.1/24
         address fd08::1/8
-        member {
-            interface wlan0 {
-            }
-            interface wlan1 {
-            }
-         }
     }
     ethernet eth0 {
         address dhcp

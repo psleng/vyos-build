@@ -26,6 +26,7 @@ import uuid
 import glob
 import json
 import base64
+import shlex
 import shutil
 import argparse
 import datetime
@@ -257,6 +258,20 @@ def build():
             "the outer build system (e.g. nexus-build, from the sbkeys repo); "
             "the private key is used on the build host / in the chroot only and "
             "is scrubbed before the image is assembled.",
+            None,
+        ),
+        "minisign-key-dir": (
+            "Path to a directory holding the minisign key material used to sign "
+            "the FINAL ISO so a running VyOS unit can verify it at "
+            "'add system image' time. Scanned (glob) for one '*.key' (the "
+            "PASSWORDLESS minisign secret key) and one '*.pub' (its public "
+            "key). Gating is purely on this option being supplied -- no flavor "
+            "flag, no key => no signing. When supplied, the PUBLIC key REPLACES "
+            "the stock keys baked at /usr/share/vyos/keys/*.minisign.pub (so the "
+            "image trusts only this signer) and the built ISO is minisign-signed "
+            "into <iso>.minisig. Passed in by the outer build system (e.g. "
+            "nexus-build); the secret key is used on the build host only and "
+            "never enters the image.",
             None,
         ),
     }
@@ -615,6 +630,56 @@ def build():
         print(
             "I: staged u-boot db key for grub sbsign (sign_grub = true) from "
             f"{uboot_key_dir}"
+        )
+
+    ## minisign ISO signing (fork feature): gated purely on --minisign-key-dir
+    ## being supplied (no flavor flag) -- "no key => no signing", mirroring how
+    ## the outer build system (nexus-build) already passes in the GPG/u-boot
+    ## key dirs. When a key dir IS given we (1) REPLACE the stock minisign public
+    ## keys baked at /usr/share/vyos/keys/*.minisign.pub with the Perle public
+    ## key, so a unit built from this ISO only accepts Perle-signed images at
+    ## 'add system image' time, and (2) remember the secret key so the FINAL ISO
+    ## can be minisign-signed after `lb build` (see the post-build step). The
+    ## secret key is referenced in place on the build host and never enters the
+    ## image. Fail closed: a supplied-but-unusable key dir aborts the build.
+    minisign_seckey = None
+    minisign_key_dir = build_config.get("minisign_key_dir")
+    if minisign_key_dir:
+        minisign_key_dir = os.path.abspath(minisign_key_dir)
+        if not os.path.isdir(minisign_key_dir):
+            raise ImageBuildError(
+                f"minisign key directory not found: {minisign_key_dir}"
+            )
+        sec_matches = sorted(glob.glob(os.path.join(minisign_key_dir, "*.key")))
+        pub_matches = sorted(glob.glob(os.path.join(minisign_key_dir, "*.pub")))
+        if len(sec_matches) != 1:
+            raise ImageBuildError(
+                "expected exactly one '*.key' (minisign secret key) file in "
+                f"{minisign_key_dir}, found {len(sec_matches)}: {sec_matches}"
+            )
+        if len(pub_matches) != 1:
+            raise ImageBuildError(
+                "expected exactly one '*.pub' (minisign public key) file in "
+                f"{minisign_key_dir}, found {len(pub_matches)}: {pub_matches}"
+            )
+        minisign_seckey = sec_matches[0]
+
+        # Replace the stock trust anchors: drop every *.minisign.pub shipped in
+        # the image and install the Perle public key in its place. The installer
+        # (vyos-1x image_installer) globs /usr/share/vyos/keys/*.minisign.pub,
+        # so the destination name only needs that suffix.
+        keys_dir = os.path.join(
+            lb_config_dir, "includes.chroot/usr/share/vyos/keys"
+        )
+        os.makedirs(keys_dir, exist_ok=True)
+        for stale in glob.glob(os.path.join(keys_dir, "*.minisign.pub")):
+            os.remove(stale)
+        staged_pub = os.path.join(keys_dir, "perle.minisign.pub")
+        shutil.copy(pub_matches[0], staged_pub)
+        os.chmod(staged_pub, 0o644)
+        print(
+            "I: minisign: replaced stock image signing keys with Perle public "
+            f"key from {minisign_key_dir}; ISO will be signed after lb build"
         )
 
     # Switch to the build directory, this is crucial for the live-build work
@@ -1276,6 +1341,23 @@ Pin-Priority: 600
 
         # Add the image to the manifest
         manifest["artifacts"].append(iso_file)
+
+        # Sign the FINAL ISO with minisign when a key was supplied via
+        # --minisign-key-dir (the matching public key was already baked into the
+        # image, replacing the stock trust anchors). Produces <iso>.minisig next
+        # to the ISO, which a running unit verifies at 'add system image' time.
+        # The key is passwordless so minisign reads no passphrase; </dev/null
+        # guards against any tty prompt. Fail closed: a requested signature that
+        # fails to be produced aborts the build (cmd() raises on non-zero exit).
+        if minisign_seckey:
+            sig_file = iso_file + ".minisig"
+            print(f"I: minisign-signing ISO {iso_file} -> {sig_file}")
+            cmd(
+                "minisign -S -s {0} -m {1} < /dev/null".format(
+                    shlex.quote(minisign_seckey), shlex.quote(iso_file)
+                )
+            )
+            manifest["artifacts"].append(sig_file)
 
     # If the flavor has `image_format = "iso"`, then the work is done.
     # If not, build additional flavors from the ISO.

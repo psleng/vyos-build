@@ -5,6 +5,9 @@
 
 image_format = "iso"
 
+# Name the shipped artifact igos-<version>-...-.iso instead of vyos-...
+image_name_prefix = "igos"
+
 pinmap_file = "igos-j7200-evm/pinmap.py"
 
 # Runtime deps (cellular/serial-control need libgpiod at runtime).

@@ -22,6 +22,11 @@ kernel_version = "6.18.38"
 kernel_flavor = "vyos"
 bootloaders = "syslinux,grub-efi"
 
+# Prefix for the final image artifact filename, i.e. the "vyos" in
+# vyos-<version>-<flavor>-<arch>.iso. Fork flavors (e.g. igos-am64x-*) override
+# this to "igos" so the shipped artifact is named igos-<version>-...-.iso.
+image_name_prefix = "vyos"
+
 # dm-verity root-squashfs integrity (fork feature). Default OFF so upstream and
 # non-verity flavors are completely unaffected. Verity flavors (e.g.
 # igos-am64x-*) set dm_verity = true, which arms: root-hash baking into the

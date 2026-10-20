@@ -861,7 +861,10 @@ DOCUMENTATION_URL="{build_config['documentation_url']}"
         iter(os.remove, artifacts)
 
         ## Create the target ISO file path
-        iso_file = f"vyos-{version_data['version']}-{build_config['build_flavor']}-{build_config['architecture']}.iso"
+        # The image name prefix is configurable (defaults to "vyos"); the igOS
+        # hardware flavors override it to "igos" in their flavor TOMLs.
+        image_name_prefix = build_config.get("image_name_prefix", "vyos")
+        iso_file = f"{image_name_prefix}-{version_data['version']}-{build_config['build_flavor']}-{build_config['architecture']}.iso"
 
         ## Create live-build configuration files
 

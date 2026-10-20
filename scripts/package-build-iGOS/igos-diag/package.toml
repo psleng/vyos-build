@@ -1,0 +1,6 @@
+[[packages]]
+name = "igos-diag"
+commit_id = "psl-master"
+scm_url = "git@github.com:Perle-Systems-Limited/igos-diag.git"
+build_cmd = "dpkg-buildpackage -uc -us -tc -b"
+# build_cmd = "dpkg-buildpackage -uc -us -b"

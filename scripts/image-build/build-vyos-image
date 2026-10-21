@@ -31,6 +31,7 @@ import shutil
 import argparse
 import datetime
 import functools
+import posixpath
 import string
 
 
@@ -799,6 +800,11 @@ def build():
             "documentation_url": build_config["documentation_url"],
             "project_news_url": build_config["project_news_url"],
             "support_url": build_config["support_url"],
+            # Default image-update URL (hosted image-version.json listing).
+            # Baked into /usr/share/vyos/version.json so vyos-1x can fall back
+            # to it for `add system image latest` when the runtime node
+            # `system update-check url` is not configured. Empty by default.
+            "update_url": build_config.get("update_url", ""),
         }
 
         # Multi line strings needs to be un-indented to not have leading
@@ -1361,6 +1367,31 @@ Pin-Priority: 600
                 )
             )
             manifest["artifacts"].append(sig_file)
+
+        # Generate the hosted "image-version.json" listing next to the ISO.
+        # This is the file vyos-1x's `add system image latest` fetches (via
+        # `vyos.version.get_remote_version`) from the baked `update_url`. We
+        # derive the hosted ISO URL from the directory of `update_url`, so the
+        # ISO (and its .minisig) are expected to be published alongside this
+        # JSON file. Skipped when no `update_url` is configured for the flavor.
+        update_url = build_config.get("update_url", "")
+        if update_url:
+            iso_url = f"{posixpath.dirname(update_url)}/{os.path.basename(iso_file)}"
+            image_version_entry = {
+                "arch": version_data["architecture"],
+                "flavors": [version_data["flavor"]],
+                "image": os.path.basename(iso_file),
+                "latest": True,
+                "lts": version_data["build_type"] == "release",
+                "release_date": now.strftime("%Y-%m-%d"),
+                "release_train": version_data["release_train"],
+                "url": iso_url,
+                "version": version_data["version"],
+            }
+            with open("image-version.json", "w") as f:
+                json.dump([image_version_entry], f, indent=2)
+            print(f"I: wrote image-version.json listing (image url: {iso_url})")
+            manifest["artifacts"].append("image-version.json")
 
     # If the flavor has `image_format = "iso"`, then the work is done.
     # If not, build additional flavors from the ISO.

@@ -71,3 +71,12 @@ support_url = "https://support.vyos.io"
 bugtracker_url = "https://vyos.dev"
 documentation_url = "https://docs.vyos.io/en/latest"
 project_news_url = "https://blog.vyos.io"
+
+# Default image-update URL baked into the image at build time. It must point
+# directly at the hosted image-version.json listing (the format defined in
+# vyos-1x, consumed by `vyos.version.get_remote_version`). When set, vyos-1x
+# uses it as the fallback for `add system image latest` whenever the runtime
+# node `system update-check url` is not configured. Empty = no baked default
+# (upstream behavior: the user must configure the node or pass an explicit URL).
+# Fork hardware flavors override this in their build-flavor TOML.
+update_url = ""

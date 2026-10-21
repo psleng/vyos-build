@@ -7,7 +7,7 @@
 image_format = "iso"
 
 # Name the shipped artifact igos-<version>-...-.iso instead of vyos-...
-image_name_prefix = "igos"
+image_name_prefix = "vyos"
 
 # Enable dm-verity integrity protection of the root squashfs (see
 # igos-am64x-all.toml / data/defaults.toml). Arms root-hash baking into the

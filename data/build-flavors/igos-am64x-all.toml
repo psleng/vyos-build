@@ -32,7 +32,7 @@
 image_format = "iso"
 
 # Name the shipped artifact igos-<version>-...-.iso instead of vyos-...
-image_name_prefix = "igos"
+image_name_prefix = "vyos"
 
 # Default image-update URL baked into /usr/share/vyos/version.json. Points
 # directly at the hosted image-version.json listing for this flavor; vyos-1x

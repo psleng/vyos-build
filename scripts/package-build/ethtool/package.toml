@@ -1,6 +1,9 @@
 [[packages]]
 name = "ethtool"
-commit_id = "debian/1%6.10-1"
+# PSL: 6.14.2 (from 6.10) - 6.10..6.13 print the JSON "auto-negotiation" value
+# inverted (fixed upstream in 9b2f6b94132d), and 6.14.2 adds NULL-deref fixes
+# (incl. --show-features) plus the 6.14.1 text-header regression fix.
+commit_id = "debian/1%6.14.2-1"
 scm_url = "https://salsa.debian.org/kernel-team/ethtool"
 # PSL: ethtool fails testsuite because netlink support does not work inside
 # a docker container. "DEB_BUILD_OPTIONS=nocheck" suppresses it.

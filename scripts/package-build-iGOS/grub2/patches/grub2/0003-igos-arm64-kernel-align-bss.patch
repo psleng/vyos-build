@@ -1,0 +1,65 @@
+Description: igOS/Perle: place the arm64 kernel aligned with room for BSS
+ Under UEFI Secure Boot the arm64 linux loader hands control to the kernel
+ directly (arm64-handover-to-kernel-if-sb-enabled.patch) instead of using
+ LoadImage()/StartImage(), pointing the EFI Loaded Image base at GRUB's own
+ kernel buffer. That buffer was only 4 KiB-aligned and sized to the file, so
+ the Linux arm64 EFI stub logged "FIRMWARE BUG: kernel image not aligned on
+ 64k boundary" and "FIRMWARE BUG: Image BSS overlaps adjacent EFI memory
+ region" and relocated itself. Allocate the buffer on a 2 MiB boundary and
+ size it to the kernel's in-memory image (arm64 header res0 = image size,
+ including BSS), zeroing the BSS tail, so the handover placement is correct.
+ Non-arm64 builds keep the original allocation.
+Author: johnlfeeney <johnlfeeney@gmail.com>
+Forwarded: not-needed
+Last-Update: 2026-10-06
+
+--- a/grub-core/loader/arm64/linux.c
++++ b/grub-core/loader/arm64/linux.c
+@@ -40,4 +40,8 @@
+ static int loaded;
+ 
++/* igOS/Perle: Linux arm64 wants its image on a 2 MiB boundary
++   (>= SEGMENT_ALIGN/MIN_KIMG_ALIGN) with room for BSS. */
++#define GRUB_ARM64_KERNEL_ALIGN 0x200000
++
+ static void *kernel_addr;
+ static grub_uint64_t kernel_size;
+@@ -314,5 +318,29 @@
+ 
+   grub_dprintf ("linux", "kernel file size: %lld\n", (long long) kernel_size);
++#ifdef __aarch64__
++  /*
++   * igOS/Perle: under UEFI Secure Boot the arm64 loader hands the kernel over
++   * directly (arm64-handover-to-kernel-if-sb-enabled.patch) using this buffer
++   * as the EFI Loaded Image base instead of LoadImage()/StartImage(). Place it
++   * on a 2 MiB boundary, sized to the kernel's in-memory image (arm64 header
++   * res0 = image size, incl. BSS), so the EFI stub does not report "kernel
++   * image not aligned on 64k boundary" / "Image BSS overlaps adjacent EFI
++   * memory region". Alignment slack is intentionally not freed so the image
++   * stays within one EFI memory descriptor (the stub's check_image_region()
++   * requires that); Linux reclaims it after boot.
++   */
++  {
++    grub_uint64_t mem_size = (lh.res0 > kernel_size) ? lh.res0 : kernel_size;
++
++    kernel_addr = grub_efi_allocate_any_pages (
++		    GRUB_EFI_BYTES_TO_PAGES (mem_size + GRUB_ARM64_KERNEL_ALIGN));
++    if (kernel_addr)
++      kernel_addr = (void *)
++	(((grub_addr_t) kernel_addr + GRUB_ARM64_KERNEL_ALIGN - 1)
++	 & ~((grub_addr_t) GRUB_ARM64_KERNEL_ALIGN - 1));
++  }
++#else
+   kernel_addr = grub_efi_allocate_any_pages (GRUB_EFI_BYTES_TO_PAGES (kernel_size));
++#endif
+   grub_dprintf ("linux", "kernel numpages: %lld\n",
+ 		(long long) GRUB_EFI_BYTES_TO_PAGES (kernel_size));
+@@ -332,4 +360,8 @@
+     }
+ 
++#ifdef __aarch64__
++  if (lh.res0 > kernel_size)
++    grub_memset ((char *) kernel_addr + kernel_size, 0, lh.res0 - kernel_size);
++#endif
+   grub_dprintf ("linux", "kernel @ %p\n", kernel_addr);
+ 

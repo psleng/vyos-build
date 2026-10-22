@@ -24,10 +24,17 @@
 #      the `plainroot root=/dev/mapper/verity-root` cmdline hands it to live-boot.
 #
 # GATING
-#   Runs only for verity flavors, detected (like 27-igos-uboot.binary keys off
-#   the u-boot payload in the rootfs) by veritysetup being present in the sibling
-#   chroot -- i.e. cryptsetup-bin was pulled in by `dm_verity = true`. On any
-#   other image this is a no-op.
+#   Runs only for verity flavors, decided by the SAME `dm_verity` flag that
+#   drives the kernel cmdline (`plainroot root=/dev/mapper/verity-root`,
+#   rendered by build-vyos-image). build-vyos-image writes that flag into the
+#   per-image flavor.json staged at chroot/usr/share/vyos/flavor.json, which
+#   this binary hook reads from the sibling chroot. Gating both the sealing
+#   (here) and the cmdline off one source makes them impossible to drift:
+#   previously this hook keyed off veritysetup/cryptsetup-bin being present in
+#   the chroot, so a flavor that shipped cryptsetup-bin but set dm_verity=false
+#   got a SEALED initrd (params baked) with a non-verity root=UUID=... cmdline
+#   -- the boot-time hook then self-gated ON and panicked fail-closed on every
+#   boot. On any non-verity image this hook is a no-op.
 #
 # REQUIREMENT
 #   veritysetup must be available on the BUILD HOST (the aarch64 build container
@@ -42,20 +49,30 @@ BS=4096
 VERITY_NAME="verity-root"
 SQUASHFS_NAME="filesystem.squashfs"
 
-# --- gate: is this a verity flavor? (sibling chroot carries veritysetup) -----
-CHROOT=""
+# --- gate: is this a verity flavor? (dm_verity flag in the per-image flavor.json) ---
+# The flag is authored once in the TOML and surfaces here via flavor.json, the
+# exact same value build-vyos-image uses to add `plainroot
+# root=/dev/mapper/verity-root` to the cmdline -- so sealing and cmdline cannot
+# disagree. If flavor.json is absent (non-igos / upstream path) we must NOT
+# seal: default to a no-op, never to sealing an image whose cmdline we cannot
+# confirm routes through verity.
+FLAVOR_JSON=""
 for c in ../chroot chroot ../../chroot; do
-    if [ -x "${c}/usr/sbin/veritysetup" ] || [ -x "${c}/sbin/veritysetup" ]; then
-        CHROOT="${c}"
+    if [ -r "${c}/usr/share/vyos/flavor.json" ]; then
+        FLAVOR_JSON="${c}/usr/share/vyos/flavor.json"
         break
     fi
 done
-if [ -z "${CHROOT}" ]; then
-    echo "I: dm-verity(iso): veritysetup not in chroot -- not a verity flavor, nothing to do"
+if [ -z "${FLAVOR_JSON}" ]; then
+    echo "I: dm-verity(iso): flavor.json not found in chroot -- cannot confirm dm_verity, nothing to do"
+    exit 0
+fi
+if ! grep -Eq '"dm_verity"[[:space:]]*:[[:space:]]*true' "${FLAVOR_JSON}"; then
+    echo "I: dm-verity(iso): dm_verity not enabled for this flavor -- nothing to do"
     exit 0
 fi
 
-echo "I: dm-verity(iso): verity flavor detected, sealing ${SQUASHFS}"
+echo "I: dm-verity(iso): dm_verity = true, sealing ${SQUASHFS}"
 
 # --- preconditions -----------------------------------------------------------
 if ! command -v veritysetup >/dev/null 2>&1; then

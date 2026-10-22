@@ -20,6 +20,19 @@ case "$1" in
     prereqs) prereqs; exit 0 ;;
 esac
 
+# Pull in the initramfs-tools helpers so the REAL panic() is available. When
+# init-premount scripts are run from /scripts/init-premount/ORDER they are
+# executed as child PROCESSES and do NOT inherit the panic() shell function
+# that /init defines -- without this source we silently fall back to the soft
+# stub below. The real panic() HALTS the boot (emergency shell / reboot); the
+# stub historically only warned and returned, so a sealed verity image whose
+# cmdline was edited to root=UUID=... printed the warning and then booted the
+# UNVERIFIED squashfs anyway (fail-OPEN downgrade). Source it to fail closed.
+if [ -r /scripts/functions ]; then
+    # shellcheck disable=SC1091
+    . /scripts/functions
+fi
+
 PARAMS=/etc/verity/params
 
 # --- self-gate: only verity images carry the baked params --------------------
@@ -28,10 +41,15 @@ PARAMS=/etc/verity/params
 # shellcheck disable=SC1090
 . "${PARAMS}"
 
-# panic() is provided by /scripts/functions (sourced by /init); define a
-# fallback so this hook still fails closed if it is ever run standalone.
+# panic() is normally provided by /scripts/functions (sourced above). Define a
+# fail-CLOSED fallback for the standalone / missing-functions case: it must
+# NEVER return, or boot would proceed to mount the unverified root. Block
+# forever instead of `exit 1`.
 if ! command -v panic >/dev/null 2>&1; then
-    panic() { echo "dm-verity PANIC: $*" >&2; sleep 5; exit 1; }
+    panic() {
+        echo "dm-verity PANIC: $*" >&2
+        while :; do sleep 60; done
+    }
 fi
 
 fail() { panic "dm-verity: $* -- refusing to boot (fail-closed)"; }

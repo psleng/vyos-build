@@ -77,6 +77,10 @@ systemctl enable vyos-configd.service
 systemctl enable vyos-grub-update.service
 systemctl enable vyos-commitd.service
 systemctl enable flask.service
+# Image-update notifications run out of the box: the checker falls back to the
+# default update URL baked into /usr/share/vyos/version.json (from the build
+# flavor's `update_url`). The `system update-check` CLI node remains an override.
+systemctl enable vyos-system-update.service
 
 echo I: Masking services
 systemctl mask systemd-journald-audit.socket

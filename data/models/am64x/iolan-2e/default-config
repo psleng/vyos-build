@@ -18,12 +18,69 @@ interfaces {
     loopback lo {
     }
     wireless wlan0 {
+        capabilities {
+            ht {
+                channel-set-width ht20
+                channel-set-width ht40+
+                channel-set-width ht40-
+                ldpc
+            }
+            vht {
+                channel-set-width 0
+                ldpc
+            }
+        }
+        channel 0
+        max-stations 16
+        mode ac
+        security {
+            wpa {
+                cipher GCMP
+                cipher GCMP-256
+                cipher CCMP-256
+                cipher CCMP
+                cipher TKIP
+                mode wpa+wpa2
+           }
+        }
+        stationary-ap
+        type access-point
     }
     wireless wlan1 {
+        capabilities {
+            ht {
+                channel-set-width ht20
+                channel-set-width ht40+
+                channel-set-width ht40-
+                ldpc
+            }
+            vht {
+                channel-set-width 0
+                ldpc
+            }
+        }
+        channel 0
+        max-stations 16
+        mode n
+        physical-device phy1
+        security {
+            wpa {
+                cipher GCMP
+                cipher GCMP-256
+                cipher CCMP-256
+                cipher CCMP
+                cipher TKIP
+                mode wpa+wpa2
+            }
+        }
+        stationary-ap
+        type access-point
     }
     wireless wlan2 {
+        disable
     }
     wireless wlan3 {
+        disable
     }
 }
 nat {

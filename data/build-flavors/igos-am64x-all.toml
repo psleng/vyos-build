@@ -31,6 +31,16 @@
 
 image_format = "iso"
 
+# Name the shipped artifact igos-<version>-...-.iso instead of vyos-...
+image_name_prefix = "vyos"
+
+# Default image-update URL baked into /usr/share/vyos/version.json. Points
+# directly at the hosted image-version.json listing for this flavor; vyos-1x
+# falls back to it for `add system image latest` when the runtime node
+# `system update-check url` is unset. The ISO referenced inside that listing is
+# expected to be hosted in the same directory as this JSON file.
+update_url = "http://172.16.48.1/igos/bookworm-am64x-igos/image-version.json"
+
 # dm-verity integrity protection of the root squashfs for this hardware image.
 # When true, overrides the defaults.toml default (false) and arms root-hash
 # baking into the initramfs + fail-closed verify at boot; see data/defaults.toml

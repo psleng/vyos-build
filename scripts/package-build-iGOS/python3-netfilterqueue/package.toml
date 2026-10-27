@@ -2,4 +2,8 @@
 name = "python-netfilterqueue"
 commit_id = "debian/1.1.0-5"
 scm_url = "https://salsa.debian.org/python-team/packages/python-netfilterqueue.git"
-build_cmd = "dpkg-buildpackage -uc -us -tc -b"
+build_cmd = """
+# Only add if no Priority: field exists anywhere in the control file
+grep -qi '^Priority:' debian/control || sed -i '/^Source:/a Priority: optional' debian/control
+dpkg-buildpackage -uc -us -tc -b
+"""

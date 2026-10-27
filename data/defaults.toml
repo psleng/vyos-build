@@ -80,3 +80,8 @@ project_news_url = "https://blog.vyos.io"
 # (upstream behavior: the user must configure the node or pass an explicit URL).
 # Fork hardware flavors override this in their build-flavor TOML.
 update_url = ""
+
+# Optional cellular firmware compatibility map URL, baked into
+# /usr/share/vyos/version.json. The WWAN updater fetches it at runtime and uses
+# its cache if the server is unavailable.
+wwan_firmware_map_url = ""

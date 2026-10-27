@@ -805,6 +805,8 @@ def build():
             # to it for `add system image latest` when the runtime node
             # `system update-check url` is not configured. Empty by default.
             "update_url": build_config.get("update_url", ""),
+            # Default cellular firmware compatibility map URL fetched at runtime.
+            "wwan_firmware_map_url": build_config.get("wwan_firmware_map_url", ""),
         }
 
         # Multi line strings needs to be un-indented to not have leading

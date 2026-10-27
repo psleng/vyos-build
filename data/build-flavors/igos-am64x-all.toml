@@ -41,6 +41,9 @@ image_name_prefix = "vyos"
 # expected to be hosted in the same directory as this JSON file.
 update_url = "http://172.16.48.1/igos/bookworm-am64x-igos/image-version.json"
 
+# Hosted modem compatibility map fetched at runtime by the WWAN firmware updater.
+wwan_firmware_map_url = "http://172.16.48.1/cellular-firmware/firmware-map.json"
+
 # dm-verity integrity protection of the root squashfs for this hardware image.
 # When true, overrides the defaults.toml default (false) and arms root-hash
 # baking into the initramfs + fail-closed verify at boot; see data/defaults.toml

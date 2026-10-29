@@ -89,6 +89,13 @@ packages = [
   # local packages.chroot debs (same rationale as nxp-wifi).
   "tfl",
   "uxfp",
+  # Cellular modem GNSS support: gpsd owns the modem's raw NMEA serial port and
+  # serves position on TCP 2947; python3-gps is the client library used by
+  # op-mode (show interfaces wwan <wwanN> gps). Stock Debian packages (unlike
+  # the local tfl/uxfp/nxp-wifi debs), listed here so they are pulled onto this
+  # cellular hardware image rather than relying on the vyos-1x Recommends.
+  "gpsd",
+  "python3-gps",
 ]
 
 # Per-model definition tree (relative to data/models/). Ships data/models/am64x/

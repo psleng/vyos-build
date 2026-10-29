@@ -1,0 +1,73 @@
+diff --git a/debian/control b/debian/control
+index 5d0a1d44b0..936862158c 100644
+--- a/debian/control
++++ b/debian/control
+@@ -62,9 +62,7 @@ Description: Secure Sockets Layer toolkit - cryptographic utility
+  laboratory.
+  For details see OSSL_PROVIDER-fips and fips_module man page.
+ 
+-Package: libssl3t64
+-Provides: ${t64:Provides}
+-Replaces: libssl3
++Package: libssl3
+ Section: libs
+ Architecture: any
+ Multi-Arch: same
+@@ -108,7 +106,7 @@ Section: libdevel
+ Architecture: any
+ Multi-Arch: same
+ Suggests: libssl-doc
+-Depends: libssl3t64 (= ${binary:Version}), ${misc:Depends}
++Depends: libssl3 (= ${binary:Version}), ${misc:Depends}
+ Description: Secure Sockets Layer toolkit - development files
+  This package is part of the OpenSSL project's implementation of the SSL
+  and TLS cryptographic protocols for secure communication over the
+diff --git a/debian/libssl3t64.NEWS b/debian/libssl3.NEWS
+similarity index 100%
+rename from debian/libssl3t64.NEWS
+rename to debian/libssl3.NEWS
+diff --git a/debian/libssl3t64.install b/debian/libssl3.install
+similarity index 100%
+rename from debian/libssl3t64.install
+rename to debian/libssl3.install
+diff --git a/debian/libssl3t64.symbols b/debian/libssl3.symbols
+similarity index 85%
+rename from debian/libssl3t64.symbols
+rename to debian/libssl3.symbols
+index db17963c2a..f45a1fd621 100644
+--- a/debian/libssl3t64.symbols
++++ b/debian/libssl3.symbols
+@@ -1,4 +1,4 @@
+-libcrypto.so.3 libssl3t64 #MINVER#
++libcrypto.so.3 libssl3 #MINVER#
+ * Build-Depends-Package: libssl-dev
+  *@OPENSSL_3.0.0 3.0.0
+  *@OPENSSL_3.0.3 3.0.3
+@@ -9,7 +9,7 @@ libcrypto.so.3 libssl3t64 #MINVER#
+  *@OPENSSL_3.3.0 3.3.0
+  *@OPENSSL_3.4.0 3.4.0
+  *@OPENSSL_3.5.0 3.5.0
+-libssl.so.3 libssl3t64 #MINVER#
++libssl.so.3 libssl3 #MINVER#
+ * Build-Depends-Package: libssl-dev
+  *@OPENSSL_3.0.0 3.0.0
+  *@OPENSSL_3.2.0 3.2.0
+diff --git a/debian/libssl3t64.lintian-overrides b/debian/libssl3t64.lintian-overrides
+deleted file mode 100644
+index 407bf11d78..0000000000
+--- a/debian/libssl3t64.lintian-overrides
++++ /dev/null
+@@ -1 +0,0 @@
+-libssl3t64: package-name-doesnt-match-sonames libssl3
+diff --git a/debian/rules b/debian/rules
+index 5a8097099e..02a418a9bd 100755
+--- a/debian/rules
++++ b/debian/rules
+@@ -153,5 +153,5 @@ override_dh_makeshlibs:
+ 	dh_makeshlibs -a -V --add-udeb="libcrypto3-udeb" -Xengines -Xossl-modules -- -c4
+ 
+ override_dh_shlibdeps:
+-	sed -i '/^udeb: libssl/s/libcrypto3-udeb/libssl3-udeb/' debian/libssl3t64/DEBIAN/shlibs
+-	dh_shlibdeps -a -L libssl3t64
++	sed -i '/^udeb: libssl/s/libcrypto3-udeb/libssl3-udeb/' debian/libssl3/DEBIAN/shlibs
++	dh_shlibdeps -a -L libssl3

@@ -99,6 +99,62 @@ def _process_vyos_signedby(build_config: dict) -> str:
     return vyos_signedby + " "
 
 
+def stage_firmware_trust(config, includes):
+    """Validate firmware signing settings and stage only public root CA trust."""
+    from pathlib import Path
+
+    from cryptography import x509
+    from cryptography.hazmat.primitives import serialization
+
+    allow_unsigned = config.get('wwan_firmware_allow_unsigned', False)
+    if type(allow_unsigned) is not bool:
+        raise ValueError('wwan_firmware_allow_unsigned must be boolean')
+    if allow_unsigned and config.get('build_type') != 'development':
+        raise ValueError('Unsigned firmware overrides are forbidden in release images')
+    source = config.get('firmware_signing_key_dir')
+    target = Path(includes)/'usr/share/vyos/igos-firmware-keys'
+    if source and Path(source).resolve() == target.resolve():
+        raise ValueError('Firmware CA source cannot be the image staging directory')
+    # This is the transient live-build staging tree, never the source key dir.
+    if target.exists():
+        shutil.rmtree(target)
+    if not source:
+        if config.get('wwan_firmware_map_url'):
+            raise ValueError('Configured firmware catalog requires --firmware-signing-key-dir')
+        return
+    source = Path(source)
+    roots = list(sorted(source.glob('*.pem')))
+    if not source.is_dir() or not roots:
+        raise ValueError('Firmware root CA directory must contain public .pem certificates')
+    validated, subjects = [], set()
+    for path in roots:
+        content = path.read_bytes()
+        if b'PRIVATE KEY' in content:
+            raise ValueError('Firmware root CA input must not contain private keys')
+        try:
+            cert = x509.load_pem_x509_certificate(content)
+            constraints = cert.extensions.get_extension_for_class(x509.BasicConstraints).value
+            # Allow a flat public-material layout; never install leaf trust.
+            if not constraints.ca:
+                continue
+            usage = cert.extensions.get_extension_for_class(x509.KeyUsage).value
+            if cert.subject in subjects:
+                raise ValueError('Firmware roots must have distinct subjects')
+            subjects.add(cert.subject)
+            if cert.issuer != cert.subject or not constraints.ca or not usage.key_cert_sign or not usage.crl_sign:
+                raise ValueError(f'Firmware trust input is not a root CA: {path.name}')
+        except x509.ExtensionNotFound as error:
+            raise ValueError(f'Firmware root lacks required CA extensions: {path.name}') from error
+        # Re-serialize only the public cert; extra PEM material never enters ISO.
+        validated.append((path.name, cert.public_bytes(serialization.Encoding.PEM)))
+    if not validated:
+        raise ValueError('Firmware root CA directory contains no root CA certificates')
+    target.mkdir(parents=True)
+    for name, content in validated:
+        (target/name).write_bytes(content)
+        (target/name).chmod(0o644)
+
+
 def build():
     ## Check if the script is running with root permissions
     ## Since live-build requires privileged calls such as chroot(),
@@ -259,6 +315,23 @@ def build():
             "the outer build system (e.g. nexus-build, from the sbkeys repo); "
             "the private key is used on the build host / in the chroot only and "
             "is scrubbed before the image is assembled.",
+            None,
+        ),
+        "firmware-signing-key-dir": (
+            "Path to a directory holding the public X.509 certificates and "
+            "revocation lists used for cellular firmware signing. Scanned "
+            "(glob) for '*.pem' certificates; only root CAs with certificate- "
+            "and CRL-signing usage are installed into "
+            "/usr/share/vyos/igos-firmware-keys/ as firmware trust anchors. Public "
+            "leaf certificates may share the directory but are not installed; "
+            "the router obtains the signer certificate from each CMS .sig "
+            "and the current revocation list from its .crl sidecar. Passed in "
+            "by the outer build system (e.g. nexus-build, via "
+            "FIRMWARE_SIGNING_KEY_DIR). Required when wwan_firmware_map_url "
+            "is configured; missing or invalid root material fails the build. "
+            "This option stages public trust only: firmware releases are signed "
+            "separately using the leaf private key, and no private keys, "
+            "passphrases, or CRL files enter the image through this option.",
             None,
         ),
         "minisign-key-dir": (
@@ -683,6 +756,12 @@ def build():
             f"key from {minisign_key_dir}; ISO will be signed after lb build"
         )
 
+    # Firmware signing has a separate trust domain from ISO, boot, and APT keys.
+    try:
+        stage_firmware_trust(build_config, os.path.join(lb_config_dir, "includes.chroot"))
+    except (ValueError, OSError) as error:
+        raise ImageBuildError(f"Firmware trust configuration: {error}") from error
+
     # Switch to the build directory, this is crucial for the live-build work
     # because the effective build config files etc. are there.
     #
@@ -805,6 +884,9 @@ def build():
             # to it for `add system image latest` when the runtime node
             # `system update-check url` is not configured. Empty by default.
             "update_url": build_config.get("update_url", ""),
+            # Default cellular firmware compatibility map URL fetched at runtime.
+            "wwan_firmware_map_url": build_config.get("wwan_firmware_map_url", ""),
+            "wwan_firmware_allow_unsigned": build_config.get("wwan_firmware_allow_unsigned", False),
         }
 
         # Multi line strings needs to be un-indented to not have leading

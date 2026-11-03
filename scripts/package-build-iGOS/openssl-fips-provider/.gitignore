@@ -1,0 +1,14 @@
+# OpenSSL source checkout (cloned at build time by produce-fips-provider.sh)
+/.openssl-src/
+
+# Build outputs: the FIPS provider is BUILT from pinned source per-arch at build
+# time (or hand-staged for a vendor binary). Not committed.
+/fips/*/fips.so
+/fips/SHA256SUMS
+
+# Debian build cruft
+/debian/.debhelper/
+/debian/igos-openssl-fips-provider/
+/debian/files
+/debian/debhelper-build-stamp
+/debian/*.substvars

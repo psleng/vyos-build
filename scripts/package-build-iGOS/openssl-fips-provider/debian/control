@@ -1,0 +1,25 @@
+Source: igos-openssl-fips-provider
+Section: libs
+Priority: optional
+Maintainer: Perle Systems <support@perle.com>
+Build-Depends: debhelper-compat (= 13)
+Standards-Version: 4.6.2
+Rules-Requires-Root: no
+
+Package: igos-openssl-fips-provider
+Architecture: any
+Multi-Arch: same
+Depends: ${misc:Depends}, libssl3 (>= 3.0)
+Description: OpenSSL FIPS 140-3 validated provider (CMVP #4985)
+ Ships the pinned, pre-built OpenSSL 3.1.2 FIPS provider (fips.so) that holds
+ NIST CMVP certificate #4985, installed into the OpenSSL provider module
+ directory (ossl-modules/).
+ .
+ The provider is version-decoupled from the base library: this validated 3.1.2
+ module loads against the system's OpenSSL 3.5 libcrypto. It is inert until
+ activated — igOS switches OpenSSL to this provider on
+ "set system option fips" (which runs "openssl fipsinstall" to self-test the
+ module and generate /run/ssl/fipsmodule.cnf, then points openssl.cnf at it).
+ .
+ This package only installs the frozen, validated binary; it does not build or
+ alter it. See docs/igos-fips-140-3-design.md (§7.5, §8.1).

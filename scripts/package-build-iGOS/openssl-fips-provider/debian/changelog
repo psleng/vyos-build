@@ -1,0 +1,6 @@
+igos-openssl-fips-provider (3.1.2-1igos1) bookworm; urgency=medium
+
+  * Package the pinned, validated OpenSSL 3.1.2 FIPS provider (CMVP #4985)
+    into ossl-modules/ for use with the igOS OpenSSL 3.5 base.
+
+ -- Perle Systems <support@perle.com>  Sun, 02 Nov 2026 17:59:00 +0000

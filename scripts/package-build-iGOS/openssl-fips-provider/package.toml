@@ -1,0 +1,26 @@
+# igOS OpenSSL FIPS provider — builds the OpenSSL 3.1.2 FIPS provider (fips.so,
+# CMVP cert #4985 lineage) from PINNED validated source and packages it as a
+# standalone Debian binary package, installed into the shared ossl-modules/
+# directory so the system's OpenSSL 3.5 libcrypto loads it when FIPS mode is
+# enabled (`set system option fips`). See docs/igos-fips-140-3-design.md §7.5.
+#
+# LOCAL, self-contained package (no upstream SCM for the Debian source tree):
+#   build_mode = "local_app"  -> build in place, no git clone/checkout of THIS
+#                                package's debian/ tree.
+# produce-fips-provider.sh then git-clones the PINNED OpenSSL 3.1.2 tag, builds
+# `enable-fips`, and stages providers/fips.so into fips/<arch>/ (+ SHA256SUMS)
+# for the current build arch (native per-arch, like the other packages). If a
+# validated fips.so is already staged by hand, the source build is skipped.
+[[packages]]
+name = "openssl-fips-provider"
+build_mode = "local_app"
+# debhelper is already present; the provider build needs a C toolchain + perl.
+mk_build_deps_cmd = "echo 'I: skipping mk-build-deps (built via build_cmd)'"
+build_cmd = "./produce-fips-provider.sh && dpkg-buildpackage -us -uc -tc -b"
+
+[dependencies]
+packages = [
+    "build-essential",
+    "perl",
+    "git",
+]

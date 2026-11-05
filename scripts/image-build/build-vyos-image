@@ -112,12 +112,13 @@ def stage_firmware_trust(config, includes):
     if allow_unsigned and config.get('build_type') != 'development':
         raise ValueError('Unsigned firmware overrides are forbidden in release images')
     source = config.get('firmware_signing_key_dir')
-    target = Path(includes)/'usr/share/vyos/igos-firmware-keys'
+    target = Path(includes)/'usr/share/vyos/keys'
     if source and Path(source).resolve() == target.resolve():
         raise ValueError('Firmware CA source cannot be the image staging directory')
-    # This is the transient live-build staging tree, never the source key dir.
+    # Remove firmware anchors only; preserve image and other signing keys.
     if target.exists():
-        shutil.rmtree(target)
+        for stale in target.glob("igos-firmware-root-*.pem"):
+            stale.unlink()
     if not source:
         if config.get('wwan_firmware_map_url'):
             raise ValueError('Configured firmware catalog requires --firmware-signing-key-dir')
@@ -146,10 +147,11 @@ def stage_firmware_trust(config, includes):
         except x509.ExtensionNotFound as error:
             raise ValueError(f'Firmware root lacks required CA extensions: {path.name}') from error
         # Re-serialize only the public cert; extra PEM material never enters ISO.
-        validated.append((path.name, cert.public_bytes(serialization.Encoding.PEM)))
+        name = path.name if path.name.startswith('igos-firmware-root-') else f'igos-firmware-root-{path.name}'
+        validated.append((name, cert.public_bytes(serialization.Encoding.PEM)))
     if not validated:
         raise ValueError('Firmware root CA directory contains no root CA certificates')
-    target.mkdir(parents=True)
+    target.mkdir(parents=True, exist_ok=True)
     for name, content in validated:
         (target/name).write_bytes(content)
         (target/name).chmod(0o644)
@@ -322,7 +324,7 @@ def build():
             "revocation lists used for cellular firmware signing. Scanned "
             "(glob) for '*.pem' certificates; only root CAs with certificate- "
             "and CRL-signing usage are installed into "
-            "/usr/share/vyos/igos-firmware-keys/ as firmware trust anchors. Public "
+            "/usr/share/vyos/keys/ as firmware trust anchors. Public "
             "leaf certificates may share the directory but are not installed; "
             "the router obtains the signer certificate from each CMS .sig "
             "and the current revocation list from its .crl sidecar. Passed in "

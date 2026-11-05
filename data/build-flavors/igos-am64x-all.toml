@@ -83,6 +83,12 @@ packages = [
   # local packages.chroot debs that are referenced (same as vyos-1x). nxp.sh
   # no-ops on models whose model.conf has `wifi = false`.
   "nxp-wifi",
+  # Telit FN920C04 cellular modem firmware-loader + control tools, locally built
+  # from scripts/package-build-iGOS/{tfl-telit,uxfp-telit} into the tfl/uxfp
+  # .debs. MUST be listed to be installed -- live-build only pulls referenced
+  # local packages.chroot debs (same rationale as nxp-wifi).
+  "tfl",
+  "uxfp",
 ]
 
 # Per-model definition tree (relative to data/models/). Ships data/models/am64x/

@@ -1,0 +1,11 @@
+[[packages]]
+name = "openssl"
+commit_id = "c8211578b8d7c821ebc2a5472ff9f8dc426e218f"
+scm_url = "https://salsa.debian.org/debian/openssl.git"
+mk_build_deps_cmd = "echo 'Skipping build dependency for trixie dpkg-dev'"
+build_cmd = "DEB_BUILD_OPTIONS=nocheck dpkg-buildpackage -uc -us -tc -b -d"
+
+[dependencies]
+packages = [
+    "libzstd-dev"
+]

@@ -71,6 +71,24 @@ mkdir -p $DST
 cp -f $(find mwifiex -name '*.ko') $DST
 cp -f nxp.sh $DST
 
+# Sign the NXP modules with the kernel's build-time key (the same ephemeral key
+# that build-kernel.sh uses for every other out-of-tree driver) so they verify
+# against the kernel's trusted keyring. Required once CONFIG_MODULE_SIG_FORCE is
+# enabled -- an unsigned module will simply not load.
+echo "=== Signing NXP kernel modules"
+SIGN_MODULES="$ROOTDIR/vyos-build/scripts/package-build/linux-kernel/sign-modules.sh"
+"$SIGN_MODULES" "$DST"
+# Fail the build loudly if signing did not happen (e.g. the kernel package was
+# not built first, so /tmp/ephemeral.* + kernel-vars are absent) -- shipping an
+# unsigned module would break boot under MODULE_SIG_FORCE.
+for ko in "$DST"/*.ko; do
+    if ! tail -c 80 "$ko" | grep -qa "Module signature appended"; then
+        echo "=== fatal: $ko is unsigned -- the kernel package (build-kernel.sh)" >&2
+        echo "=== must be built before the NXP drivers so the signing key exists." >&2
+        exit 1
+    fi
+done
+
 # Copy the systemd service file to start/stop wifi cleanly
 echo "=== Installing NXP system service"
 DST=fs/usr/lib/systemd/system

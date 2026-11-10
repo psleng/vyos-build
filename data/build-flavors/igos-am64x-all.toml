@@ -102,6 +102,15 @@ packages = [
   # be installed -- live-build only pulls referenced local debs. Inert until
   # activated by `set system option fips` (vyos-1x system_option / T8529).
   "igos-openssl-fips-provider",
+  # iGOS web GUI (flask-react-web) and its CLI first-boot onboarding wizard
+  # (igos-cli-onboarding). Listed here the same way uxfp/gpsd are, so they are
+  # pulled onto the image explicitly rather than relying on a vyos-1x dependency.
+  # flask-react-web is the React/Flask management UI; igos-cli-onboarding ships
+  # the /etc/profile.d login check + /config/scripts setup wizard (server-
+  # independent first-boot provisioning). igos-cli-onboarding Depends on
+  # vyos-custom-queries, which flask-react-web already pulls in.
+  "flask-react-web",
+  "igos-cli-onboarding",
 ]
 
 # Per-model definition tree (relative to data/models/). Ships data/models/am64x/

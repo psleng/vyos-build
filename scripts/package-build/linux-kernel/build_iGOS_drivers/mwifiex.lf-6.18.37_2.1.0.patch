@@ -1,0 +1,44 @@
+diff --git a/mlan/mlan_cmdevt.c b/mlan/mlan_cmdevt.c
+index c8e98d8..873cdc6 100644
+--- a/mlan/mlan_cmdevt.c
++++ b/mlan/mlan_cmdevt.c
+@@ -1445,6 +1445,12 @@ static t_u32 wlan_get_cmd_timeout(t_u16 cmd_id)
+ 	case HostCmd_CMD_802_11_SCAN_EXT:
+ #ifdef UAP_SUPPORT
+ 	case HostCmd_CMD_APCMD_SYS_CONFIGURE:
++	/* PSL: FW holds BSS start/stop until a scan on the other MAC of a
++	 * dual-MAC chip (e.g. 9098) completes, which can exceed 5s. Allow as
++	 * long as a scan so this does not trigger a spurious FW reset.
++	 */
++	case HostCmd_CMD_APCMD_BSS_START:
++	case HostCmd_CMD_APCMD_BSS_STOP:
+ #endif
+ 		timeout = MRVDRV_TIMER_10S * 2;
+ 		break;
+@@ -1464,8 +1470,6 @@ static t_u32 wlan_get_cmd_timeout(t_u16 cmd_id)
+ 	case HostCmd_CMD_SOFT_RESET:
+ #ifdef UAP_SUPPORT
+ 	case HostCmd_CMD_APCMD_SYS_RESET:
+-	case HostCmd_CMD_APCMD_BSS_START:
+-	case HostCmd_CMD_APCMD_BSS_STOP:
+ 	case HostCmd_CMD_APCMD_STA_DEAUTH:
+ #endif
+ 	case HostCmd_CMD_APCMD_ACS_SCAN:
+diff --git a/mlinux/moal_uap_cfg80211.c b/mlinux/moal_uap_cfg80211.c
+index 552c663..7262a2d 100644
+--- a/mlinux/moal_uap_cfg80211.c
++++ b/mlinux/moal_uap_cfg80211.c
+@@ -4633,11 +4633,12 @@ int woal_uap_cfg80211_dump_station(struct wiphy *wiphy, struct net_device *dev,
+ 			BIT(NL80211_STA_INFO_TX_BYTES) |
+ 			BIT(NL80211_STA_INFO_RX_PACKETS) |
+ 			BIT(NL80211_STA_INFO_TX_PACKETS) |
+-			BIT(NL80211_STA_INFO_SIGNAL);
++			BIT(NL80211_STA_INFO_SIGNAL_AVG);
+ 	sinfo->rx_bytes = info->param.sta_list.info[idx].stats.rx_bytes;
+ 	sinfo->tx_bytes = info->param.sta_list.info[idx].stats.tx_bytes;
+ 	sinfo->rx_packets = info->param.sta_list.info[idx].stats.rx_packets;
+ 	sinfo->tx_packets = info->param.sta_list.info[idx].stats.tx_packets;
++	sinfo->signal_avg = info->param.sta_list.info[idx].rssi;
+ #else
+ 	sinfo->filled = STATION_INFO_INACTIVE_TIME | STATION_INFO_SIGNAL;
+ #endif

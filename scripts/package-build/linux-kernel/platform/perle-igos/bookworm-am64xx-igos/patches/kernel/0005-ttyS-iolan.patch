@@ -1,5 +1,5 @@
 diff --git a/drivers/Makefile b/drivers/Makefile
-index 8e1ffa4358d5..5b94eefc7a77 100644
+index 8e1ffa4..5b94eef 100644
 --- a/drivers/Makefile
 +++ b/drivers/Makefile
 @@ -6,6 +6,8 @@
@@ -12,7 +12,7 @@ index 8e1ffa4358d5..5b94eefc7a77 100644
  obj-y				+= irqchip/
  obj-y				+= bus/
 diff --git a/drivers/char/Kconfig b/drivers/char/Kconfig
-index d2cfc584e202..9720681c14bb 100644
+index d2cfc58..9720681 100644
 --- a/drivers/char/Kconfig
 +++ b/drivers/char/Kconfig
 @@ -7,6 +7,47 @@ menu "Character devices"
@@ -64,7 +64,7 @@ index d2cfc584e202..9720681c14bb 100644
  	tristate "TTY driver to output user messages via printk"
  	depends on EXPERT && TTY
 diff --git a/drivers/char/Makefile b/drivers/char/Makefile
-index 1291369b9126..05adca597ff9 100644
+index 1291369..05adca5 100644
 --- a/drivers/char/Makefile
 +++ b/drivers/char/Makefile
 @@ -2,7 +2,7 @@
@@ -78,7 +78,7 @@ index 1291369b9126..05adca597ff9 100644
  obj-y				+= misc.o
 diff --git a/drivers/char/fanout.c b/drivers/char/fanout.c
 new file mode 100644
-index 000000000000..6b82eb42ee2a
+index 0000000..6b82eb4
 --- /dev/null
 +++ b/drivers/char/fanout.c
 @@ -0,0 +1,410 @@
@@ -494,7 +494,7 @@ index 000000000000..6b82eb42ee2a
 +
 diff --git a/drivers/perle/Kconfig b/drivers/perle/Kconfig
 new file mode 100644
-index 000000000000..93caa95722cc
+index 0000000..93caa95
 --- /dev/null
 +++ b/drivers/perle/Kconfig
 @@ -0,0 +1,4 @@
@@ -504,7 +504,7 @@ index 000000000000..93caa95722cc
 +
 diff --git a/drivers/perle/Makefile b/drivers/perle/Makefile
 new file mode 100644
-index 000000000000..1402266c87cd
+index 0000000..1402266
 --- /dev/null
 +++ b/drivers/perle/Makefile
 @@ -0,0 +1,7 @@
@@ -517,7 +517,7 @@ index 000000000000..1402266c87cd
 +
 diff --git a/drivers/perle/perle_info.c b/drivers/perle/perle_info.c
 new file mode 100644
-index 000000000000..606a7bdb9249
+index 0000000..606a7bd
 --- /dev/null
 +++ b/drivers/perle/perle_info.c
 @@ -0,0 +1,153 @@
@@ -675,7 +675,7 @@ index 000000000000..606a7bdb9249
 +MODULE_DESCRIPTION("procfs for perle console server");
 +
 diff --git a/drivers/tty/serial/8250/8250.h b/drivers/tty/serial/8250/8250.h
-index 2d4f15df18f7..75f2eab06442 100644
+index 2d4f15d..75f2eab 100644
 --- a/drivers/tty/serial/8250/8250.h
 +++ b/drivers/tty/serial/8250/8250.h
 @@ -13,12 +13,17 @@
@@ -728,7 +728,7 @@ index 2d4f15df18f7..75f2eab06442 100644
  		mctrl_gpio_set(up->gpios, serial8250_MCR_to_TIOCM(value));
  }
 diff --git a/drivers/tty/serial/8250/8250_core.c b/drivers/tty/serial/8250/8250_core.c
-index bfa421ab3253..57a8d7aa8fd5 100644
+index e8363c8..5eddd77 100644
 --- a/drivers/tty/serial/8250/8250_core.c
 +++ b/drivers/tty/serial/8250/8250_core.c
 @@ -34,6 +34,9 @@
@@ -755,7 +755,7 @@ index bfa421ab3253..57a8d7aa8fd5 100644
  
  	if (up->port.irq)
  		serial_out(up, UART_IER, ier);
-@@ -741,6 +750,15 @@ int serial8250_register_8250_port(const struct uart_8250_port *up)
+@@ -745,6 +754,15 @@ int serial8250_register_8250_port(const struct uart_8250_port *up)
  	uart->rs485_stop_tx	= up->rs485_stop_tx;
  	uart->lsr_save_mask	= up->lsr_save_mask;
  	uart->dma		= up->dma;
@@ -769,9 +769,9 @@ index bfa421ab3253..57a8d7aa8fd5 100644
 +	uart->port.set_mctrl	= up->port.set_mctrl;	// duplicate below
 +#endif /*CONFIG_PERLE_IOLAN*/
  
- 	/* Take tx_loadsz from fifosize if it wasn't set separately */
- 	if (uart->port.fifosize && !uart->tx_loadsz)
-@@ -805,6 +823,60 @@ int serial8250_register_8250_port(const struct uart_8250_port *up)
+ 	uart_set_cons_flow_enabled(&uart->port, uart_cons_flow_enabled(&up->port) | cons_flow);
+ 
+@@ -811,6 +829,60 @@ int serial8250_register_8250_port(const struct uart_8250_port *up)
  	if (up->dl_write)
  		uart->dl_write = up->dl_write;
  
@@ -832,7 +832,7 @@ index bfa421ab3253..57a8d7aa8fd5 100644
  	/* Check the type (again)! It might have changed by the port.type assignment above. */
  	if (uart->port.type != PORT_8250_CIR) {
  		if (uart_console_registered(&uart->port))
-@@ -870,6 +942,13 @@ void serial8250_unregister_port(int line)
+@@ -876,6 +948,13 @@ void serial8250_unregister_port(int line)
  		serial8250_em485_destroy(uart);
  	}
  
@@ -848,7 +848,7 @@ index bfa421ab3253..57a8d7aa8fd5 100644
  		uart->port.flags &= ~UPF_BOOT_AUTOCONF;
 diff --git a/drivers/tty/serial/8250/8250_perle.h b/drivers/tty/serial/8250/8250_perle.h
 new file mode 100644
-index 000000000000..3109313ae1ea
+index 0000000..3109313
 --- /dev/null
 +++ b/drivers/tty/serial/8250/8250_perle.h
 @@ -0,0 +1,57 @@
@@ -912,7 +912,7 @@ index 000000000000..3109313ae1ea
 \ No newline at end of file
 diff --git a/drivers/tty/serial/8250/8250_perle_helper.c b/drivers/tty/serial/8250/8250_perle_helper.c
 new file mode 100644
-index 000000000000..a1e6430462dc
+index 0000000..a1e6430
 --- /dev/null
 +++ b/drivers/tty/serial/8250/8250_perle_helper.c
 @@ -0,0 +1,2236 @@
@@ -3154,7 +3154,7 @@ index 000000000000..a1e6430462dc
 +EXPORT_SYMBOL_GPL(perle_serial8250_get_rs232_rts_toggle);
 diff --git a/drivers/tty/serial/8250/8250_perleomap.c b/drivers/tty/serial/8250/8250_perleomap.c
 new file mode 100644
-index 000000000000..cd23031e7923
+index 0000000..cd23031
 --- /dev/null
 +++ b/drivers/tty/serial/8250/8250_perleomap.c
 @@ -0,0 +1,2041 @@
@@ -5200,7 +5200,7 @@ index 000000000000..cd23031e7923
 +MODULE_DESCRIPTION("OMAP 8250 Driver");
 +MODULE_LICENSE("GPL v2");
 diff --git a/drivers/tty/serial/8250/8250_platform.c b/drivers/tty/serial/8250/8250_platform.c
-index fe7ec440ffa5..1a2e9b67dec9 100644
+index 69d8720..53a4f1a 100644
 --- a/drivers/tty/serial/8250/8250_platform.c
 +++ b/drivers/tty/serial/8250/8250_platform.c
 @@ -14,6 +14,7 @@
@@ -5222,7 +5222,7 @@ index fe7ec440ffa5..1a2e9b67dec9 100644
  		port->irqflags |= irqflag;
  		if (serial8250_isa_config != NULL)
  			serial8250_isa_config(i, &up->port, &up->capabilities);
-@@ -299,6 +304,41 @@ struct platform_device *serial8250_isa_devs;
+@@ -300,6 +305,41 @@ struct platform_device *serial8250_isa_devs;
  static int __init serial8250_init(void)
  {
  	int ret;
@@ -5265,7 +5265,7 @@ index fe7ec440ffa5..1a2e9b67dec9 100644
  	if (nr_uarts == 0)
  		return -ENODEV;
 diff --git a/drivers/tty/serial/8250/8250_port.c b/drivers/tty/serial/8250/8250_port.c
-index 8785961a2a82..f7ed96848cab 100644
+index 455d558..faa641c 100644
 --- a/drivers/tty/serial/8250/8250_port.c
 +++ b/drivers/tty/serial/8250/8250_port.c
 @@ -39,6 +39,12 @@
@@ -5281,7 +5281,7 @@ index 8785961a2a82..f7ed96848cab 100644
  /*
   * Here we define the default xmit fifo size used for each type of UART.
   */
-@@ -640,7 +646,7 @@ EXPORT_SYMBOL_GPL(serial8250_em485_config);
+@@ -642,7 +648,7 @@ EXPORT_SYMBOL_GPL(serial8250_em485_config);
   * once and disable_runtime_pm_tx() will still disable RPM because the fifo is
   * empty and the HW can idle again.
   */
@@ -5290,7 +5290,7 @@ index 8785961a2a82..f7ed96848cab 100644
  {
  	unsigned char rpm_active;
  
-@@ -652,6 +658,7 @@ static void serial8250_rpm_get_tx(struct uart_8250_port *p)
+@@ -654,6 +660,7 @@ static void serial8250_rpm_get_tx(struct uart_8250_port *p)
  		return;
  	pm_runtime_get_sync(p->port.dev);
  }
@@ -5298,7 +5298,7 @@ index 8785961a2a82..f7ed96848cab 100644
  
  static void serial8250_rpm_put_tx(struct uart_8250_port *p)
  {
-@@ -1295,6 +1302,7 @@ void serial8250_em485_stop_tx(struct uart_8250_port *p, bool toggle_ier)
+@@ -1297,6 +1304,7 @@ void serial8250_em485_stop_tx(struct uart_8250_port *p, bool toggle_ier)
  		mcr |= UART_MCR_RTS;
  	else
  		mcr &= ~UART_MCR_RTS;
@@ -5306,7 +5306,7 @@ index 8785961a2a82..f7ed96848cab 100644
  	serial8250_out_MCR(p, mcr);
  
  	/*
-@@ -1359,7 +1367,7 @@ static void __stop_tx_rs485(struct uart_8250_port *p, u64 stop_delay)
+@@ -1361,7 +1369,7 @@ static void __stop_tx_rs485(struct uart_8250_port *p, u64 stop_delay)
  	}
  }
  
@@ -5315,7 +5315,7 @@ index 8785961a2a82..f7ed96848cab 100644
  {
  	struct uart_8250_em485 *em485 = p->em485;
  
-@@ -1393,11 +1401,17 @@ static inline void __stop_tx(struct uart_8250_port *p)
+@@ -1395,11 +1403,17 @@ static inline void __stop_tx(struct uart_8250_port *p)
  		__stop_tx_rs485(p, stop_delay);
  	}
  
@@ -5334,7 +5334,7 @@ index 8785961a2a82..f7ed96848cab 100644
  {
  	struct uart_8250_port *up = up_to_u8250p(port);
  
-@@ -1412,6 +1426,7 @@ static void serial8250_stop_tx(struct uart_port *port)
+@@ -1414,6 +1428,7 @@ static void serial8250_stop_tx(struct uart_port *port)
  		serial_icr_write(up, UART_ACR, up->acr);
  	}
  }
@@ -5342,7 +5342,7 @@ index 8785961a2a82..f7ed96848cab 100644
  
  static inline void __start_tx(struct uart_port *port)
  {
-@@ -1425,7 +1440,16 @@ static inline void __start_tx(struct uart_port *port)
+@@ -1427,7 +1442,16 @@ static inline void __start_tx(struct uart_port *port)
  			u16 lsr = serial_lsr_in(up);
  
  			if (lsr & UART_LSR_THRE)
@@ -5359,7 +5359,7 @@ index 8785961a2a82..f7ed96848cab 100644
  		}
  	}
  
-@@ -1460,7 +1484,8 @@ void serial8250_em485_start_tx(struct uart_8250_port *up, bool toggle_ier)
+@@ -1462,7 +1486,8 @@ void serial8250_em485_start_tx(struct uart_8250_port *up, bool toggle_ier)
  		mcr |= UART_MCR_RTS;
  	else
  		mcr &= ~UART_MCR_RTS;
@@ -5369,7 +5369,7 @@ index 8785961a2a82..f7ed96848cab 100644
  }
  EXPORT_SYMBOL_GPL(serial8250_em485_start_tx);
  
-@@ -1564,7 +1589,7 @@ static void serial8250_disable_ms(struct uart_port *port)
+@@ -1566,7 +1591,7 @@ static void serial8250_disable_ms(struct uart_port *port)
  	serial_port_out(port, UART_IER, up->ier);
  }
  
@@ -5378,7 +5378,7 @@ index 8785961a2a82..f7ed96848cab 100644
  {
  	struct uart_8250_port *up = up_to_u8250p(port);
  
-@@ -1582,6 +1607,7 @@ static void serial8250_enable_ms(struct uart_port *port)
+@@ -1584,6 +1609,7 @@ static void serial8250_enable_ms(struct uart_port *port)
  	guard(serial8250_rpm)(up);
  	serial_port_out(port, UART_IER, up->ier);
  }
@@ -5386,7 +5386,7 @@ index 8785961a2a82..f7ed96848cab 100644
  
  void serial8250_read_char(struct uart_8250_port *up, u16 lsr)
  {
-@@ -1735,10 +1761,53 @@ EXPORT_SYMBOL_GPL(serial8250_tx_chars);
+@@ -1737,10 +1763,53 @@ EXPORT_SYMBOL_GPL(serial8250_tx_chars);
  unsigned int serial8250_modem_status(struct uart_8250_port *up)
  {
  	struct uart_port *port = &up->port;
@@ -5440,7 +5440,7 @@ index 8785961a2a82..f7ed96848cab 100644
  	if (status & UART_MSR_ANY_DELTA && up->ier & UART_IER_MSI &&
  	    port->state != NULL) {
  		if (status & UART_MSR_TERI)
-@@ -1816,13 +1885,41 @@ void serial8250_handle_irq_locked(struct uart_port *port, unsigned int iir)
+@@ -1828,13 +1897,41 @@ void serial8250_handle_irq_locked(struct uart_port *port, unsigned int iir)
  		d = irq_get_irq_data(port->irq);
  		if (d && irqd_is_wakeup_set(d))
  			pm_wakeup_event(tport->tty->dev, 0);
@@ -5482,7 +5482,7 @@ index 8785961a2a82..f7ed96848cab 100644
  		else if (!up->dma->tx_running)
  			__stop_tx(up);
  	}
-@@ -1870,7 +1967,14 @@ static int serial8250_tx_threshold_handle_irq(struct uart_port *port)
+@@ -1882,7 +1979,14 @@ static int serial8250_tx_threshold_handle_irq(struct uart_port *port)
  		struct uart_8250_port *up = up_to_u8250p(port);
  
  		guard(uart_port_lock_irqsave)(port);
@@ -5497,7 +5497,7 @@ index 8785961a2a82..f7ed96848cab 100644
  	}
  
  	iir = serial_port_in(port, UART_IIR);
-@@ -1900,6 +2004,12 @@ unsigned int serial8250_do_get_mctrl(struct uart_port *port)
+@@ -1912,6 +2016,12 @@ unsigned int serial8250_do_get_mctrl(struct uart_port *port)
  		status = serial8250_modem_status(up);
  
  	val = serial8250_MSR_to_TIOCM(status);
@@ -5510,7 +5510,7 @@ index 8785961a2a82..f7ed96848cab 100644
  	if (up->gpios)
  		return mctrl_gpio_get(up->gpios, &val);
  
-@@ -1917,18 +2027,29 @@ static unsigned int serial8250_get_mctrl(struct uart_port *port)
+@@ -1929,18 +2039,29 @@ static unsigned int serial8250_get_mctrl(struct uart_port *port)
  void serial8250_do_set_mctrl(struct uart_port *port, unsigned int mctrl)
  {
  	struct uart_8250_port *up = up_to_u8250p(port);
@@ -5542,7 +5542,7 @@ index 8785961a2a82..f7ed96848cab 100644
  	if (port->rs485.flags & SER_RS485_ENABLED)
  		return;
  
-@@ -1937,11 +2058,20 @@ static void serial8250_set_mctrl(struct uart_port *port, unsigned int mctrl)
+@@ -1949,11 +2070,20 @@ static void serial8250_set_mctrl(struct uart_port *port, unsigned int mctrl)
  	else
  		serial8250_do_set_mctrl(port, mctrl);
  }
@@ -5564,7 +5564,7 @@ index 8785961a2a82..f7ed96848cab 100644
  	guard(serial8250_rpm)(up);
  	guard(uart_port_lock_irqsave)(port);
  
-@@ -1951,6 +2081,7 @@ static void serial8250_break_ctl(struct uart_port *port, int break_state)
+@@ -1963,6 +2093,7 @@ static void serial8250_break_ctl(struct uart_port *port, int break_state)
  		up->lcr &= ~UART_LCR_SBC;
  	serial_port_out(port, UART_LCR, up->lcr);
  }
@@ -5572,7 +5572,7 @@ index 8785961a2a82..f7ed96848cab 100644
  
  /* Returns true if @bits were set, false on timeout */
  static bool wait_for_lsr(struct uart_8250_port *up, int bits)
-@@ -3156,6 +3287,11 @@ static const struct uart_ops serial8250_pops = {
+@@ -3180,6 +3311,11 @@ static const struct uart_ops serial8250_pops = {
  	.poll_get_char = serial8250_get_poll_char,
  	.poll_put_char = serial8250_put_poll_char,
  #endif
@@ -5585,7 +5585,7 @@ index 8785961a2a82..f7ed96848cab 100644
  
  void serial8250_init_port(struct uart_8250_port *up)
 diff --git a/drivers/tty/serial/8250/Kconfig b/drivers/tty/serial/8250/Kconfig
-index f64ef0819cd4..de131a7226f0 100644
+index f64ef08..de131a7 100644
 --- a/drivers/tty/serial/8250/Kconfig
 +++ b/drivers/tty/serial/8250/Kconfig
 @@ -590,3 +590,10 @@ config SERIAL_OF_PLATFORM
@@ -5600,7 +5600,7 @@ index f64ef0819cd4..de131a7226f0 100644
 +    help
 +      This option replace 8250_omap serial driver.
 diff --git a/drivers/tty/serial/8250/Makefile b/drivers/tty/serial/8250/Makefile
-index 9ec4d5fe64de..b03e4e227e6c 100644
+index 9ec4d5f..b03e4e2 100644
 --- a/drivers/tty/serial/8250/Makefile
 +++ b/drivers/tty/serial/8250/Makefile
 @@ -56,4 +56,6 @@ obj-$(CONFIG_SERIAL_8250_CS)		+= serial_cs.o
@@ -5611,7 +5611,7 @@ index 9ec4d5fe64de..b03e4e227e6c 100644
 +8250_perleomap-y := 8250_perleomap.o 8250_perle_helper.o
  CFLAGS_8250_ingenic.o += -I$(srctree)/scripts/dtc/libfdt
 diff --git a/drivers/tty/serial/Makefile b/drivers/tty/serial/Makefile
-index a2ccbc508ec5..cc6420db063d 100644
+index a2ccbc5..cc6420d 100644
 --- a/drivers/tty/serial/Makefile
 +++ b/drivers/tty/serial/Makefile
 @@ -100,3 +100,5 @@ obj-$(CONFIG_SERIAL_MCTRL_GPIO)	+= serial_mctrl_gpio.o
@@ -5621,7 +5621,7 @@ index a2ccbc508ec5..cc6420db063d 100644
 +
 +obj-$(CONFIG_PERLE_IOLAN) += uart_trace.o
 diff --git a/drivers/tty/serial/serial_core.c b/drivers/tty/serial/serial_core.c
-index ca72454b3eb0..022f3509cfa3 100644
+index 602dfaf..7f3d094 100644
 --- a/drivers/tty/serial/serial_core.c
 +++ b/drivers/tty/serial/serial_core.c
 @@ -34,6 +34,11 @@
@@ -5663,7 +5663,7 @@ index ca72454b3eb0..022f3509cfa3 100644
  
   check_and_exit:
  	if (uport->type == PORT_UNKNOWN)
-@@ -1360,10 +1376,19 @@ static void uart_sanitize_serial_rs485(struct uart_port *port, struct serial_rs4
+@@ -1361,10 +1377,19 @@ static void uart_sanitize_serial_rs485(struct uart_port *port, struct serial_rs4
  {
  	u32 supported_flags = port->rs485_supported.flags;
  
@@ -5683,7 +5683,7 @@ index ca72454b3eb0..022f3509cfa3 100644
  
  	/* Clear other RS485 flags but SER_RS485_TERMINATE_BUS and return if enabling RS422 */
  	if (rs485->flags & SER_RS485_MODE_RS422) {
-@@ -1473,15 +1498,32 @@ static int uart_set_rs485_config(struct tty_struct *tty, struct uart_port *port,
+@@ -1474,15 +1499,32 @@ static int uart_set_rs485_config(struct tty_struct *tty, struct uart_port *port,
  	ret = uart_check_rs485_flags(port, &rs485);
  	if (ret)
  		return ret;
@@ -5719,7 +5719,7 @@ index ca72454b3eb0..022f3509cfa3 100644
  			/* Reset RTS and other mctrl lines when disabling RS485 */
  			if (!(rs485.flags & SER_RS485_ENABLED))
  				port->ops->set_mctrl(port, port->mctrl);
-@@ -1563,6 +1605,11 @@ uart_ioctl(struct tty_struct *tty, unsigned int cmd, unsigned long arg)
+@@ -1564,6 +1606,11 @@ uart_ioctl(struct tty_struct *tty, unsigned int cmd, unsigned long arg)
  	void __user *uarg = (void __user *)arg;
  	int ret = -ENOIOCTLCMD;
  
@@ -5731,7 +5731,7 @@ index ca72454b3eb0..022f3509cfa3 100644
  
  	/*
  	 * These ioctls don't rely on the hardware to be present.
-@@ -1788,6 +1835,14 @@ static void uart_wait_until_sent(struct tty_struct *tty, int timeout)
+@@ -1789,6 +1836,14 @@ static void uart_wait_until_sent(struct tty_struct *tty, int timeout)
  		return;
  	}
  
@@ -5746,7 +5746,7 @@ index ca72454b3eb0..022f3509cfa3 100644
  	/*
  	 * Set the check interval to be 1/5 of the estimated time to
  	 * send a single character, and make it at least 1.  The check
-@@ -1971,6 +2026,11 @@ static int uart_port_activate(struct tty_port *port, struct tty_struct *tty)
+@@ -1972,6 +2027,11 @@ static int uart_port_activate(struct tty_port *port, struct tty_struct *tty)
  	if (!uport || uport->flags & UPF_DEAD)
  		return -ENXIO;
  
@@ -5758,7 +5758,7 @@ index ca72454b3eb0..022f3509cfa3 100644
  	/*
  	 * Start up the serial port.
  	 */
-@@ -3052,6 +3112,10 @@ static const struct attribute_group tty_dev_attr_group = {
+@@ -3074,6 +3134,10 @@ static const struct attribute_group tty_dev_attr_group = {
  	.attrs = tty_dev_attrs,
  };
  
@@ -5769,9 +5769,9 @@ index ca72454b3eb0..022f3509cfa3 100644
  /**
   * serial_core_add_one_port - attach a driver-defined port structure
   * @drv: pointer to the uart low level driver structure for this port
-@@ -3102,6 +3166,14 @@ static int serial_core_add_one_port(struct uart_driver *drv, struct uart_port *u
- 	if (!uport->name)
- 		return -ENOMEM;
+@@ -3135,6 +3199,14 @@ static int serial_core_add_one_port(struct uart_driver *drv, struct uart_port *u
+ 	uart_port_set_cons(uport, drv->cons);
+ 	uport->minor = drv->tty_driver->minor_start + uport->line;
  
 +#ifdef CONFIG_PERLE_IOLAN
 +	/*
@@ -5784,7 +5784,7 @@ index ca72454b3eb0..022f3509cfa3 100644
  	if (uport->cons && uport->dev)
  		of_console_check(uport->dev->of_node, uport->cons->name, uport->line);
  
-@@ -3146,6 +3218,10 @@ static int serial_core_add_one_port(struct uart_driver *drv, struct uart_port *u
+@@ -3169,6 +3241,10 @@ static int serial_core_add_one_port(struct uart_driver *drv, struct uart_port *u
  		       uport->line);
  	}
  
@@ -5796,7 +5796,7 @@ index ca72454b3eb0..022f3509cfa3 100644
  }
  
 diff --git a/drivers/tty/serial/serial_mctrl_gpio.c b/drivers/tty/serial/serial_mctrl_gpio.c
-index 7b02c5ca4afd..a16d8aa5ce51 100644
+index 7b02c5c..a16d8aa 100644
 --- a/drivers/tty/serial/serial_mctrl_gpio.c
 +++ b/drivers/tty/serial/serial_mctrl_gpio.c
 @@ -16,6 +16,15 @@
@@ -5897,7 +5897,7 @@ index 7b02c5ca4afd..a16d8aa5ce51 100644
  
 diff --git a/drivers/tty/serial/uart_trace.c b/drivers/tty/serial/uart_trace.c
 new file mode 100644
-index 000000000000..2f0596f6125f
+index 0000000..2f0596f
 --- /dev/null
 +++ b/drivers/tty/serial/uart_trace.c
 @@ -0,0 +1,364 @@
@@ -6266,10 +6266,10 @@ index 000000000000..2f0596f6125f
 +
 +
 diff --git a/drivers/tty/tty_port.c b/drivers/tty/tty_port.c
-index fe67c5cb0a3f..cbc2e723af2f 100644
+index 6c3055e..af71197 100644
 --- a/drivers/tty/tty_port.c
 +++ b/drivers/tty/tty_port.c
-@@ -492,7 +492,9 @@ int tty_port_block_til_ready(struct tty_port *port,
+@@ -521,7 +521,9 @@ int tty_port_block_til_ready(struct tty_port *port,
  	if (filp == NULL || (filp->f_flags & O_NONBLOCK)) {
  		/* Indicate we are open */
  		if (C_BAUD(tty))
@@ -6281,7 +6281,7 @@ index fe67c5cb0a3f..cbc2e723af2f 100644
  	}
 diff --git a/include/linux/perle_serial.h b/include/linux/perle_serial.h
 new file mode 100644
-index 000000000000..3e2a14b174bc
+index 0000000..3e2a14b
 --- /dev/null
 +++ b/include/linux/perle_serial.h
 @@ -0,0 +1,31 @@
@@ -6317,7 +6317,7 @@ index 000000000000..3e2a14b174bc
 +#endif  // _LINUX_PERLE_SERIAL_H
 +
 diff --git a/include/linux/serial_8250.h b/include/linux/serial_8250.h
-index a95b2d143d24..4ae0fa72a875 100644
+index a95b2d1..4ae0fa7 100644
 --- a/include/linux/serial_8250.h
 +++ b/include/linux/serial_8250.h
 @@ -12,6 +12,10 @@
@@ -6513,7 +6513,7 @@ index a95b2d143d24..4ae0fa72a875 100644
 +
  #endif
 diff --git a/include/linux/serial_core.h b/include/linux/serial_core.h
-index 666430b47899..93239f574274 100644
+index bdc2143..af13765 100644
 --- a/include/linux/serial_core.h
 +++ b/include/linux/serial_core.h
 @@ -404,6 +404,11 @@ struct uart_ops {
@@ -6552,7 +6552,7 @@ index 666430b47899..93239f574274 100644
  
  #define UPF_NO_THRE_TEST	((__force upf_t) BIT_ULL(19))
  /* Port has hardware-assisted h/w flow control */
-@@ -596,6 +611,15 @@ struct uart_port {
+@@ -598,6 +613,15 @@ struct uart_port {
  	struct gpio_desc	*rs485_rx_during_tx_gpio; /* Output GPIO that sets the state of RS485 RX during TX */
  	struct serial_iso7816   iso7816;
  	void			*private_data;		/* generic platform data pointer */
@@ -6568,7 +6568,7 @@ index 666430b47899..93239f574274 100644
  };
  
  /*
-@@ -1143,6 +1167,39 @@ bool uart_match_port(const struct uart_port *port1,
+@@ -1145,6 +1169,39 @@ bool uart_match_port(const struct uart_port *port1,
  int uart_suspend_port(struct uart_driver *reg, struct uart_port *port);
  int uart_resume_port(struct uart_driver *reg, struct uart_port *port);
  
@@ -6608,7 +6608,7 @@ index 666430b47899..93239f574274 100644
  static inline int uart_tx_stopped(struct uart_port *port)
  {
  	struct tty_struct *tty = port->state->port.tty;
-@@ -1150,6 +1207,7 @@ static inline int uart_tx_stopped(struct uart_port *port)
+@@ -1152,6 +1209,7 @@ static inline int uart_tx_stopped(struct uart_port *port)
  		return 1;
  	return 0;
  }
@@ -6617,7 +6617,7 @@ index 666430b47899..93239f574274 100644
  static inline bool uart_cts_enabled(struct uart_port *uport)
  {
 diff --git a/include/uapi/asm-generic/ioctls.h b/include/uapi/asm-generic/ioctls.h
-index cdc9f4ca8c27..22445ee25bb8 100644
+index cdc9f4c..22445ee 100644
 --- a/include/uapi/asm-generic/ioctls.h
 +++ b/include/uapi/asm-generic/ioctls.h
 @@ -118,4 +118,94 @@
@@ -6716,7 +6716,7 @@ index cdc9f4ca8c27..22445ee25bb8 100644
 +
  #endif /* __ASM_GENERIC_IOCTLS_H */
 diff --git a/include/uapi/asm-generic/termbits.h b/include/uapi/asm-generic/termbits.h
-index 890ef29053e2..ab29d359b7a7 100644
+index 890ef29..ab29d35 100644
 --- a/include/uapi/asm-generic/termbits.h
 +++ b/include/uapi/asm-generic/termbits.h
 @@ -146,4 +146,104 @@ struct ktermios {
@@ -6825,7 +6825,7 @@ index 890ef29053e2..ab29d359b7a7 100644
 +
  #endif /* __ASM_GENERIC_TERMBITS_H */
 diff --git a/include/uapi/linux/serial.h b/include/uapi/linux/serial.h
-index de9b4733607e..a52d388a6725 100644
+index de9b473..a52d388 100644
 --- a/include/uapi/linux/serial.h
 +++ b/include/uapi/linux/serial.h
 @@ -153,6 +153,33 @@ struct serial_rs485 {
@@ -6863,7 +6863,7 @@ index de9b4733607e..a52d388a6725 100644
  	__u32	delay_rts_after_send;
  
 diff --git a/include/uapi/linux/tty_flags.h b/include/uapi/linux/tty_flags.h
-index cf25056d4b27..2e6787d6a3c9 100644
+index cf25056..2e6787d 100644
 --- a/include/uapi/linux/tty_flags.h
 +++ b/include/uapi/linux/tty_flags.h
 @@ -32,6 +32,9 @@
@@ -6888,7 +6888,7 @@ index cf25056d4b27..2e6787d6a3c9 100644
  #define ASYNC_DEPRECATED	(ASYNC_SPLIT_TERMIOS | ASYNC_SESSION_LOCKOUT | \
 diff --git a/include/uapi/linux/uart_trace.h b/include/uapi/linux/uart_trace.h
 new file mode 100644
-index 000000000000..544d51aac90b
+index 0000000..544d51a
 --- /dev/null
 +++ b/include/uapi/linux/uart_trace.h
 @@ -0,0 +1,86 @@
@@ -6979,10 +6979,10 @@ index 000000000000..544d51aac90b
 +
 +#endif	/* __UART_TRACE__ */
 diff --git a/init/Kconfig b/init/Kconfig
-index cab3ad28ca49..e10a83adfbc6 100644
+index 1858e55..90b5d87 100644
 --- a/init/Kconfig
 +++ b/init/Kconfig
-@@ -2198,3 +2198,9 @@ config ARCH_HAS_SYNC_CORE_BEFORE_USERMODE
+@@ -2207,3 +2207,9 @@ config ARCH_HAS_SYNC_CORE_BEFORE_USERMODE
  # <asm/syscall_wrapper.h>.
  config ARCH_HAS_SYSCALL_WRAPPER
  	def_bool n

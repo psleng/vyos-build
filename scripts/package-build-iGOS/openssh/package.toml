@@ -7,7 +7,7 @@ build_cmd = "meson setup build; meson compile -C build; dpkg-buildpackage -uc -u
 
 [[packages]]
 name = "openssh"
-commit_id = "c15ceafbfa7c8da5413a20d8961cc3c87504008d"
+commit_id = "583526cea3667776e922f6f232d093688b33e264"
 scm_url = "https://salsa.debian.org/ssh-team/openssh.git"
 pre_build_hook = """
     sudo apt-get -y -t bookworm-backports install debhelper

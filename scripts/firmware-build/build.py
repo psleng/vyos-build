@@ -21,16 +21,13 @@ from contextlib import ExitStack, contextmanager
 from datetime import datetime
 from pathlib import Path, PurePosixPath
 from urllib.parse import quote, urlsplit
-from urllib.request import urlopen
 
 import tomllib
 
 def firmware_base_url():
-    # Read the tracked flavor directly from GitHub; no local or URL overrides.
-    source = ("https://raw.githubusercontent.com/psleng/vyos-build/"
-              "psl-master/data/build-flavors/igos-am64x-all.toml")
-    with urlopen(source, timeout=30) as response:
-        config = tomllib.loads(response.read(1024 * 1024).decode("utf-8"))
+    # Use the flavor from the same checkout as the build tools.
+    source = Path(__file__).resolve().parents[2] / 'data/build-flavors/igos-am64x-all.toml'
+    config = tomllib.loads(source.read_text(encoding='utf-8'))
     url = config["wwan_firmware_map_url"]
     parsed = urlsplit(url)
     if (parsed.scheme not in ("http", "https") or not parsed.netloc

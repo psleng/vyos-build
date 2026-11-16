@@ -1,0 +1,140 @@
+#!/usr/bin/env python3
+# Copyright (C) 2026 Perle Systems Limited
+# SPDX-License-Identifier: GPL-2.0-or-later
+"""Create detached CMS signatures for igOS firmware files and releases."""
+import argparse
+import hashlib
+import json
+import os
+from pathlib import Path, PurePosixPath
+import subprocess
+import sys
+import tempfile
+from urllib.parse import unquote, urlsplit
+
+
+def write(path, data):
+    path = Path(path)
+    temporary = None
+    try:
+        with tempfile.NamedTemporaryFile(dir=path.parent, delete=False) as stream:
+            temporary = Path(stream.name)
+            stream.write(data)
+            stream.flush()
+            os.fsync(stream.fileno())
+        temporary.chmod(0o644)
+        temporary.replace(path)
+    finally:
+        if temporary is not None:
+            temporary.unlink(missing_ok=True)
+
+
+def passphrase(path):
+    value = Path(path).read_bytes().rstrip(b'\r\n') if path else b''
+    if path and not value:
+        raise ValueError('Passphrase file is empty')
+    if b'\n' in value or b'\r' in value:
+        raise ValueError('Passphrase file must contain a single line')
+    return value
+
+
+def sign(content, args, secret):
+    # Stream large firmware files through OpenSSL. Secrets use stdin, not argv.
+    result = subprocess.run([
+        'openssl', 'cms', '-sign', '-binary', '-md', 'sha256', '-nosmimecap',
+        '-in', str(content), '-signer', str(args.cert), '-inkey', str(args.key),
+        '-passin', 'stdin', '-outform', 'DER',
+    ], input=secret+b'\n', stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+       timeout=600, check=False)
+    if result.returncode or not result.stdout or len(result.stdout) > 128*1024:
+        raise ValueError('Firmware signing failed; check certificate, key, and passphrase')
+    write(str(content)+'.pem', args.cert.read_bytes())
+    write(str(content)+'.crl', args.crl.read_bytes())
+    write(str(content)+'.sig', result.stdout)
+    print(f'Release signature created: {content.name}')
+
+
+def preserve_archive_signature(content, args):
+    """Reuse a signature only if it still authenticates these bytes and saved cert.
+
+    This checks cryptographic integrity, not current trust or expiry. The router
+    enforces those policies at install time; leaf rotation must not replace an
+    unchanged archive's original signature. CRLs are refreshed independently.
+    """
+    signature = Path(str(content)+'.sig')
+    certificate = Path(str(content)+'.pem')
+    if not all(path.is_file() and not path.is_symlink() and path.stat().st_size
+               for path in (signature, certificate)):
+        return False
+    if signature.stat().st_size > 128*1024:
+        return False
+    result = subprocess.run([
+        'openssl', 'cms', '-verify', '-binary', '-inform', 'DER',
+        '-in', str(signature), '-content', str(content),
+        '-nointern', '-certfile', str(certificate), '-noverify',
+        '-out', os.devnull,
+    ], stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=600, check=False)
+    if result.returncode:
+        return False
+    write(str(content)+'.crl', args.crl.read_bytes())
+    print(f'Archive signature preserved: {content.name}')
+    return True
+
+
+def release_files(args):
+    """Select catalog archives safely and check their declared hashes before signing."""
+    catalog = json.loads(args.catalog.read_text())
+    if catalog.get('schema') != 1:
+        raise ValueError('Expected schema-1 firmware catalog')
+    base = args.base_url.rstrip('/')+'/'
+    root = args.archive_root.resolve()
+    archives = set()
+    for model in catalog['cellular-firmware']:
+        for revision in model['revisions']:
+            for artifact in revision['firmware']:
+                url = artifact['url']
+                if not url.startswith(base) or urlsplit(url).query or urlsplit(url).fragment:
+                    raise ValueError('Archive URL is outside release base URL or contains query/fragment')
+                relative = PurePosixPath(unquote(url[len(base):]))
+                if relative.is_absolute() or '..' in relative.parts or '\\' in str(relative):
+                    raise ValueError('Unsafe archive path')
+                path = root.joinpath(*relative.parts).resolve()
+                if not path.is_relative_to(root) or not path.is_file():
+                    raise ValueError('Missing archive or path escapes release directory')
+                digest = hashlib.sha256()
+                with path.open('rb') as stream:
+                    for chunk in iter(lambda: stream.read(1024*1024), b''):
+                        digest.update(chunk)
+                if digest.hexdigest() != artifact['archive_sha256']:
+                    raise ValueError(f'Archive hash differs from catalog: {path.name}')
+                archives.add(path)
+    return sorted(archives)+[args.catalog]
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    commands = parser.add_subparsers(dest='command', required=True)
+    release = commands.add_parser('release', help='Sign catalog and its firmware archives')
+    release.add_argument('--catalog', type=Path, required=True)
+    release.add_argument('--archive-root', type=Path, required=True)
+    release.add_argument('--base-url', required=True)
+    release.add_argument('--key', type=Path, required=True)
+    release.add_argument('--cert', type=Path, required=True)
+    release.add_argument('--crl', type=Path, required=True)
+    release.add_argument('--password-file', type=Path)
+    args = parser.parse_args()
+    files = release_files(args)
+    secret = passphrase(args.password_file)
+    for path in files:
+        if path != args.catalog and preserve_archive_signature(path, args):
+            continue
+        sign(path, args, secret)
+    return 0
+
+
+if __name__ == '__main__':
+    try:
+        sys.exit(main())
+    except (OSError, ValueError, KeyError, TypeError, subprocess.TimeoutExpired) as error:
+        print(f'Firmware signing error: {error}', file=sys.stderr)
+        sys.exit(1)

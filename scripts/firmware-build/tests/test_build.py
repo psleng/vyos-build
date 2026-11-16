@@ -9,13 +9,18 @@ import zipfile
 from pathlib import Path
 from unittest.mock import patch
 
-# Exercise CLI subprocesses without depending on GitHub availability.
+# Exercise CLI subprocesses with an isolated flavor fixture.
 TEST_RUNNER = """
-import io, runpy, sys
+import runpy, sys
+from pathlib import Path
 from unittest.mock import patch
 sys.argv = sys.argv[1:]
-with patch('urllib.request.urlopen', return_value=io.BytesIO(
-        b'wwan_firmware_map_url = "https://fw.test/modem-firmware.json"')):
+original_read = Path.read_text
+def read(path, *args, **kwargs):
+    if path.name == 'igos-am64x-all.toml':
+        return 'wwan_firmware_map_url = "https://fw.test/modem-firmware.json"'
+    return original_read(path, *args, **kwargs)
+with patch.object(Path, 'read_text', read):
     runpy.run_path(sys.argv[0], run_name='__main__')
 """
 
@@ -39,15 +44,15 @@ class TestGenerator(unittest.TestCase):
     def build(self):
         return g.build(self.source, self.output, 'https://fw.test/cellular-firmware')
 
-    def test_flavor_url_from_git(self):
-        with patch.dict('os.environ', {'FIRMWARE_BASE_URL': 'https://ignored.test',
-                                       'FIRMWARE_BUILD_FLAVOR': '/does/not/exist'}, clear=True), \
-                patch.object(g, 'urlopen') as fetch:
-            fetch.return_value.__enter__.return_value.read.return_value = (
-                b'wwan_firmware_map_url = "https://git.test/modem-firmware/modem-firmware.json"')
-            self.assertEqual(g.firmware_base_url(), 'https://git.test/modem-firmware')
-            self.assertIn('/psleng/vyos-build/psl-master/', fetch.call_args.args[0])
-            fetch.return_value.__enter__.return_value.read.return_value = b'invalid toml!'
+    def test_flavor_url_from_same_checkout(self):
+        original_read = Path.read_text
+        expected = ROOT.parents[1]/'data/build-flavors/igos-am64x-all.toml'
+        def read(path, *args, **kwargs):
+            self.assertEqual(path, expected)
+            return 'wwan_firmware_map_url = "https://fw.test/modem-firmware.json"'
+        with patch.object(Path, 'read_text', read):
+            self.assertEqual(g.firmware_base_url(), 'https://fw.test')
+        with patch.object(Path, 'read_text', return_value='invalid toml!'):
             with self.assertRaises(ValueError):
                 g.firmware_base_url()
 

@@ -22,3 +22,7 @@ Set FIRMWARE_SIGNING_DIR, FIRMWARE_SIGNING_PASSWORD_FILE, and
 FIRMWARE_REQUIRE_SIGNING=1 for required signed builds. The signing tool is
 resolved beside build.py, independently of the source checkout. ISO signing
 and firmware X.509/CMS signing remain separate.
+
+The firmware base URL is read from `data/build-flavors/igos-am64x-all.toml`
+in the same vyos-build checkout. Mount the checkout read-only in Docker so
+this configuration remains available; no GitHub fetch is required.

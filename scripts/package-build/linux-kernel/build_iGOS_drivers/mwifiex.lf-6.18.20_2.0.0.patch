@@ -16,3 +16,33 @@ index 8d824f6..b0fc5c5 100644
  #else
  	sinfo->filled = STATION_INFO_INACTIVE_TIME | STATION_INFO_SIGNAL;
  #endif
+diff --git a/mlan/mlan_cmdevt.c b/mlan/mlan_cmdevt.c
+index cb4477e..edbc23a 100644
+--- a/mlan/mlan_cmdevt.c
++++ b/mlan/mlan_cmdevt.c
+@@ -1426,6 +1426,16 @@ static t_u32 wlan_get_cmd_timeout(t_u16 cmd_id)
+ 	case HostCmd_CMD_802_11_SCAN_EXT:
+ 		timeout = MRVDRV_TIMER_10S * 2;
+ 		break;
++#ifdef UAP_SUPPORT
++	/* PSL: FW holds BSS start/stop until a scan on the other MAC of a
++	 * dual-MAC chip (e.g. 9098) completes, which can exceed 5s. Allow as
++	 * long as a scan so this does not trigger a spurious FW reset.
++	 */
++	case HostCmd_CMD_APCMD_BSS_START:
++	case HostCmd_CMD_APCMD_BSS_STOP:
++		timeout = MRVDRV_TIMER_10S * 2;
++		break;
++#endif
+ 	case HostCmd_CMD_FUNC_INIT:
+ 	case HostCmd_CMD_FUNC_SHUTDOWN:
+ 	case HostCmd_CMD_802_11_ASSOCIATE:
+@@ -1442,8 +1452,6 @@ static t_u32 wlan_get_cmd_timeout(t_u16 cmd_id)
+ 	case HostCmd_CMD_SOFT_RESET:
+ #ifdef UAP_SUPPORT
+ 	case HostCmd_CMD_APCMD_SYS_RESET:
+-	case HostCmd_CMD_APCMD_BSS_START:
+-	case HostCmd_CMD_APCMD_BSS_STOP:
+ 	case HostCmd_CMD_APCMD_STA_DEAUTH:
+ #endif
+ 	case HostCmd_CMD_APCMD_ACS_SCAN:

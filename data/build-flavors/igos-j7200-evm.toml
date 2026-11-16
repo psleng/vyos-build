@@ -13,12 +13,33 @@ pinmap_file = "igos-j7200-evm/pinmap.py"
 # Runtime deps (cellular/serial-control need libgpiod at runtime).
 packages = [
   "python3-libgpiod",
+  # veritysetup (dm-verity setup tool), pulled in so the initramfs verity-open
+  # hook can unlock the root squashfs; required when dm_verity = true.
+  "cryptsetup-bin",
+  # NXP 88W9098 Wi-Fi driver stack (nxp-wifi .deb from build_iGOS_drivers). MUST
+  # be listed to be installed -- live-build only pulls referenced local debs, so
+  # the j7200 build flow must also PRODUCE nxp-wifi.deb or `lb build` fails.
+  "nxp-wifi",
   # Telit FN920C04 cellular modem firmware-loader + control tools, locally built
   # from scripts/package-build-iGOS/{tfl-telit,uxfp-telit} into the tfl/uxfp
   # .debs. MUST be listed to be installed -- live-build only pulls referenced
   # local packages.chroot debs.
   "tfl",
   "uxfp",
+  # Cellular modem GNSS: gpsd owns the raw NMEA serial port and serves position
+  # on TCP 2947; python3-gps is the op-mode client library. Stock Debian pkgs.
+  "gpsd",
+  "python3-gps",
+  # OpenSSL 3.1.2 FIPS 140-3 validated provider (CMVP #4985), locally built into
+  # the igos-openssl-fips-provider .deb. MUST be listed AND produced by the j7200
+  # build flow or `lb build` fails. Inert until `set system option fips`.
+  "igos-openssl-fips-provider",
+  # iGOS web GUI (flask-react-web) and its CLI first-boot onboarding wizard
+  # (igos-cli-onboarding), pulled from upstream the same way uxfp/gpsd are rather
+  # than relying on a vyos-1x dependency. igos-cli-onboarding Depends on
+  # vyos-custom-queries (pulled transitively via flask-react-web).
+  "flask-react-web",
+  "igos-cli-onboarding",
 ]
 
 # Per-model definition tree (relative to data/models/). Ships data/models/j7200/

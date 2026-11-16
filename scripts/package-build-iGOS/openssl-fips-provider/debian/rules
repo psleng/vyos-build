@@ -1,0 +1,48 @@
+#!/usr/bin/make -f
+# Package the PINNED, VALIDATED OpenSSL 3.1.2 FIPS provider (fips.so).
+# The binary is NOT built here — it is a frozen, pre-validated artifact staged
+# under fips/<arch>/fips.so and verified (optionally) against fips/SHA256SUMS.
+# See docs/igos-fips-140-3-design.md §7.5 / §8.1 and ./README.md.
+
+export DH_VERBOSE = 1
+
+DEB_HOST_MULTIARCH ?= $(shell dpkg-architecture -qDEB_HOST_MULTIARCH)
+DEB_HOST_ARCH      ?= $(shell dpkg-architecture -qDEB_HOST_ARCH)
+
+PKGDIR  = debian/igos-openssl-fips-provider
+MODDIR  = usr/lib/$(DEB_HOST_MULTIARCH)/ossl-modules
+PROVIDER = fips/$(DEB_HOST_ARCH)/fips.so
+
+%:
+	dh $@
+
+# Nothing to compile/configure/test — the provider is a pinned binary.
+override_dh_auto_build:
+override_dh_auto_configure:
+override_dh_auto_test:
+
+override_dh_auto_install:
+	@set -e; \
+	if [ ! -f "$(PROVIDER)" ]; then \
+	  echo "E: pinned validated FIPS provider missing for arch '$(DEB_HOST_ARCH)':"; \
+	  echo "E:   expected $(PROVIDER)"; \
+	  echo "E: Stage the validated OpenSSL 3.1.2 fips.so there (see README.md)."; \
+	  echo "E: Until then, do NOT add 'igos-openssl-fips-provider' to any flavor's"; \
+	  echo "E: packages = [...] list."; \
+	  exit 1; \
+	fi; \
+	case "$$(head -c 4 "$(PROVIDER)" | od -An -tx1 | tr -d ' \n')" in \
+	  7f454c46) : ;; \
+	  *) echo "E: $(PROVIDER) is not an ELF shared object (placeholder?)."; \
+	     echo "E: Stage the real validated fips.so (see README.md)."; exit 1 ;; \
+	esac; \
+	if [ -f fips/SHA256SUMS ]; then \
+	  echo "I: verifying pinned provider against fips/SHA256SUMS"; \
+	  ( cd fips && sha256sum -c --ignore-missing --strict SHA256SUMS ) \
+	    || { echo "E: pinned fips.so failed SHA256 verification"; exit 1; }; \
+	else \
+	  echo "W: no fips/SHA256SUMS — shipping provider WITHOUT hash pinning check"; \
+	fi
+	install -d $(PKGDIR)/$(MODDIR)
+	install -m 0644 "$(PROVIDER)" $(PKGDIR)/$(MODDIR)/fips.so
+	@echo "I: installed validated fips.so -> /$(MODDIR)/fips.so"

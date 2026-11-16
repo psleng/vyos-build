@@ -49,6 +49,28 @@ packages = [
   # local packages.chroot debs (same rationale as nxp-wifi).
   "tfl",
   "uxfp",
+  # Cellular modem GNSS support: gpsd owns the modem's raw NMEA serial port and
+  # serves position on TCP 2947; python3-gps is the client library used by
+  # op-mode (show interfaces wwan <wwanN> gps). Stock Debian packages (unlike
+  # the local tfl/uxfp/nxp-wifi debs), listed here so they are pulled onto this
+  # cellular hardware image rather than relying on the vyos-1x Recommends.
+  "gpsd",
+  "python3-gps",
+  # OpenSSL 3.1.2 FIPS 140-3 validated provider (CMVP #4985), built from pinned
+  # source by scripts/package-build-iGOS/openssl-fips-provider into the
+  # igos-openssl-fips-provider .deb (fips.so -> ossl-modules/). MUST be listed to
+  # be installed -- live-build only pulls referenced local debs. Inert until
+  # activated by `set system option fips` (vyos-1x system_option / T8529).
+  "igos-openssl-fips-provider",
+  # iGOS web GUI (flask-react-web) and its CLI first-boot onboarding wizard
+  # (igos-cli-onboarding). Listed here the same way uxfp/gpsd are, so they are
+  # pulled onto the image explicitly rather than relying on a vyos-1x dependency.
+  # flask-react-web is the React/Flask management UI; igos-cli-onboarding ships
+  # the /etc/profile.d login check + /config/scripts setup wizard (server-
+  # independent first-boot provisioning). igos-cli-onboarding Depends on
+  # vyos-custom-queries, which flask-react-web already pulls in.
+  "flask-react-web",
+  "igos-cli-onboarding",
 ]
 
 # Per-model definition tree (relative to data/models/). Ships data/models/am64x-evm/

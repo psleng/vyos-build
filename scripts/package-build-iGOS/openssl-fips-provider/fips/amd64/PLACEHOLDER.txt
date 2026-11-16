@@ -1,0 +1,9 @@
+PLACEHOLDER — fips/amd64/fips.so is produced at build time.
+
+produce-fips-provider.sh builds the OpenSSL 3.1.2 FIPS provider from pinned
+source for this arch and stages it here (git-ignored build output).
+
+Pre-stage escape hatch: to ship a vendor/lab-supplied VALIDATED fips.so instead,
+drop it here as fips/amd64/fips.so and the source build is skipped. It must be the
+amd64 OpenSSL 3.1.2 FIPS provider (CMVP #4985) per the Security Policy — NOT a
+provider built from the 3.5 source. See README.md and design doc §8.1/§8.6.

@@ -41,6 +41,9 @@ image_name_prefix = "vyos"
 # expected to be hosted in the same directory as this JSON file.
 update_url = "https://download.perle.com/Engineering/updates/igos/cloud/am64xx-igos/image-version.json"
 
+# Hosted modem compatibility map fetched at runtime by the WWAN firmware updater.
+wwan_firmware_map_url = "https://download.perle.com/Engineering/updates/igos/cloud/modem-firmware/modem-firmware.json"
+
 # dm-verity integrity protection of the root squashfs for this hardware image.
 # When true, overrides the defaults.toml default (false) and arms root-hash
 # baking into the initramfs + fail-closed verify at boot; see data/defaults.toml

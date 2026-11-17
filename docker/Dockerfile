@@ -259,6 +259,7 @@ RUN pip --no-cache --no-cache-dir install --break-system-packages \
       procps \
       protobuf-compiler \
       python3 \
+      python3-cryptography \
       python3-setuptools \
       python3-inotify \
       python3-xmltodict \

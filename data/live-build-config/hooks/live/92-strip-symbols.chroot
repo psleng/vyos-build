@@ -28,6 +28,10 @@ STRIPDIR_UNNEEDED="
 /usr/sbin
 "
 STRIP_EXCLUDE=`dpkg-query -L libbinutils | grep '.so'`
+# The validated OpenSSL FIPS provider must stay byte-for-byte as built: vyos-1x
+# checks its SHA-256 against the package's identity manifest and fails closed.
+STRIP_EXCLUDE="${STRIP_EXCLUDE}
+`dpkg-query -L igos-openssl-fips-provider 2>/dev/null | grep '\.so$'`"
 
 # Perform stuff.
 echo "Stripping symbols..."

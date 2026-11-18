@@ -12,6 +12,12 @@ DEB_HOST_ARCH      ?= $(shell dpkg-architecture -qDEB_HOST_ARCH)
 PKGDIR  = debian/igos-openssl-fips-provider
 MODDIR  = usr/lib/$(DEB_HOST_MULTIARCH)/ossl-modules
 PROVIDER = fips/$(DEB_HOST_ARCH)/fips.so
+# Arch-qualified (the SHA differs per arch; the package is Multi-Arch: same).
+# vyos-1x reads this to prove the loaded module is this exact build.
+MANIFEST_DIR = usr/lib/$(DEB_HOST_MULTIARCH)/igos-openssl-fips-provider
+# Version the provider must self-report: the upstream part of the package
+# version (3.1.2-1igosN -> 3.1.2), i.e. the pinned OpenSSL FIPS release.
+PROVIDER_VERSION := $(shell dpkg-parsechangelog -SVersion | sed -e 's/-[^-]*$$//')
 
 %:
 	dh $@
@@ -20,6 +26,12 @@ PROVIDER = fips/$(DEB_HOST_ARCH)/fips.so
 override_dh_auto_build:
 override_dh_auto_configure:
 override_dh_auto_test:
+
+# The validated module must ship byte-for-byte as built: dh_strip/dh_dwz would
+# rewrite fips.so (strip .symtab, add .gnu_debuglink), so it would no longer be
+# the pinned binary and would not match the identity manifest checked on target.
+override_dh_strip:
+override_dh_dwz:
 
 override_dh_auto_install:
 	@set -e; \
@@ -43,6 +55,14 @@ override_dh_auto_install:
 	else \
 	  echo "W: no fips/SHA256SUMS — shipping provider WITHOUT hash pinning check"; \
 	fi
-	install -d $(PKGDIR)/$(MODDIR)
-	install -m 0644 "$(PROVIDER)" $(PKGDIR)/$(MODDIR)/fips.so
-	@echo "I: installed validated fips.so -> /$(MODDIR)/fips.so"
+	@set -e; \
+	sha=$$(./check-fips-provider.sh "$(PROVIDER)" "$(PROVIDER_VERSION)"); \
+	install -d $(PKGDIR)/$(MODDIR) $(PKGDIR)/$(MANIFEST_DIR); \
+	install -m 0644 "$(PROVIDER)" $(PKGDIR)/$(MODDIR)/fips.so; \
+	printf '%s\n' \
+	  '# Identity of the validated OpenSSL FIPS provider shipped by' \
+	  '# igos-openssl-fips-provider. vyos-1x refuses to enable FIPS mode unless' \
+	  '# /$(MODDIR)/fips.so matches sha256 and the loaded provider reports version.' \
+	  "version=$(PROVIDER_VERSION)" \
+	  "sha256=$$sha" > $(PKGDIR)/$(MANIFEST_DIR)/fips.so.manifest; \
+	echo "I: installed validated fips.so $(PROVIDER_VERSION) ($$sha) -> /$(MODDIR)/fips.so"

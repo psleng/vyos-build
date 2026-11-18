@@ -1,3 +1,16 @@
+igos-openssl-fips-provider (3.1.2-1igos2) bookworm; urgency=medium
+
+  * Conflicts/Replaces/Provides openssl-provider-fips: Debian's OpenSSL 3.5
+    builds an unvalidated 3.5 fips.so at the same ossl-modules/fips.so path.
+  * Ship fips.so byte-for-byte as built (disable dh_strip/dh_dwz, which were
+    stripping the validated module and adding .gnu_debuglink).
+  * Self-test the staged module at build time and refuse to package it unless
+    it reports the pinned provider version.
+  * Ship an identity manifest (version + SHA-256) that vyos-1x verifies before
+    and after activating FIPS mode.
+
+ -- Perle Systems <support@perle.com>  Wed, 18 Nov 2026 12:40:00 -0500
+
 igos-openssl-fips-provider (3.1.2-1igos1) bookworm; urgency=medium
 
   * Package the pinned, validated OpenSSL 3.1.2 FIPS provider (CMVP #4985)

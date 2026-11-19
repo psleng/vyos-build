@@ -10,6 +10,10 @@ systemctl disable isc-kea-dhcp6-server.service
 systemctl disable isc-kea-dhcp-ddns-server.service
 systemctl disable isc-dhcp-relay.service
 systemctl disable ssh.service
+# The VyOS OpenSSH configuration starts these only when TPM is enabled.
+if [ -f /lib/systemd/system/ssh-tpm-agent.service ]; then
+    systemctl disable ssh-tpm-agent.service ssh-tpm-agent.socket || exit 1
+fi
 systemctl disable sshguard.service
 systemctl disable openvpn.service
 systemctl disable lldpd.service

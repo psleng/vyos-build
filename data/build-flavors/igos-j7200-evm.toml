@@ -49,8 +49,8 @@ packages = [
 # 26-igos-dtb.binary hook.
 models_dir = "j7200"
 
-# Bootloader payload (see igos-am64x-all.toml). "none" pulls nothing.
-uboot_payload = "none"
+# Bootloader payload: the exact u-boot package to ship (see igos-am64x-all.toml).
+uboot_payload = "u-boot-j7200-evm"
 
 # Squashfs compression — favor BOOT SPEED over image size on this slow ARM SoC.
 # lz4 decompresses far faster than the arm64 default (xz), at the cost of a

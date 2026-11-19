@@ -47,11 +47,13 @@ sign_boot = false
 # selects the signature-ENFORCING grub build and bakes the public key into the
 # rootfs (/gpgkeys/perle.pubkey.bin) so the installer's grub-install --pubkey
 # embeds it -- kernel/initrd/dtb/module .sig are then checked at boot. Arm a
-# flavor by: secure_grub = true and keep sign_boot = true -- the build then
-# auto-adds the enforcing grub module package (grub-efi-arm64-bin-secure, which
-# Conflicts/Replaces stock grub-efi-arm64-bin) and stages the pubkey. REQUIRES
-# sign_boot (an enforcing grub over unsigned artifacts will not boot); the build
-# fails closed otherwise.
+# flavor by: secure_grub = true, keep sign_boot = true, and list the enforcing
+# grub module package in the flavor's packages (e.g. grub-efi-arm64-bin-secure,
+# which Conflicts/Replaces stock grub-efi-arm64-bin); the build stages the
+# pubkey. Every enforcing grub package Provides igos-grub-secure, and
+# 25-igos-grub-core.chroot fails the build if the flag and the installed grub
+# disagree. REQUIRES sign_boot (an enforcing grub over unsigned artifacts will
+# not boot); the build fails closed otherwise.
 secure_grub = false
 
 # Secure-boot of the GRUB EFI binary FOR u-boot (fork feature). Default OFF.

@@ -26,10 +26,15 @@
 #   grub.cfg. Nothing baked here is per-unit, so one signed core boots every unit.
 #
 # GATE
-#   secure_grub only. Signal = the enforcing grub package is installed
-#   (build-vyos-image appends grub-efi-arm64-bin-secure to the package list ONLY
-#   when secure_grub = true; it Replaces stock so /usr/lib/grub/arm64-efi holds
-#   the pgp-enforcing modules). Non-secure images skip this and keep stock grub.
+#   secure_grub only, read from the flavor (/usr/share/vyos/flavor.json). The
+#   flavor lists the enforcing grub package it wants in packages = [...]; every
+#   such package Provides the virtual igos-grub-secure (and Replaces stock, so
+#   /usr/lib/grub/arm64-efi holds the pgp-enforcing modules). The flag and the
+#   installed grub must agree, otherwise the build fails:
+#     * secure_grub = true, no igos-grub-secure provider -> no enforcing grub
+#     * secure_grub = false, provider installed -> enforcing grub with no
+#       trusted key staged, i.e. an image that cannot boot anything
+#   Non-secure images with stock grub skip this hook.
 #
 # NOTE
 #   This embeds the pubkey (so the core VERIFIES kernel/initrd/dtb). Signing the
@@ -43,12 +48,24 @@ CORE="/usr/lib/grub/arm64-efi/monolithic/grubaa64.efi"
 PUBKEY="/gpgkeys/perle.pubkey.bin"
 LABEL="persistence"
 
-# --- gate: secure_grub? (enforcing grub package present) ---------------------
-if ! dpkg-query -W -f='${Status}' grub-efi-arm64-bin-secure 2>/dev/null \
-        | grep -q 'install ok installed'; then
-    echo "I: grub-core(chroot): grub-efi-arm64-bin-secure not installed (secure_grub != true) -- skipping"
+# --- gate: secure_grub flag vs installed enforcing grub ----------------------
+SECURE_GRUB=$(python3 -c 'import json; print(str(json.load(open("/usr/share/vyos/flavor.json")).get("secure_grub", False)).lower())')
+SECURE_PKGS=$(dpkg-query -W -f='${db:Status-Abbrev} ${Package} ${Provides}\n' 2>/dev/null \
+    | awk '$1 == "ii" && $0 ~ /(^|[ ,])igos-grub-secure([ ,(]|$)/ {print $2}' | xargs)
+
+if [ "${SECURE_GRUB}" != "true" ]; then
+    if [ -n "${SECURE_PKGS}" ]; then
+        echo "E: grub-core(chroot): enforcing grub (${SECURE_PKGS}) installed but secure_grub is not set -- no trusted key would be staged; set secure_grub = true or drop the package from the flavor"
+        exit 1
+    fi
+    echo "I: grub-core(chroot): secure_grub not set -- skipping"
     exit 0
 fi
+if [ -z "${SECURE_PKGS}" ]; then
+    echo "E: grub-core(chroot): secure_grub = true but no enforcing grub (Provides: igos-grub-secure) is installed -- list it in the flavor packages (e.g. grub-efi-arm64-bin-secure; rebuild grub2 if the package predates the igos-grub-secure Provides)"
+    exit 1
+fi
+echo "I: grub-core(chroot): enforcing grub: ${SECURE_PKGS}"
 
 echo "I: grub-core(chroot): secure_grub build -- generating enforcing GRUB core"
 

@@ -25,7 +25,33 @@ configuration. See `vyos-1x/docs/igos-fips-140-3-design.md` (§0.3, §0.4, §7.5
 
 Then `dpkg-buildpackage` packages that `fips.so` into
 `igos-openssl-fips-provider`. The built `fips.so`/`SHA256SUMS` are **build
-outputs** (git-ignored), not committed.
+outputs** (git-ignored), not committed. Packaging:
+
+- runs `check-fips-provider.sh`: `openssl fipsinstall` self-tests the staged
+  module, then loads it and **refuses to package it unless the provider
+  self-reports the pinned version** (`3.1.2`, the upstream part of the package
+  version). A wrong binary staged via the escape hatch below fails the build;
+- ships `fips.so` **byte-for-byte as built** (`dh_strip`/`dh_dwz` disabled);
+- writes an arch-specific identity manifest,
+  `/usr/lib/<multiarch>/igos-openssl-fips-provider/fips.so.manifest`
+  (`version=` + `sha256=` of the shipped `fips.so`).
+
+## Which `fips.so` is active on the running system
+
+OpenSSL resolves the `fips` provider to `/usr/lib/<multiarch>/ossl-modules/fips.so`
+and `openssl fipsinstall` will self-test *any* FIPS provider there, so neither
+proves the validated module is the one in use. Three layers make sure it is:
+
+1. **Packaging:** `Conflicts`/`Replaces`/`Provides: openssl-provider-fips`.
+   Debian's OpenSSL 3.5 source (our `openssl-3.5` package) also builds
+   `openssl-provider-fips` — an **unvalidated 3.5** `fips.so` at the **same
+   path**. This package takes that path over, so the two can never co-exist.
+2. **Commit (`set system option fips`)** and **every boot**
+   (`vyos-fips-regenerate.service`): vyos-1x refuses / fails closed unless the
+   on-disk `fips.so` matches the manifest SHA-256 **and**, after `fipsinstall`,
+   the provider OpenSSL actually loads reports the manifest version.
+3. **Op-mode:** `show system fips` shows the loaded provider version against the
+   validated version, and whether the module matches the manifest.
 
 ### Pre-stage escape hatch (vendor / lab validated binary)
 If you drop a validated `fips.so` into `fips/<arch>/fips.so` by hand, the source
@@ -59,8 +85,8 @@ sits in `ossl-modules/` and is loaded by the same 3.5 `libcrypto`.
 
 ## Enabling it in an image
 
-Local `.deb`s are only installed when **referenced**. The package is already
-listed in `data/build-flavors/igos-am64x-all.toml`:
+Packages from the APT mirror are only installed when **referenced**; the
+package is listed in the igOS flavors (`data/build-flavors/igos-*.toml`):
 
 ```toml
 packages = [
@@ -68,6 +94,11 @@ packages = [
   "igos-openssl-fips-provider",
 ]
 ```
+
+Note that any `.deb` dropped into `vyos-build/packages/` is installed whether
+or not a flavor lists it (live-build `packages.chroot`). Do not drop the
+`openssl-provider-fips_*.deb` from an `openssl-3.5` build there — it conflicts
+with this package and the image build will fail.
 
 Add the same line to any other FIPS-capable flavor. The provider is present but
 **inert** until `set system option fips` activates it (vyos-1x T8529:
@@ -82,7 +113,13 @@ cd scripts/package-build-iGOS/openssl-fips-provider
 ```
 or directly: `./produce-fips-provider.sh && dpkg-buildpackage -us -uc -tc -b`.
 
-Validate the result:
+Validate the result (the package build already runs this):
 ```
-openssl fipsinstall -module fips/<arch>/fips.so -out /tmp/fipsmodule.cnf   # -> INSTALL PASSED
+./check-fips-provider.sh fips/<arch>/fips.so 3.1.2    # self-test + version; prints SHA-256
+```
+
+On target, with FIPS enabled:
+```
+show system fips          # Provider version: 3.1.2 (validated: 3.1.2), Validated module: yes
+openssl list -providers   # fips ... version: 3.1.2, status: active
 ```

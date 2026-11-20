@@ -20,10 +20,12 @@ dm_verity = false
 sign_boot = true
 
 # Secure-boot ENFORCEMENT in grub (see data/defaults.toml). false = ship the
-# plain non-verifying grub (current bring-up). To arm: set true and keep
-# sign_boot = true -- the build then auto-adds grub-efi-arm64-bin-secure (the
-# signature-enforcing grub module package) and bakes in the pubkey. The build
-# fails closed if secure_grub = true without sign_boot = true.
+# plain non-verifying grub (current bring-up). To arm: set true, keep
+# sign_boot = true, and list the signature-enforcing grub package for this
+# setup in packages = [...] below (grub-efi-arm64-bin-secure). The build bakes
+# in the pubkey and fails closed if secure_grub = true without sign_boot = true,
+# or if the flag and the listed enforcing grub (Provides: igos-grub-secure)
+# disagree.
 secure_grub = true
 
 # Secure-boot of the grub EFI core FOR u-boot (see data/defaults.toml /
@@ -71,6 +73,9 @@ packages = [
   # vyos-custom-queries, which flask-react-web already pulls in.
   "flask-react-web",
   "igos-cli-onboarding",
+  # Signature-enforcing grub modules for secure_grub = true (see above). Must
+  # Provide igos-grub-secure; built by scripts/package-build-iGOS/grub2.
+  "grub-efi-arm64-bin-secure",
 ]
 
 # Per-model definition tree (relative to data/models/). Ships data/models/am64x-evm/
@@ -81,8 +86,8 @@ packages = [
 # model.conf declares its own `dtb =`, staged by the 26-igos-dtb.binary hook.
 models_dir = "am64x-evm"
 
-# Bootloader payload (see igos-am64x-all.toml). "none" pulls nothing.
-uboot_payload = "none"
+# Bootloader payload: the exact u-boot package to ship (see igos-am64x-all.toml).
+uboot_payload = "u-boot-am64xx-evm"
 
 # Squashfs compression — favor BOOT SPEED over image size on this slow ARM SoC.
 # lz4 decompresses far faster than the arm64 default (xz), at the cost of a

@@ -1042,6 +1042,9 @@ DOCUMENTATION_URL="{build_config['documentation_url']}"
         ## payload key: it is already in the image via the arm64 architecture
         ## layer plus live-build's grub-efi stage.) This simply folds into the
         ## package list installed below.
+        ## The flavor names the exact u-boot package to ship (e.g. the secure or
+        ## the non-secure build of the board's u-boot); it is installed as-is and
+        ## is independent of every other flag here.
         for _payload_key in ("uboot_payload",):
             _payload = build_config.get(_payload_key)
             if _payload and _payload != "none":
@@ -1050,18 +1053,11 @@ DOCUMENTATION_URL="{build_config['documentation_url']}"
                 build_config["packages"] += _pkgs
                 print(f'I: {_payload_key} adds package(s): {" ".join(_pkgs)}')
 
-        ## Fork-only: when secure_grub = true, pull the signature-enforcing grub
-        ## module build in place of stock. grub-efi-arm64-bin-secure ships the
-        ## same file paths but Conflicts/Replaces the stock grub-efi-arm64-bin
-        ## (and satisfies grub-efi-arm64's strict dependency via a versioned
-        ## Provides), so grub-install and u-boot are unaffected -- only the
-        ## compiled-in pgp enforcement differs. secure_grub = false pulls
-        ## nothing, leaving stock (non-verifying) grub from the Debian mirror.
-        if bool(build_config.get("secure_grub", False)):
-            build_config.setdefault("packages", [])
-            if "grub-efi-arm64-bin-secure" not in build_config["packages"]:
-                build_config["packages"].append("grub-efi-arm64-bin-secure")
-                print("I: secure_grub = true adds package: grub-efi-arm64-bin-secure")
+        ## Fork-only: the signature-enforcing grub package is NOT chosen here.
+        ## A secure_grub flavor lists the one it wants in packages = [...] (e.g.
+        ## grub-efi-arm64-bin-secure); every such package Provides the virtual
+        ## igos-grub-secure, and 25-igos-grub-core.chroot fails the build if the
+        ## secure_grub flag and the installed grub disagree.
 
         ## sign_grub needs sbsign/sbverify in the chroot for
         ## 26-igos-sign-grub-uboot.chroot to sign the grub core.

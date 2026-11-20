@@ -12,12 +12,18 @@
 # identical, so grub-install and u-boot are unaffected -- only the compiled-in
 # pgp enforcement differs.
 #
+# It also Provides the virtual package igos-grub-secure: flavors list the secure
+# grub package they want in packages = [...], and the image build (hook
+# 25-igos-grub-core.chroot) recognises ANY enforcing grub through that name, so
+# other secure grub builds can be added without touching the build scripts.
+#
 # Run from the source tree (cwd) after dpkg-buildpackage; artifacts are one
 # level up (dpkg-buildpackage writes to the parent of the source tree).
 set -eu
 
 SRC_NAME="grub-efi-arm64-bin"
 NEW_NAME="grub-efi-arm64-bin-secure"
+VIRTUAL="igos-grub-secure"
 OUTDIR=".."
 
 deb=$(ls "${OUTDIR}"/${SRC_NAME}_*_*.deb 2>/dev/null | head -n1 || true)
@@ -41,10 +47,10 @@ fi
 
 # Rename the package and inject the compatibility relationships right after the
 # Package field so the stanza stays well formed (Description remains last).
-awk -v new="${NEW_NAME}" -v src="${SRC_NAME}" -v ver="${ver}" '
+awk -v new="${NEW_NAME}" -v src="${SRC_NAME}" -v ver="${ver}" -v virt="${VIRTUAL}" '
     /^Package: / && !done {
         print "Package: " new
-        print "Provides: " src " (= " ver ")"
+        print "Provides: " src " (= " ver "), " virt
         print "Conflicts: " src
         print "Replaces: " src
         done = 1

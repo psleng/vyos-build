@@ -17,7 +17,8 @@
 #   override; defaults to `dtb`). Copy that blob from the chroot's kernel output
 #   to the ISO's boot/dtb/ FLAT -- by basename, vendor dir stripped -- so every
 #   dtb (and its optional `dtb_alias` copy) lands directly under /boot/dtb. GRUB
-#   then loads the per-image dtb by a vendor-neutral name.
+#   then loads the per-image dtb by a vendor-neutral name. An optional
+#   `dtb_uboot` copy keeps its relative path (e.g. ti/...) for U-Boot.
 #
 #   Only the dtbs the models declare are carried -- not every dtb the kernel
 #   builds. Each image ships a SINGLE platform's model tree (igos-am64x = the
@@ -114,6 +115,18 @@ for conf in "${MODELS_ROOT}"/*/*/model.conf; do
         mkdir -p "$(dirname "${adst}")"
         cp "${dst}" "${adst}"
         echo "I: dtb-stage(iso):   aliased /${dst} as /${adst}"
+    fi
+
+    # Optional U-Boot-facing copy (model.conf `dtb_uboot`): unlike dtb_alias the
+    # relative path is KEPT, for boards whose stock U-Boot env loads
+    # /boot/dtb/${name_fdt} with a vendor dir (ti/k3-am642-evm.dtb). Kept out
+    # of dtb_alias so GRUB (vyos.system.grub) does not start loading a dtb.
+    ubdtb=$(get_key "${conf}" dtb_uboot)
+    if [ -n "${ubdtb}" ]; then
+        udst="${DTB_DEST}/${ubdtb#/}"
+        mkdir -p "$(dirname "${udst}")"
+        cp "${dst}" "${udst}"
+        echo "I: dtb-stage(iso):   copied /${dst} to /${udst} for U-Boot"
     fi
     staged=$((staged + 1))
 done

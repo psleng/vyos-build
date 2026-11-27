@@ -1,0 +1,23 @@
+diff --git a/drivers/net/ethernet/ti/am65-cpsw-nuss.c b/drivers/net/ethernet/ti/am65-cpsw-nuss.c
+index 31d436cdceb7..90951d3132cb 100644
+--- a/drivers/net/ethernet/ti/am65-cpsw-nuss.c
++++ b/drivers/net/ethernet/ti/am65-cpsw-nuss.c
+@@ -2762,6 +2762,7 @@ am65_cpsw_nuss_init_port_ndev(struct am65_cpsw_common *common, u32 port_idx)
+ 	struct device *dev = common->dev;
+ 	struct am65_cpsw_port *port;
+ 	struct phylink *phylink;
++	int alias_id;
+ 
+ 	port = &common->ports[port_idx];
+ 
+@@ -2860,6 +2861,10 @@ am65_cpsw_nuss_init_port_ndev(struct am65_cpsw_common *common, u32 port_idx)
+ 	if (!common->dma_ndev)
+ 		common->dma_ndev = port->ndev;
+ 
++	alias_id = of_alias_get_id(port->slave.port_np, "ethernet");
++	if (alias_id >= 0)
++		snprintf(port->ndev->name, IFNAMSIZ, "eth%d", alias_id);
++
+ 	return 0;
+ }
+ 
